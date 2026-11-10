@@ -1,0 +1,8 @@
+﻿# 營收月份 2024-12｜追蹤範圍：30 檔驗證樣本｜市場 上櫃｜只看近 12 個月新高 是｜排序 代號
+# 金額單位：新台幣元（來源仟元×1000）；百分比單位：%；定義版本 rev_12m_high-v1／rev_yoy-v1
+# 近 12 個月新高＝當月營收高於前 12 個月（不含當月）的最高值；相等不算。只代表數字比較，不代表利多或買進訊號。年增率可能因去年同月基期低而偏高，請一併看去年同月金額。本頁不是投資建議。
+# yoy_note：當月營收為負時標「當月營收為負」；年增率數字照 analysis 定義，不改為不適用
+revenue_month,symbol,name,market,revenue_twd,revenue_prev_year_twd,mom_pct,yoy_pct,yoy_status,yoy_reason,yoy_note,cumulative_twd,cumulative_yoy_pct,rev_12m_high_status,rev_12m_high_reason,prior_12m_max_twd,rev_12m_high_version,yoy_version,industry,remark,source,fetched_at
+2024-12,3293,鈊象,TPEx,1710380000.0,1324622000.0,2.33,29.12211936688354,ok,,,18512825000.0,30.59,true,,1680390000.0,rev_12m_high-v1,rev_yoy-v1,文化創意業,-,https://mopsov.twse.com.tw/nas/t21/otc/t21sc03_113_12.html,2026-11-10T04:57:23+08:00
+2024-12,5274,信驊,TPEx,736877000.0,318583000.0,8.19,131.29828019699735,ok,,,6459666000.0,106.35,true,,708152000.0,rev_12m_high-v1,rev_yoy-v1,半導體業,本月及本年增減百分比達50％以上者，主係伺服器晶片營收較去年同期成長所致。,https://mopsov.twse.com.tw/nas/t21/otc/t21sc03_113_12.html,2026-11-10T04:57:23+08:00
+2024-12,8069,元太,TPEx,3357735000.0,2220192000.0,10.03,51.2362444329139,ok,,,32163133000.0,18.59,true,,3266043000.0,rev_12m_high-v1,rev_yoy-v1,光電業,2024年度受新舊產品轉換及公司新產品上市影響，致公司本月及累計營收較去年同期增加,https://mopsov.twse.com.tw/nas/t21/otc/t21sc03_113_12.html,2026-11-10T04:57:23+08:00

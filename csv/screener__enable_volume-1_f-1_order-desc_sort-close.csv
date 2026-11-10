@@ -1,0 +1,7 @@
+﻿"# 參數：ma_short=20, ma_long=60, breakout_lookback=20, volume_lookback=20, volume_multiplier=1.5, min_turnover=100000000.0, max_gap_days=3, max_daily_move=0.11, legacy_max_daily_move=0.07, min_listing_days=60, new_listing_no_limit_days=5, adj_prev_close_tolerance=0.005, coverage_policy=strict, derive_share_factor=True, enable_trend=False, enable_breakout=False, enable_volume=True, enable_turnover=False, check_unexplained_gap=True；交易日 2026-11-09；引擎：analysis/screener.py screen()"
+# 量與金額口徑：上市：STOCK_DAY 官方總量口徑（含零股、盤後定價、鉅額）；上櫃：tradingStock 官方總量口徑（上櫃不含鉅額，已知限制）。
+# 追蹤範圍：30 檔驗證樣本（清單來源 pipeline/config.py SAMPLE30；範圍外不計入排除）
+代號,名稱,市場,交易日期,收盤(新台幣元),漲跌幅(%),成交金額(新台幣元),MA短,MA長,量比(倍),條件1_趨勢,條件2_突破,條件3_量能,條件4_成交金額,符合原因,漲跌交叉檢查,資料來源,資料標記
+5274,信驊,上櫃,2026-11-09,11700.0,2.857142857142847,10102169000,15661.0,17077.416666666668,2.02757502027575,未啟用,未啟用,通過,未啟用,"量能：成交量 ≥ 前 N 個交易日平均量（不含當日）× 倍數（門檻 量比 ≥ 1.5）：成立：當日 875,000 股 ≥ 均量 431,550 股 × 1.5 = 647,325 股",與官方漲跌一致,daily_prices（經 analysis/screener.py 計算）,正式
+2207,和泰車,上市,2026-11-09,533.0,0.9469696969697017,265252522,535.3,525.4,1.6615832240881836,未啟用,未啟用,通過,未啟用,"量能：成交量 ≥ 前 N 個交易日平均量（不含當日）× 倍數（門檻 量比 ≥ 1.5）：成立：當日 497,293 股 ≥ 均量 299,289 股 × 1.5 = 448,933 股",與官方漲跌一致,daily_prices（經 analysis/screener.py 計算）,正式
+2412,中華電,上市,2026-11-09,159.0,-2.752293577981646,3889052948,155.625,145.24166666666667,1.7866620970408778,未啟用,未啟用,通過,未啟用,"量能：成交量 ≥ 前 N 個交易日平均量（不含當日）× 倍數（門檻 量比 ≥ 1.5）：成立：當日 24,349,598 股 ≥ 均量 13,628,541 股 × 1.5 = 20,442,812 股",與官方漲跌一致,daily_prices（經 analysis/screener.py 計算）,正式

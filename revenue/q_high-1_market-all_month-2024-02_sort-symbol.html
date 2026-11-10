@@ -1,0 +1,100 @@
+<!doctype html>
+<html data-static="1" lang="zh-Hant-TW">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>月營收追蹤｜台股盤後研究</title>
+<link rel="icon" href="data:,">
+<link rel="stylesheet" href="../static/css/site.css">
+<script>document.documentElement.classList.add('js')</script>
+<meta name="site-root" content="../">
+<link rel="stylesheet" href="../static/css/static.css">
+</head>
+<body>
+<a class="skip" href="#main">跳到主要內容</a>
+
+<header class="site">
+  <div class="wrap mast">
+    <a class="brand" href="../" aria-label="台股盤後研究 首頁"><span class="seal" aria-hidden="true">盤後</span><span class="brand-name">台股盤後研究</span></a>
+    <nav class="mainnav" aria-label="主要功能">
+      <a href="../">盤後總覽</a>
+      <a href="../screener/">條件選股</a>
+      <a href="./" class="on" aria-current="page">營收</a>
+      <a href="../status/">資料狀態</a>
+    </nav>
+    <form class="search" action="#" data-static-path="/search" method="get" role="search">
+      <label class="sr" for="site-q">搜尋股票代號或名稱（按 / 快速聚焦）</label>
+      <input id="site-q" type="search" name="q" list="stocklist" placeholder="代號或名稱，如 2330、台積" value="" autocomplete="off">
+      <kbd class="kbd" aria-hidden="true" title="按 / 聚焦搜尋">/</kbd>
+      <datalist id="stocklist"></datalist>
+      <button type="submit">前往個股</button>
+    </form>
+  </div><div class="wrap meta-bar" role="status" aria-label="資料更新狀態">
+    <span class="mi">資料日期 <strong data-date="2026-11-09">2026-11-09</strong></span>
+    <span class="mi">更新 <span class="pill pill-warn">◐ 部分成功</span></span>
+    <span class="mi src-ok">行情 <span class="dot ok" aria-hidden="true"></span>正常</span>
+    <span class="mi src-ok">月營收 <span class="dot ok" aria-hidden="true"></span>正常</span>
+    <span class="mi src-ok">重大訊息 <span class="dot ok" aria-hidden="true"></span>正常</span>
+    <span class="mi muted">最後更新 2026-11-10 07:45（台北）</span>
+    
+    <a class="mi status-link" href="../status/">資料狀態 →</a>
+  </div>
+</header>
+<main id="main" class="wrap">
+<div class="static-banner" role="note" data-testid="static-banner"><strong>公開靜態版</strong><span>資料日期 <b>2026-11-09</b>｜最近一次更新工作完成 2026-11-10 07:45（台北時間）｜本頁產生於 2026-11-10 10:21（台北時間）。每交易日 18:00、每日 22:00 更新後重新產生；資料全部來自證交所、櫃買中心、公開資訊觀測站。</span></div>
+
+<h1>月營收追蹤 <small>2024-02</small></h1>
+<p class="basis-note" data-testid="revenue-universe">追蹤範圍：30 檔驗證樣本｜目前僅收錄 30 檔驗證樣本，數字不代表全市場。</p>
+
+<form class="rev-filter" method="get" action="../revenue/index.html" data-static-path="/revenue" data-testid="revenue-filter">
+  <label class="f-field"><span>營收月份</span> <select name="month"><option value="2026-10">2026-10（預設）</option><option value="2026-09">2026-09</option><option value="2026-08">2026-08</option><option value="2026-07">2026-07</option><option value="2026-06">2026-06</option><option value="2026-05">2026-05</option><option value="2026-04">2026-04</option><option value="2026-03">2026-03</option><option value="2026-02">2026-02</option><option value="2026-01">2026-01</option><option value="2025-12">2025-12</option><option value="2025-11">2025-11</option><option value="2025-10">2025-10</option><option value="2025-09">2025-09</option><option value="2025-08">2025-08</option><option value="2025-07">2025-07</option><option value="2025-06">2025-06</option><option value="2025-05">2025-05</option><option value="2025-04">2025-04</option><option value="2025-03">2025-03</option><option value="2025-02">2025-02</option><option value="2025-01">2025-01</option><option value="2024-12">2024-12</option><option value="2024-11">2024-11</option><option value="2024-10">2024-10</option><option value="2024-09">2024-09</option><option value="2024-08">2024-08</option><option value="2024-07">2024-07</option><option value="2024-06">2024-06</option><option value="2024-05">2024-05</option><option value="2024-04">2024-04</option><option value="2024-03">2024-03</option><option value="2024-02" selected>2024-02</option><option value="2024-01">2024-01</option><option value="2023-12">2023-12</option><option value="2023-11">2023-11</option></select></label>
+  <label class="f-field"><span>市場</span> <select name="market"><option value="all" selected>全部</option><option value="TWSE">上市</option><option value="TPEx">上櫃</option></select></label>
+  <label class="f-check"><input type="checkbox" name="high" value="1" checked> 只看近 12 個月新高</label>
+  <input type="hidden" name="sort" value="symbol">
+  <button type="submit" class="primary">套用</button>
+  <a class="btn" href="../csv/revenue__high-1_market-all_month-2024-02_sort-symbol.csv" data-testid="revenue-csv">匯出 CSV<span class="f-sub">（目前篩選與排序）</span></a>
+</form>
+
+
+<p class="rev-count" data-testid="revenue-count">2024-02 已有營收 <span class="nw"><a href="../source/q_agg-count_revenue_month-2024-02_table-monthly_revenues_universe-1.html"><b>30</b></a>／30 檔</span><span class="sep" aria-hidden="true">｜</span><span class="nw">近 12 個月新高 <a href="q_high-1_market-all_month-2024-02_sort-symbol.html"><b>0</b></a> 檔</span><span class="sep" aria-hidden="true">｜</span><span class="nw">資料不足 30 檔</span></p>
+
+
+<p class="state state-nondefault rev-filtered" data-state="revenue-filtered"><span aria-hidden="true">⚑</span> 篩選中：只看近 12 個月新高，共 0 列。<a href="q_month-2024-02.html">清除篩選</a></p>
+
+
+
+<section class="card" id="have" aria-labelledby="have-h">
+  <h2 id="have-h">已有營收（0 列）</h2>
+  
+  <div class="empty" data-state="revenue-filtered-empty">目前篩選條件下 0 列。</div>
+  
+</section>
+
+
+
+
+<section class="card fine" id="explain" aria-labelledby="explain-h">
+  <h2 id="explain-h">說明</h2>
+  <p data-testid="revenue-fixed-note">近 12 個月新高＝當月營收高於前 12 個月（不含當月）的最高值；相等不算。只代表數字比較，不代表利多或買進訊號。年增率可能因去年同月基期低而偏高，請一併看去年同月金額。本頁不是投資建議。</p>
+  <p class="srcline">近 12 個月新高與年增率：analysis/revenue.py evaluate_revenue()（rev_12m_high-v1／rev_yoy-v1）；月增率、累計營收、累計年增率為來源值。金額單位：新台幣元。</p>
+  
+  <div id="fin-note" class="fin-note" data-testid="fin-note"><p>※ 金融業：申報口徑不同，不宜跨產業比較。</p>
+    <ul><li>「產業別：金融保險業（其中金控公司係控股公司，其申報之「營業收入」係認列所有子公司損益之合計數）」——公開資訊觀測站 上市公司月營收彙總表（t21sc03），<a href="https://mopsov.twse.com.tw/nas/t21/sii/t21sc03_115_9_0.html" rel="noopener" target="_blank">https://mopsov.twse.com.tw/nas/t21/sii/t21sc03_115_9_0.html</a>（查閱 2026-11-10）</li><li>「營業收入：為利各業別比較，本項目對應至各業別之會計項目名稱列示如下。一般行業：營業收入｜金融業：淨收益｜保險業：營業收入｜證券期貨業：收益｜金控：淨收益｜異業合併：收入」——公開資訊觀測站 財務比較E點通（mopsfin）使用說明及應注意事項，<a href="https://mopsfin.twse.com.tw/terms" rel="noopener" target="_blank">https://mopsfin.twse.com.tw/terms</a>（查閱 2026-11-10）</li></ul></div>
+  
+</section>
+<p class="srcline">來源：monthly_revenues｜資料日期：2024-02｜追蹤範圍：30 檔驗證樣本</p>
+
+</main>
+<footer class="site">
+  <div class="wrap foot-grid">
+    <div><h2>資料來源與更新</h2><p>行情：證交所、櫃買中心；月營收、財報、重大訊息：公開資訊觀測站。每交易日 18:00 盤後更新、22:00 補查公告與營收。時間皆為台北時間（UTC+8）。<a href="../status/">各來源狀態 →</a></p></div>
+    <div><h2>單位</h2><p>價格：新台幣元；金額：億元（新台幣）；成交量：股；指數：點；漲跌：▲ 上漲（紅）、▼ 下跌（綠）、■ 平盤，並加 +／− 號。</p></div>
+    <div><h2>聲明</h2><p>本站僅供研究參考，不構成投資建議；技術訊號不代表獲利保證；本站不提供下單功能。數值由程式計算，文字說明不推論未經證實的原因。</p>
+      <p class="muted">圖表：<a href="https://www.tradingview.com/" rel="noopener">TradingView Lightweight Charts™</a>（Apache-2.0，本地檔案）。</p></div>
+  </div>
+</footer>
+<script src="../static/js/site.js" defer></script>
+
+<script src="../static/js/static.js" defer></script>
+</body>
+</html>

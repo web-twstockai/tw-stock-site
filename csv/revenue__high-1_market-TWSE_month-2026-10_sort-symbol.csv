@@ -1,0 +1,9 @@
+﻿# 營收月份 2026-10｜追蹤範圍：30 檔驗證樣本｜市場 上市｜只看近 12 個月新高 是｜排序 代號
+# 金額單位：新台幣元（來源仟元×1000）；百分比單位：%；定義版本 rev_12m_high-v1／rev_yoy-v1
+# 近 12 個月新高＝當月營收高於前 12 個月（不含當月）的最高值；相等不算。只代表數字比較，不代表利多或買進訊號。年增率可能因去年同月基期低而偏高，請一併看去年同月金額。本頁不是投資建議。
+# yoy_note：當月營收為負時標「當月營收為負」；年增率數字照 analysis 定義，不改為不適用
+revenue_month,symbol,name,market,revenue_twd,revenue_prev_year_twd,mom_pct,yoy_pct,yoy_status,yoy_reason,yoy_note,cumulative_twd,cumulative_yoy_pct,rev_12m_high_status,rev_12m_high_reason,prior_12m_max_twd,rev_12m_high_version,yoy_version,industry,remark,source,fetched_at
+2026-10,2308,台達電,TWSE,74666163000.0,57383550000.0,14.16,30.117713177382722,ok,,,614333699000.0,36.31,true,,67073192000.0,rev_12m_high-v1,rev_yoy-v1,電子零組件業,-,https://mopsov.twse.com.tw/nas/t21/sii/t21sc03_115_10.html,2026-11-10T05:36:20+08:00
+2026-10,2317,鴻海,TWSE,1305319612000.0,895708525000.0,12.66,45.73039951807984,ok,,,8975092122000.0,40.39,true,,1158633235000.0,rev_12m_high-v1,rev_yoy-v1,其他電子業,-,https://mopsov.twse.com.tw/nas/t21/sii/t21sc03_115_10.html,2026-11-10T05:36:20+08:00
+2026-10,2357,華碩,TWSE,107619902000.0,66330479000.0,10.67,62.2480398490715,ok,,,850051842000.0,41.13,true,,106723044000.0,rev_12m_high-v1,rev_yoy-v1,電腦及週邊設備業,本月增減差異說明:主要來自AI伺服器之銷售成長。,https://mopsov.twse.com.tw/nas/t21/sii/t21sc03_115_10.html,2026-11-10T05:36:20+08:00
+2026-10,2603,長榮,TWSE,53603471000.0,27330016000.0,7.82,96.13406373417416,ok,,,392052025000.0,22.24,true,,49711309000.0,rev_12m_high-v1,rev_yoy-v1,航運業,運價受市場供需影響，以致收入增加。,https://mopsov.twse.com.tw/nas/t21/sii/t21sc03_115_10.html,2026-11-10T05:36:20+08:00

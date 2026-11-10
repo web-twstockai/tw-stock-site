@@ -1,0 +1,390 @@
+<!doctype html>
+<html data-static="1" lang="zh-Hant-TW">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>月營收追蹤｜台股盤後研究</title>
+<link rel="icon" href="data:,">
+<link rel="stylesheet" href="../static/css/site.css">
+<script>document.documentElement.classList.add('js')</script>
+<meta name="site-root" content="../">
+<link rel="stylesheet" href="../static/css/static.css">
+</head>
+<body>
+<a class="skip" href="#main">跳到主要內容</a>
+
+<header class="site">
+  <div class="wrap mast">
+    <a class="brand" href="../" aria-label="台股盤後研究 首頁"><span class="seal" aria-hidden="true">盤後</span><span class="brand-name">台股盤後研究</span></a>
+    <nav class="mainnav" aria-label="主要功能">
+      <a href="../">盤後總覽</a>
+      <a href="../screener/">條件選股</a>
+      <a href="./" class="on" aria-current="page">營收</a>
+      <a href="../status/">資料狀態</a>
+    </nav>
+    <form class="search" action="#" data-static-path="/search" method="get" role="search">
+      <label class="sr" for="site-q">搜尋股票代號或名稱（按 / 快速聚焦）</label>
+      <input id="site-q" type="search" name="q" list="stocklist" placeholder="代號或名稱，如 2330、台積" value="" autocomplete="off">
+      <kbd class="kbd" aria-hidden="true" title="按 / 聚焦搜尋">/</kbd>
+      <datalist id="stocklist"></datalist>
+      <button type="submit">前往個股</button>
+    </form>
+  </div><div class="wrap meta-bar" role="status" aria-label="資料更新狀態">
+    <span class="mi">資料日期 <strong data-date="2026-11-09">2026-11-09</strong></span>
+    <span class="mi">更新 <span class="pill pill-warn">◐ 部分成功</span></span>
+    <span class="mi src-ok">行情 <span class="dot ok" aria-hidden="true"></span>正常</span>
+    <span class="mi src-ok">月營收 <span class="dot ok" aria-hidden="true"></span>正常</span>
+    <span class="mi src-ok">重大訊息 <span class="dot ok" aria-hidden="true"></span>正常</span>
+    <span class="mi muted">最後更新 2026-11-10 07:45（台北）</span>
+    
+    <a class="mi status-link" href="../status/">資料狀態 →</a>
+  </div>
+</header>
+<main id="main" class="wrap">
+<div class="static-banner" role="note" data-testid="static-banner"><strong>公開靜態版</strong><span>資料日期 <b>2026-11-09</b>｜最近一次更新工作完成 2026-11-10 07:45（台北時間）｜本頁產生於 2026-11-10 10:21（台北時間）。每交易日 18:00、每日 22:00 更新後重新產生；資料全部來自證交所、櫃買中心、公開資訊觀測站。</span></div>
+
+<h1>月營收追蹤 <small>2024-04</small></h1>
+<p class="basis-note" data-testid="revenue-universe">追蹤範圍：30 檔驗證樣本｜目前僅收錄 30 檔驗證樣本，數字不代表全市場。</p>
+
+<form class="rev-filter" method="get" action="../revenue/index.html" data-static-path="/revenue" data-testid="revenue-filter">
+  <label class="f-field"><span>營收月份</span> <select name="month"><option value="2026-10">2026-10（預設）</option><option value="2026-09">2026-09</option><option value="2026-08">2026-08</option><option value="2026-07">2026-07</option><option value="2026-06">2026-06</option><option value="2026-05">2026-05</option><option value="2026-04">2026-04</option><option value="2026-03">2026-03</option><option value="2026-02">2026-02</option><option value="2026-01">2026-01</option><option value="2025-12">2025-12</option><option value="2025-11">2025-11</option><option value="2025-10">2025-10</option><option value="2025-09">2025-09</option><option value="2025-08">2025-08</option><option value="2025-07">2025-07</option><option value="2025-06">2025-06</option><option value="2025-05">2025-05</option><option value="2025-04">2025-04</option><option value="2025-03">2025-03</option><option value="2025-02">2025-02</option><option value="2025-01">2025-01</option><option value="2024-12">2024-12</option><option value="2024-11">2024-11</option><option value="2024-10">2024-10</option><option value="2024-09">2024-09</option><option value="2024-08">2024-08</option><option value="2024-07">2024-07</option><option value="2024-06">2024-06</option><option value="2024-05">2024-05</option><option value="2024-04" selected>2024-04</option><option value="2024-03">2024-03</option><option value="2024-02">2024-02</option><option value="2024-01">2024-01</option><option value="2023-12">2023-12</option><option value="2023-11">2023-11</option></select></label>
+  <label class="f-field"><span>市場</span> <select name="market"><option value="all">全部</option><option value="TWSE" selected>上市</option><option value="TPEx">上櫃</option></select></label>
+  <label class="f-check"><input type="checkbox" name="high" value="1"> 只看近 12 個月新高</label>
+  <input type="hidden" name="sort" value="symbol">
+  <button type="submit" class="primary">套用</button>
+  <a class="btn" href="../csv/revenue__market-TWSE_month-2024-04_sort-symbol.csv" data-testid="revenue-csv">匯出 CSV<span class="f-sub">（目前篩選與排序）</span></a>
+</form>
+
+
+<p class="rev-count" data-testid="revenue-count">2024-04 已有營收 <span class="nw"><a href="../source/q_agg-count_revenue_month-2024-04_table-monthly_revenues_universe-1.html"><b>30</b></a>／30 檔</span><span class="sep" aria-hidden="true">｜</span><span class="nw">近 12 個月新高 <a href="q_high-1_market-TWSE_month-2024-04_sort-symbol.html"><b>0</b></a> 檔</span><span class="sep" aria-hidden="true">｜</span><span class="nw">資料不足 30 檔</span></p>
+
+
+<p class="state state-nondefault rev-filtered" data-state="revenue-filtered"><span aria-hidden="true">⚑</span> 篩選中：市場＝上市，共 20 列。<a href="q_month-2024-04.html">清除篩選</a></p>
+
+
+
+<section class="card" id="have" aria-labelledby="have-h">
+  <h2 id="have-h">已有營收（20 列）</h2>
+  
+  <div class="table-wrap sticky-first rev-wrap" tabindex="0" role="region" aria-label="已有營收表，可左右捲動"><table class="data rev-table" data-testid="revenue-table">
+    <thead><tr>
+      
+      <th aria-sort="ascending"><a data-static-off="1" title="公開靜態版未提供此頁">代號 ↑</a></th><th>名稱</th><th><a data-static-off="1" title="公開靜態版未提供此頁">市場</a></th><th class="r"><a data-static-off="1" title="公開靜態版未提供此頁">營收</a></th><th class="r"><a data-static-off="1" title="公開靜態版未提供此頁">去年同月營收</a></th><th class="r"><a data-static-off="1" title="公開靜態版未提供此頁">月增率</a></th><th class="r"><a data-static-off="1" title="公開靜態版未提供此頁">年增率</a></th><th class="r"><a data-static-off="1" title="公開靜態版未提供此頁">累計營收</a></th><th class="r"><a data-static-off="1" title="公開靜態版未提供此頁">累計年增率</a></th><th><a data-static-off="1" title="公開靜態版未提供此頁">近 12 個月新高</a></th><th>公司差異說明</th>
+    </tr></thead>
+    <tbody>
+    
+    <tr id="row-1101" data-high="insufficient">
+      <td class="stock-cell rev-code"><a href="../stock/1101/#revenue" title="1101 台泥"><span class="cd">1101</span></a></td>
+      <td class="rev-name">台泥</td>
+      <td>上市</td>
+      <td class="r"><a class="v vlink" href="../source/q_revenue_month-2024-04_symbol-1101_table-monthly_revenues.html" data-src-link="1">116.26 億<span class="tip" role="tooltip">來源：monthly_revenues<br>資料日期：2024-04<br>來源表：monthly_revenues<br>主鍵：symbol=1101, revenue_month=2024-04<br>單位：新台幣元<br>原值：11,626,493,000<br>點擊開啟來源列 →</span></a></td>
+      <td class="r"><a class="v vlink" href="../source/q_revenue_month-2024-04_symbol-1101_table-monthly_revenues.html" data-src-link="1">91.00 億<span class="tip" role="tooltip">來源：monthly_revenues<br>資料日期：2024-04<br>來源表：monthly_revenues<br>主鍵：symbol=1101, revenue_month=2024-04<br>單位：新台幣元<br>原值：9,100,119,000<br>點擊開啟來源列 →</span></a></td>
+      <td class="r"><span class="chg down"><span class="arr" aria-hidden="true">▼</span><span class="sr">下跌</span><a class="v vlink" href="../source/q_revenue_month-2024-04_symbol-1101_table-monthly_revenues.html" data-src-link="1">−14.81%<span class="tip" role="tooltip">來源：monthly_revenues<br>資料日期：2024-04<br>來源表：monthly_revenues<br>主鍵：symbol=1101, revenue_month=2024-04<br>單位：%<br>註：來源值（monthly_revenues.mom_pct）<br>點擊開啟來源列 →</span></a></span></td>
+      <td class="r" data-yoy="ok"><span class="chg up"><span class="arr" aria-hidden="true">▲</span><span class="sr">上漲</span><a class="v vlink" href="../source/q_revenue_month-2024-04_symbol-1101_table-monthly_revenues.html" data-src-link="1">+27.76%<span class="tip" role="tooltip">來源：monthly_revenues<br>資料日期：2024-04<br>來源表：monthly_revenues<br>主鍵：symbol=1101, revenue_month=2024-04<br>單位：%<br>註：analysis rev_yoy-v1；來源值 27.76<br>點擊開啟來源列 →</span></a></span></td>
+      <td class="r"><a class="v vlink" href="../source/q_revenue_month-2024-04_symbol-1101_table-monthly_revenues.html" data-src-link="1">373.12 億<span class="tip" role="tooltip">來源：monthly_revenues<br>資料日期：2024-04<br>來源表：monthly_revenues<br>主鍵：symbol=1101, revenue_month=2024-04<br>單位：新台幣元<br>原值：37,312,156,000<br>點擊開啟來源列 →</span></a></td>
+      <td class="r"><span class="chg up"><span class="arr" aria-hidden="true">▲</span><span class="sr">上漲</span><a class="v vlink" href="../source/q_revenue_month-2024-04_symbol-1101_table-monthly_revenues.html" data-src-link="1">+5.21%<span class="tip" role="tooltip">來源：monthly_revenues<br>資料日期：2024-04<br>來源表：monthly_revenues<br>主鍵：symbol=1101, revenue_month=2024-04<br>單位：%<br>註：來源值（monthly_revenues.cumulative_yoy_pct）<br>點擊開啟來源列 →</span></a></span></td>
+      <td data-testid="high-1101"><span class="badge st-insufficient" tabindex="0">資料不足<span class="tip" role="tooltip">REV_INSUFFICIENT_HISTORY：歷史不足 13 個月（前 12 個月起點之前沒有資料）<br></span></span></td>
+      <td class="rev-remark">—</td>
+    </tr>
+    
+    <tr id="row-1216" data-high="insufficient">
+      <td class="stock-cell rev-code"><a href="../stock/1216/#revenue" title="1216 統一"><span class="cd">1216</span></a></td>
+      <td class="rev-name">統一</td>
+      <td>上市</td>
+      <td class="r"><a class="v vlink" href="../source/q_revenue_month-2024-04_symbol-1216_table-monthly_revenues.html" data-src-link="1">523.39 億<span class="tip" role="tooltip">來源：monthly_revenues<br>資料日期：2024-04<br>來源表：monthly_revenues<br>主鍵：symbol=1216, revenue_month=2024-04<br>單位：新台幣元<br>原值：52,338,982,000<br>點擊開啟來源列 →</span></a></td>
+      <td class="r"><a class="v vlink" href="../source/q_revenue_month-2024-04_symbol-1216_table-monthly_revenues.html" data-src-link="1">440.70 億<span class="tip" role="tooltip">來源：monthly_revenues<br>資料日期：2024-04<br>來源表：monthly_revenues<br>主鍵：symbol=1216, revenue_month=2024-04<br>單位：新台幣元<br>原值：44,069,723,000<br>點擊開啟來源列 →</span></a></td>
+      <td class="r"><span class="chg up"><span class="arr" aria-hidden="true">▲</span><span class="sr">上漲</span><a class="v vlink" href="../source/q_revenue_month-2024-04_symbol-1216_table-monthly_revenues.html" data-src-link="1">+0.28%<span class="tip" role="tooltip">來源：monthly_revenues<br>資料日期：2024-04<br>來源表：monthly_revenues<br>主鍵：symbol=1216, revenue_month=2024-04<br>單位：%<br>註：來源值（monthly_revenues.mom_pct）<br>點擊開啟來源列 →</span></a></span></td>
+      <td class="r" data-yoy="ok"><span class="chg up"><span class="arr" aria-hidden="true">▲</span><span class="sr">上漲</span><a class="v vlink" href="../source/q_revenue_month-2024-04_symbol-1216_table-monthly_revenues.html" data-src-link="1">+18.76%<span class="tip" role="tooltip">來源：monthly_revenues<br>資料日期：2024-04<br>來源表：monthly_revenues<br>主鍵：symbol=1216, revenue_month=2024-04<br>單位：%<br>註：analysis rev_yoy-v1；來源值 18.76<br>點擊開啟來源列 →</span></a></span></td>
+      <td class="r"><a class="v vlink" href="../source/q_revenue_month-2024-04_symbol-1216_table-monthly_revenues.html" data-src-link="1">2,110.97 億<span class="tip" role="tooltip">來源：monthly_revenues<br>資料日期：2024-04<br>來源表：monthly_revenues<br>主鍵：symbol=1216, revenue_month=2024-04<br>單位：新台幣元<br>原值：211,096,989,000<br>點擊開啟來源列 →</span></a></td>
+      <td class="r"><span class="chg up"><span class="arr" aria-hidden="true">▲</span><span class="sr">上漲</span><a class="v vlink" href="../source/q_revenue_month-2024-04_symbol-1216_table-monthly_revenues.html" data-src-link="1">+20.30%<span class="tip" role="tooltip">來源：monthly_revenues<br>資料日期：2024-04<br>來源表：monthly_revenues<br>主鍵：symbol=1216, revenue_month=2024-04<br>單位：%<br>註：來源值（monthly_revenues.cumulative_yoy_pct）<br>點擊開啟來源列 →</span></a></span></td>
+      <td data-testid="high-1216"><span class="badge st-insufficient" tabindex="0">資料不足<span class="tip" role="tooltip">REV_INSUFFICIENT_HISTORY：歷史不足 13 個月（前 12 個月起點之前沒有資料）<br></span></span></td>
+      <td class="rev-remark">—</td>
+    </tr>
+    
+    <tr id="row-1301" data-high="insufficient">
+      <td class="stock-cell rev-code"><a href="../stock/1301/#revenue" title="1301 台塑"><span class="cd">1301</span></a></td>
+      <td class="rev-name">台塑</td>
+      <td>上市</td>
+      <td class="r"><a class="v vlink" href="../source/q_revenue_month-2024-04_symbol-1301_table-monthly_revenues.html" data-src-link="1">166.61 億<span class="tip" role="tooltip">來源：monthly_revenues<br>資料日期：2024-04<br>來源表：monthly_revenues<br>主鍵：symbol=1301, revenue_month=2024-04<br>單位：新台幣元<br>原值：16,660,677,000<br>點擊開啟來源列 →</span></a></td>
+      <td class="r"><a class="v vlink" href="../source/q_revenue_month-2024-04_symbol-1301_table-monthly_revenues.html" data-src-link="1">161.97 億<span class="tip" role="tooltip">來源：monthly_revenues<br>資料日期：2024-04<br>來源表：monthly_revenues<br>主鍵：symbol=1301, revenue_month=2024-04<br>單位：新台幣元<br>原值：16,196,620,000<br>點擊開啟來源列 →</span></a></td>
+      <td class="r"><span class="chg down"><span class="arr" aria-hidden="true">▼</span><span class="sr">下跌</span><a class="v vlink" href="../source/q_revenue_month-2024-04_symbol-1301_table-monthly_revenues.html" data-src-link="1">−5.65%<span class="tip" role="tooltip">來源：monthly_revenues<br>資料日期：2024-04<br>來源表：monthly_revenues<br>主鍵：symbol=1301, revenue_month=2024-04<br>單位：%<br>註：來源值（monthly_revenues.mom_pct）<br>點擊開啟來源列 →</span></a></span></td>
+      <td class="r" data-yoy="ok"><span class="chg up"><span class="arr" aria-hidden="true">▲</span><span class="sr">上漲</span><a class="v vlink" href="../source/q_revenue_month-2024-04_symbol-1301_table-monthly_revenues.html" data-src-link="1">+2.87%<span class="tip" role="tooltip">來源：monthly_revenues<br>資料日期：2024-04<br>來源表：monthly_revenues<br>主鍵：symbol=1301, revenue_month=2024-04<br>單位：%<br>註：analysis rev_yoy-v1；來源值 2.86<br>點擊開啟來源列 →</span></a></span></td>
+      <td class="r"><a class="v vlink" href="../source/q_revenue_month-2024-04_symbol-1301_table-monthly_revenues.html" data-src-link="1">647.69 億<span class="tip" role="tooltip">來源：monthly_revenues<br>資料日期：2024-04<br>來源表：monthly_revenues<br>主鍵：symbol=1301, revenue_month=2024-04<br>單位：新台幣元<br>原值：64,769,170,000<br>點擊開啟來源列 →</span></a></td>
+      <td class="r"><span class="chg down"><span class="arr" aria-hidden="true">▼</span><span class="sr">下跌</span><a class="v vlink" href="../source/q_revenue_month-2024-04_symbol-1301_table-monthly_revenues.html" data-src-link="1">−5.32%<span class="tip" role="tooltip">來源：monthly_revenues<br>資料日期：2024-04<br>來源表：monthly_revenues<br>主鍵：symbol=1301, revenue_month=2024-04<br>單位：%<br>註：來源值（monthly_revenues.cumulative_yoy_pct）<br>點擊開啟來源列 →</span></a></span></td>
+      <td data-testid="high-1301"><span class="badge st-insufficient" tabindex="0">資料不足<span class="tip" role="tooltip">REV_INSUFFICIENT_HISTORY：歷史不足 13 個月（前 12 個月起點之前沒有資料）<br></span></span></td>
+      <td class="rev-remark">—</td>
+    </tr>
+    
+    <tr id="row-2002" data-high="insufficient">
+      <td class="stock-cell rev-code"><a href="../stock/2002/#revenue" title="2002 中鋼"><span class="cd">2002</span></a></td>
+      <td class="rev-name">中鋼</td>
+      <td>上市</td>
+      <td class="r"><a class="v vlink" href="../source/q_revenue_month-2024-04_symbol-2002_table-monthly_revenues.html" data-src-link="1">327.02 億<span class="tip" role="tooltip">來源：monthly_revenues<br>資料日期：2024-04<br>來源表：monthly_revenues<br>主鍵：symbol=2002, revenue_month=2024-04<br>單位：新台幣元<br>原值：32,701,734,000<br>點擊開啟來源列 →</span></a></td>
+      <td class="r"><a class="v vlink" href="../source/q_revenue_month-2024-04_symbol-2002_table-monthly_revenues.html" data-src-link="1">323.79 億<span class="tip" role="tooltip">來源：monthly_revenues<br>資料日期：2024-04<br>來源表：monthly_revenues<br>主鍵：symbol=2002, revenue_month=2024-04<br>單位：新台幣元<br>原值：32,379,484,000<br>點擊開啟來源列 →</span></a></td>
+      <td class="r"><span class="chg down"><span class="arr" aria-hidden="true">▼</span><span class="sr">下跌</span><a class="v vlink" href="../source/q_revenue_month-2024-04_symbol-2002_table-monthly_revenues.html" data-src-link="1">−0.47%<span class="tip" role="tooltip">來源：monthly_revenues<br>資料日期：2024-04<br>來源表：monthly_revenues<br>主鍵：symbol=2002, revenue_month=2024-04<br>單位：%<br>註：來源值（monthly_revenues.mom_pct）<br>點擊開啟來源列 →</span></a></span></td>
+      <td class="r" data-yoy="ok"><span class="chg up"><span class="arr" aria-hidden="true">▲</span><span class="sr">上漲</span><a class="v vlink" href="../source/q_revenue_month-2024-04_symbol-2002_table-monthly_revenues.html" data-src-link="1">+1.00%<span class="tip" role="tooltip">來源：monthly_revenues<br>資料日期：2024-04<br>來源表：monthly_revenues<br>主鍵：symbol=2002, revenue_month=2024-04<br>單位：%<br>註：analysis rev_yoy-v1；來源值 0.99<br>點擊開啟來源列 →</span></a></span></td>
+      <td class="r"><a class="v vlink" href="../source/q_revenue_month-2024-04_symbol-2002_table-monthly_revenues.html" data-src-link="1">1,264.56 億<span class="tip" role="tooltip">來源：monthly_revenues<br>資料日期：2024-04<br>來源表：monthly_revenues<br>主鍵：symbol=2002, revenue_month=2024-04<br>單位：新台幣元<br>原值：126,455,650,000<br>點擊開啟來源列 →</span></a></td>
+      <td class="r"><span class="chg up"><span class="arr" aria-hidden="true">▲</span><span class="sr">上漲</span><a class="v vlink" href="../source/q_revenue_month-2024-04_symbol-2002_table-monthly_revenues.html" data-src-link="1">+2.20%<span class="tip" role="tooltip">來源：monthly_revenues<br>資料日期：2024-04<br>來源表：monthly_revenues<br>主鍵：symbol=2002, revenue_month=2024-04<br>單位：%<br>註：來源值（monthly_revenues.cumulative_yoy_pct）<br>點擊開啟來源列 →</span></a></span></td>
+      <td data-testid="high-2002"><span class="badge st-insufficient" tabindex="0">資料不足<span class="tip" role="tooltip">REV_INSUFFICIENT_HISTORY：歷史不足 13 個月（前 12 個月起點之前沒有資料）<br></span></span></td>
+      <td class="rev-remark">—</td>
+    </tr>
+    
+    <tr id="row-2207" data-high="insufficient">
+      <td class="stock-cell rev-code"><a href="../stock/2207/#revenue" title="2207 和泰車"><span class="cd">2207</span></a></td>
+      <td class="rev-name">和泰車</td>
+      <td>上市</td>
+      <td class="r"><a class="v vlink" href="../source/q_revenue_month-2024-04_symbol-2207_table-monthly_revenues.html" data-src-link="1">222.31 億<span class="tip" role="tooltip">來源：monthly_revenues<br>資料日期：2024-04<br>來源表：monthly_revenues<br>主鍵：symbol=2207, revenue_month=2024-04<br>單位：新台幣元<br>原值：22,230,683,000<br>點擊開啟來源列 →</span></a></td>
+      <td class="r"><a class="v vlink" href="../source/q_revenue_month-2024-04_symbol-2207_table-monthly_revenues.html" data-src-link="1">232.15 億<span class="tip" role="tooltip">來源：monthly_revenues<br>資料日期：2024-04<br>來源表：monthly_revenues<br>主鍵：symbol=2207, revenue_month=2024-04<br>單位：新台幣元<br>原值：23,214,994,000<br>點擊開啟來源列 →</span></a></td>
+      <td class="r"><span class="chg down"><span class="arr" aria-hidden="true">▼</span><span class="sr">下跌</span><a class="v vlink" href="../source/q_revenue_month-2024-04_symbol-2207_table-monthly_revenues.html" data-src-link="1">−8.98%<span class="tip" role="tooltip">來源：monthly_revenues<br>資料日期：2024-04<br>來源表：monthly_revenues<br>主鍵：symbol=2207, revenue_month=2024-04<br>單位：%<br>註：來源值（monthly_revenues.mom_pct）<br>點擊開啟來源列 →</span></a></span></td>
+      <td class="r" data-yoy="ok"><span class="chg down"><span class="arr" aria-hidden="true">▼</span><span class="sr">下跌</span><a class="v vlink" href="../source/q_revenue_month-2024-04_symbol-2207_table-monthly_revenues.html" data-src-link="1">−4.24%<span class="tip" role="tooltip">來源：monthly_revenues<br>資料日期：2024-04<br>來源表：monthly_revenues<br>主鍵：symbol=2207, revenue_month=2024-04<br>單位：%<br>註：analysis rev_yoy-v1；來源值 -4.23<br>點擊開啟來源列 →</span></a></span></td>
+      <td class="r"><a class="v vlink" href="../source/q_revenue_month-2024-04_symbol-2207_table-monthly_revenues.html" data-src-link="1">915.54 億<span class="tip" role="tooltip">來源：monthly_revenues<br>資料日期：2024-04<br>來源表：monthly_revenues<br>主鍵：symbol=2207, revenue_month=2024-04<br>單位：新台幣元<br>原值：91,554,073,000<br>點擊開啟來源列 →</span></a></td>
+      <td class="r"><span class="chg up"><span class="arr" aria-hidden="true">▲</span><span class="sr">上漲</span><a class="v vlink" href="../source/q_revenue_month-2024-04_symbol-2207_table-monthly_revenues.html" data-src-link="1">+2.26%<span class="tip" role="tooltip">來源：monthly_revenues<br>資料日期：2024-04<br>來源表：monthly_revenues<br>主鍵：symbol=2207, revenue_month=2024-04<br>單位：%<br>註：來源值（monthly_revenues.cumulative_yoy_pct）<br>點擊開啟來源列 →</span></a></span></td>
+      <td data-testid="high-2207"><span class="badge st-insufficient" tabindex="0">資料不足<span class="tip" role="tooltip">REV_INSUFFICIENT_HISTORY：歷史不足 13 個月（前 12 個月起點之前沒有資料）<br></span></span></td>
+      <td class="rev-remark">—</td>
+    </tr>
+    
+    <tr id="row-2308" data-high="insufficient">
+      <td class="stock-cell rev-code"><a href="../stock/2308/#revenue" title="2308 台達電"><span class="cd">2308</span></a></td>
+      <td class="rev-name">台達電</td>
+      <td>上市</td>
+      <td class="r"><a class="v vlink" href="../source/q_revenue_month-2024-04_symbol-2308_table-monthly_revenues.html" data-src-link="1">335.38 億<span class="tip" role="tooltip">來源：monthly_revenues<br>資料日期：2024-04<br>來源表：monthly_revenues<br>主鍵：symbol=2308, revenue_month=2024-04<br>單位：新台幣元<br>原值：33,537,561,000<br>點擊開啟來源列 →</span></a></td>
+      <td class="r"><a class="v vlink" href="../source/q_revenue_month-2024-04_symbol-2308_table-monthly_revenues.html" data-src-link="1">315.42 億<span class="tip" role="tooltip">來源：monthly_revenues<br>資料日期：2024-04<br>來源表：monthly_revenues<br>主鍵：symbol=2308, revenue_month=2024-04<br>單位：新台幣元<br>原值：31,542,219,000<br>點擊開啟來源列 →</span></a></td>
+      <td class="r"><span class="chg up"><span class="arr" aria-hidden="true">▲</span><span class="sr">上漲</span><a class="v vlink" href="../source/q_revenue_month-2024-04_symbol-2308_table-monthly_revenues.html" data-src-link="1">+6.20%<span class="tip" role="tooltip">來源：monthly_revenues<br>資料日期：2024-04<br>來源表：monthly_revenues<br>主鍵：symbol=2308, revenue_month=2024-04<br>單位：%<br>註：來源值（monthly_revenues.mom_pct）<br>點擊開啟來源列 →</span></a></span></td>
+      <td class="r" data-yoy="ok"><span class="chg up"><span class="arr" aria-hidden="true">▲</span><span class="sr">上漲</span><a class="v vlink" href="../source/q_revenue_month-2024-04_symbol-2308_table-monthly_revenues.html" data-src-link="1">+6.33%<span class="tip" role="tooltip">來源：monthly_revenues<br>資料日期：2024-04<br>來源表：monthly_revenues<br>主鍵：symbol=2308, revenue_month=2024-04<br>單位：%<br>註：analysis rev_yoy-v1；來源值 6.32<br>點擊開啟來源列 →</span></a></span></td>
+      <td class="r"><a class="v vlink" href="../source/q_revenue_month-2024-04_symbol-2308_table-monthly_revenues.html" data-src-link="1">1,248.36 億<span class="tip" role="tooltip">來源：monthly_revenues<br>資料日期：2024-04<br>來源表：monthly_revenues<br>主鍵：symbol=2308, revenue_month=2024-04<br>單位：新台幣元<br>原值：124,835,551,000<br>點擊開啟來源列 →</span></a></td>
+      <td class="r"><span class="chg up"><span class="arr" aria-hidden="true">▲</span><span class="sr">上漲</span><a class="v vlink" href="../source/q_revenue_month-2024-04_symbol-2308_table-monthly_revenues.html" data-src-link="1">+0.34%<span class="tip" role="tooltip">來源：monthly_revenues<br>資料日期：2024-04<br>來源表：monthly_revenues<br>主鍵：symbol=2308, revenue_month=2024-04<br>單位：%<br>註：來源值（monthly_revenues.cumulative_yoy_pct）<br>點擊開啟來源列 →</span></a></span></td>
+      <td data-testid="high-2308"><span class="badge st-insufficient" tabindex="0">資料不足<span class="tip" role="tooltip">REV_INSUFFICIENT_HISTORY：歷史不足 13 個月（前 12 個月起點之前沒有資料）<br></span></span></td>
+      <td class="rev-remark">—</td>
+    </tr>
+    
+    <tr id="row-2317" data-high="insufficient">
+      <td class="stock-cell rev-code"><a href="../stock/2317/#revenue" title="2317 鴻海"><span class="cd">2317</span></a></td>
+      <td class="rev-name">鴻海</td>
+      <td>上市</td>
+      <td class="r"><a class="v vlink" href="../source/q_revenue_month-2024-04_symbol-2317_table-monthly_revenues.html" data-src-link="1">5,108.96 億<span class="tip" role="tooltip">來源：monthly_revenues<br>資料日期：2024-04<br>來源表：monthly_revenues<br>主鍵：symbol=2317, revenue_month=2024-04<br>單位：新台幣元<br>原值：510,896,397,000<br>點擊開啟來源列 →</span></a></td>
+      <td class="r"><a class="v vlink" href="../source/q_revenue_month-2024-04_symbol-2317_table-monthly_revenues.html" data-src-link="1">4,292.19 億<span class="tip" role="tooltip">來源：monthly_revenues<br>資料日期：2024-04<br>來源表：monthly_revenues<br>主鍵：symbol=2317, revenue_month=2024-04<br>單位：新台幣元<br>原值：429,219,228,000<br>點擊開啟來源列 →</span></a></td>
+      <td class="r"><span class="chg up"><span class="arr" aria-hidden="true">▲</span><span class="sr">上漲</span><a class="v vlink" href="../source/q_revenue_month-2024-04_symbol-2317_table-monthly_revenues.html" data-src-link="1">+14.15%<span class="tip" role="tooltip">來源：monthly_revenues<br>資料日期：2024-04<br>來源表：monthly_revenues<br>主鍵：symbol=2317, revenue_month=2024-04<br>單位：%<br>註：來源值（monthly_revenues.mom_pct）<br>點擊開啟來源列 →</span></a></span></td>
+      <td class="r" data-yoy="ok"><span class="chg up"><span class="arr" aria-hidden="true">▲</span><span class="sr">上漲</span><a class="v vlink" href="../source/q_revenue_month-2024-04_symbol-2317_table-monthly_revenues.html" data-src-link="1">+19.03%<span class="tip" role="tooltip">來源：monthly_revenues<br>資料日期：2024-04<br>來源表：monthly_revenues<br>主鍵：symbol=2317, revenue_month=2024-04<br>單位：%<br>註：analysis rev_yoy-v1；來源值 19.02<br>點擊開啟來源列 →</span></a></span></td>
+      <td class="r"><a class="v vlink" href="../source/q_revenue_month-2024-04_symbol-2317_table-monthly_revenues.html" data-src-link="1">18,330.59 億<span class="tip" role="tooltip">來源：monthly_revenues<br>資料日期：2024-04<br>來源表：monthly_revenues<br>主鍵：symbol=2317, revenue_month=2024-04<br>單位：新台幣元<br>原值：1,833,059,111,000<br>點擊開啟來源列 →</span></a></td>
+      <td class="r"><span class="chg down"><span class="arr" aria-hidden="true">▼</span><span class="sr">下跌</span><a class="v vlink" href="../source/q_revenue_month-2024-04_symbol-2317_table-monthly_revenues.html" data-src-link="1">−3.11%<span class="tip" role="tooltip">來源：monthly_revenues<br>資料日期：2024-04<br>來源表：monthly_revenues<br>主鍵：symbol=2317, revenue_month=2024-04<br>單位：%<br>註：來源值（monthly_revenues.cumulative_yoy_pct）<br>點擊開啟來源列 →</span></a></span></td>
+      <td data-testid="high-2317"><span class="badge st-insufficient" tabindex="0">資料不足<span class="tip" role="tooltip">REV_INSUFFICIENT_HISTORY：歷史不足 13 個月（前 12 個月起點之前沒有資料）<br></span></span></td>
+      <td class="rev-remark">—</td>
+    </tr>
+    
+    <tr id="row-2330" data-high="insufficient">
+      <td class="stock-cell rev-code"><a href="../stock/2330/#revenue" title="2330 台積電"><span class="cd">2330</span></a></td>
+      <td class="rev-name">台積電</td>
+      <td>上市</td>
+      <td class="r"><a class="v vlink" href="../source/q_revenue_month-2024-04_symbol-2330_table-monthly_revenues.html" data-src-link="1">2,360.21 億<span class="tip" role="tooltip">來源：monthly_revenues<br>資料日期：2024-04<br>來源表：monthly_revenues<br>主鍵：symbol=2330, revenue_month=2024-04<br>單位：新台幣元<br>原值：236,021,112,000<br>點擊開啟來源列 →</span></a></td>
+      <td class="r"><a class="v vlink" href="../source/q_revenue_month-2024-04_symbol-2330_table-monthly_revenues.html" data-src-link="1">1,479.00 億<span class="tip" role="tooltip">來源：monthly_revenues<br>資料日期：2024-04<br>來源表：monthly_revenues<br>主鍵：symbol=2330, revenue_month=2024-04<br>單位：新台幣元<br>原值：147,899,735,000<br>點擊開啟來源列 →</span></a></td>
+      <td class="r"><span class="chg up"><span class="arr" aria-hidden="true">▲</span><span class="sr">上漲</span><a class="v vlink" href="../source/q_revenue_month-2024-04_symbol-2330_table-monthly_revenues.html" data-src-link="1">+20.90%<span class="tip" role="tooltip">來源：monthly_revenues<br>資料日期：2024-04<br>來源表：monthly_revenues<br>主鍵：symbol=2330, revenue_month=2024-04<br>單位：%<br>註：來源值（monthly_revenues.mom_pct）<br>點擊開啟來源列 →</span></a></span></td>
+      <td class="r" data-yoy="ok"><span class="chg up"><span class="arr" aria-hidden="true">▲</span><span class="sr">上漲</span><a class="v vlink" href="../source/q_revenue_month-2024-04_symbol-2330_table-monthly_revenues.html" data-src-link="1">+59.58%<span class="tip" role="tooltip">來源：monthly_revenues<br>資料日期：2024-04<br>來源表：monthly_revenues<br>主鍵：symbol=2330, revenue_month=2024-04<br>單位：%<br>註：analysis rev_yoy-v1；來源值 59.58<br>點擊開啟來源列 →</span></a></span></td>
+      <td class="r"><a class="v vlink" href="../source/q_revenue_month-2024-04_symbol-2330_table-monthly_revenues.html" data-src-link="1">8,286.65 億<span class="tip" role="tooltip">來源：monthly_revenues<br>資料日期：2024-04<br>來源表：monthly_revenues<br>主鍵：symbol=2330, revenue_month=2024-04<br>單位：新台幣元<br>原值：828,665,313,000<br>點擊開啟來源列 →</span></a></td>
+      <td class="r"><span class="chg up"><span class="arr" aria-hidden="true">▲</span><span class="sr">上漲</span><a class="v vlink" href="../source/q_revenue_month-2024-04_symbol-2330_table-monthly_revenues.html" data-src-link="1">+26.21%<span class="tip" role="tooltip">來源：monthly_revenues<br>資料日期：2024-04<br>來源表：monthly_revenues<br>主鍵：symbol=2330, revenue_month=2024-04<br>單位：%<br>註：來源值（monthly_revenues.cumulative_yoy_pct）<br>點擊開啟來源列 →</span></a></span></td>
+      <td data-testid="high-2330"><span class="badge st-insufficient" tabindex="0">資料不足<span class="tip" role="tooltip">REV_INSUFFICIENT_HISTORY：歷史不足 13 個月（前 12 個月起點之前沒有資料）<br></span></span></td>
+      <td class="rev-remark"><details><summary>展開</summary>因先進製程產品需求增加所致。</details></td>
+    </tr>
+    
+    <tr id="row-2357" data-high="insufficient">
+      <td class="stock-cell rev-code"><a href="../stock/2357/#revenue" title="2357 華碩"><span class="cd">2357</span></a></td>
+      <td class="rev-name">華碩</td>
+      <td>上市</td>
+      <td class="r"><a class="v vlink" href="../source/q_revenue_month-2024-04_symbol-2357_table-monthly_revenues.html" data-src-link="1">416.23 億<span class="tip" role="tooltip">來源：monthly_revenues<br>資料日期：2024-04<br>來源表：monthly_revenues<br>主鍵：symbol=2357, revenue_month=2024-04<br>單位：新台幣元<br>原值：41,623,099,000<br>點擊開啟來源列 →</span></a></td>
+      <td class="r"><a class="v vlink" href="../source/q_revenue_month-2024-04_symbol-2357_table-monthly_revenues.html" data-src-link="1">313.04 億<span class="tip" role="tooltip">來源：monthly_revenues<br>資料日期：2024-04<br>來源表：monthly_revenues<br>主鍵：symbol=2357, revenue_month=2024-04<br>單位：新台幣元<br>原值：31,304,341,000<br>點擊開啟來源列 →</span></a></td>
+      <td class="r"><span class="chg down"><span class="arr" aria-hidden="true">▼</span><span class="sr">下跌</span><a class="v vlink" href="../source/q_revenue_month-2024-04_symbol-2357_table-monthly_revenues.html" data-src-link="1">−16.31%<span class="tip" role="tooltip">來源：monthly_revenues<br>資料日期：2024-04<br>來源表：monthly_revenues<br>主鍵：symbol=2357, revenue_month=2024-04<br>單位：%<br>註：來源值（monthly_revenues.mom_pct）<br>點擊開啟來源列 →</span></a></span></td>
+      <td class="r" data-yoy="ok"><span class="chg up"><span class="arr" aria-hidden="true">▲</span><span class="sr">上漲</span><a class="v vlink" href="../source/q_revenue_month-2024-04_symbol-2357_table-monthly_revenues.html" data-src-link="1">+32.96%<span class="tip" role="tooltip">來源：monthly_revenues<br>資料日期：2024-04<br>來源表：monthly_revenues<br>主鍵：symbol=2357, revenue_month=2024-04<br>單位：%<br>註：analysis rev_yoy-v1；來源值 32.96<br>點擊開啟來源列 →</span></a></span></td>
+      <td class="r"><a class="v vlink" href="../source/q_revenue_month-2024-04_symbol-2357_table-monthly_revenues.html" data-src-link="1">1,633.20 億<span class="tip" role="tooltip">來源：monthly_revenues<br>資料日期：2024-04<br>來源表：monthly_revenues<br>主鍵：symbol=2357, revenue_month=2024-04<br>單位：新台幣元<br>原值：163,319,988,000<br>點擊開啟來源列 →</span></a></td>
+      <td class="r"><span class="chg up"><span class="arr" aria-hidden="true">▲</span><span class="sr">上漲</span><a class="v vlink" href="../source/q_revenue_month-2024-04_symbol-2357_table-monthly_revenues.html" data-src-link="1">+14.44%<span class="tip" role="tooltip">來源：monthly_revenues<br>資料日期：2024-04<br>來源表：monthly_revenues<br>主鍵：symbol=2357, revenue_month=2024-04<br>單位：%<br>註：來源值（monthly_revenues.cumulative_yoy_pct）<br>點擊開啟來源列 →</span></a></span></td>
+      <td data-testid="high-2357"><span class="badge st-insufficient" tabindex="0">資料不足<span class="tip" role="tooltip">REV_INSUFFICIENT_HISTORY：歷史不足 13 個月（前 12 個月起點之前沒有資料）<br></span></span></td>
+      <td class="rev-remark">—</td>
+    </tr>
+    
+    <tr id="row-2412" data-high="insufficient">
+      <td class="stock-cell rev-code"><a href="../stock/2412/#revenue" title="2412 中華電"><span class="cd">2412</span></a></td>
+      <td class="rev-name">中華電</td>
+      <td>上市</td>
+      <td class="r"><a class="v vlink" href="../source/q_revenue_month-2024-04_symbol-2412_table-monthly_revenues.html" data-src-link="1">179.29 億<span class="tip" role="tooltip">來源：monthly_revenues<br>資料日期：2024-04<br>來源表：monthly_revenues<br>主鍵：symbol=2412, revenue_month=2024-04<br>單位：新台幣元<br>原值：17,928,904,000<br>點擊開啟來源列 →</span></a></td>
+      <td class="r"><a class="v vlink" href="../source/q_revenue_month-2024-04_symbol-2412_table-monthly_revenues.html" data-src-link="1">170.80 億<span class="tip" role="tooltip">來源：monthly_revenues<br>資料日期：2024-04<br>來源表：monthly_revenues<br>主鍵：symbol=2412, revenue_month=2024-04<br>單位：新台幣元<br>原值：17,079,880,000<br>點擊開啟來源列 →</span></a></td>
+      <td class="r"><span class="chg down"><span class="arr" aria-hidden="true">▼</span><span class="sr">下跌</span><a class="v vlink" href="../source/q_revenue_month-2024-04_symbol-2412_table-monthly_revenues.html" data-src-link="1">−2.24%<span class="tip" role="tooltip">來源：monthly_revenues<br>資料日期：2024-04<br>來源表：monthly_revenues<br>主鍵：symbol=2412, revenue_month=2024-04<br>單位：%<br>註：來源值（monthly_revenues.mom_pct）<br>點擊開啟來源列 →</span></a></span></td>
+      <td class="r" data-yoy="ok"><span class="chg up"><span class="arr" aria-hidden="true">▲</span><span class="sr">上漲</span><a class="v vlink" href="../source/q_revenue_month-2024-04_symbol-2412_table-monthly_revenues.html" data-src-link="1">+4.97%<span class="tip" role="tooltip">來源：monthly_revenues<br>資料日期：2024-04<br>來源表：monthly_revenues<br>主鍵：symbol=2412, revenue_month=2024-04<br>單位：%<br>註：analysis rev_yoy-v1；來源值 4.97<br>點擊開啟來源列 →</span></a></span></td>
+      <td class="r"><a class="v vlink" href="../source/q_revenue_month-2024-04_symbol-2412_table-monthly_revenues.html" data-src-link="1">728.72 億<span class="tip" role="tooltip">來源：monthly_revenues<br>資料日期：2024-04<br>來源表：monthly_revenues<br>主鍵：symbol=2412, revenue_month=2024-04<br>單位：新台幣元<br>原值：72,872,374,000<br>點擊開啟來源列 →</span></a></td>
+      <td class="r"><span class="chg up"><span class="arr" aria-hidden="true">▲</span><span class="sr">上漲</span><a class="v vlink" href="../source/q_revenue_month-2024-04_symbol-2412_table-monthly_revenues.html" data-src-link="1">+2.21%<span class="tip" role="tooltip">來源：monthly_revenues<br>資料日期：2024-04<br>來源表：monthly_revenues<br>主鍵：symbol=2412, revenue_month=2024-04<br>單位：%<br>註：來源值（monthly_revenues.cumulative_yoy_pct）<br>點擊開啟來源列 →</span></a></span></td>
+      <td data-testid="high-2412"><span class="badge st-insufficient" tabindex="0">資料不足<span class="tip" role="tooltip">REV_INSUFFICIENT_HISTORY：歷史不足 13 個月（前 12 個月起點之前沒有資料）<br></span></span></td>
+      <td class="rev-remark">—</td>
+    </tr>
+    
+    <tr id="row-2454" data-high="insufficient">
+      <td class="stock-cell rev-code"><a href="../stock/2454/#revenue" title="2454 聯發科"><span class="cd">2454</span></a></td>
+      <td class="rev-name">聯發科</td>
+      <td>上市</td>
+      <td class="r"><a class="v vlink" href="../source/q_revenue_month-2024-04_symbol-2454_table-monthly_revenues.html" data-src-link="1">420.28 億<span class="tip" role="tooltip">來源：monthly_revenues<br>資料日期：2024-04<br>來源表：monthly_revenues<br>主鍵：symbol=2454, revenue_month=2024-04<br>單位：新台幣元<br>原值：42,027,887,000<br>點擊開啟來源列 →</span></a></td>
+      <td class="r"><a class="v vlink" href="../source/q_revenue_month-2024-04_symbol-2454_table-monthly_revenues.html" data-src-link="1">283.50 億<span class="tip" role="tooltip">來源：monthly_revenues<br>資料日期：2024-04<br>來源表：monthly_revenues<br>主鍵：symbol=2454, revenue_month=2024-04<br>單位：新台幣元<br>原值：28,349,722,000<br>點擊開啟來源列 →</span></a></td>
+      <td class="r"><span class="chg down"><span class="arr" aria-hidden="true">▼</span><span class="sr">下跌</span><a class="v vlink" href="../source/q_revenue_month-2024-04_symbol-2454_table-monthly_revenues.html" data-src-link="1">−16.74%<span class="tip" role="tooltip">來源：monthly_revenues<br>資料日期：2024-04<br>來源表：monthly_revenues<br>主鍵：symbol=2454, revenue_month=2024-04<br>單位：%<br>註：來源值（monthly_revenues.mom_pct）<br>點擊開啟來源列 →</span></a></span></td>
+      <td class="r" data-yoy="ok"><span class="chg up"><span class="arr" aria-hidden="true">▲</span><span class="sr">上漲</span><a class="v vlink" href="../source/q_revenue_month-2024-04_symbol-2454_table-monthly_revenues.html" data-src-link="1">+48.25%<span class="tip" role="tooltip">來源：monthly_revenues<br>資料日期：2024-04<br>來源表：monthly_revenues<br>主鍵：symbol=2454, revenue_month=2024-04<br>單位：%<br>註：analysis rev_yoy-v1；來源值 48.24<br>點擊開啟來源列 →</span></a></span></td>
+      <td class="r"><a class="v vlink" href="../source/q_revenue_month-2024-04_symbol-2454_table-monthly_revenues.html" data-src-link="1">1,754.86 億<span class="tip" role="tooltip">來源：monthly_revenues<br>資料日期：2024-04<br>來源表：monthly_revenues<br>主鍵：symbol=2454, revenue_month=2024-04<br>單位：新台幣元<br>原值：175,486,034,000<br>點擊開啟來源列 →</span></a></td>
+      <td class="r"><span class="chg up"><span class="arr" aria-hidden="true">▲</span><span class="sr">上漲</span><a class="v vlink" href="../source/q_revenue_month-2024-04_symbol-2454_table-monthly_revenues.html" data-src-link="1">+41.51%<span class="tip" role="tooltip">來源：monthly_revenues<br>資料日期：2024-04<br>來源表：monthly_revenues<br>主鍵：symbol=2454, revenue_month=2024-04<br>單位：%<br>註：來源值（monthly_revenues.cumulative_yoy_pct）<br>點擊開啟來源列 →</span></a></span></td>
+      <td data-testid="high-2454"><span class="badge st-insufficient" tabindex="0">資料不足<span class="tip" role="tooltip">REV_INSUFFICIENT_HISTORY：歷史不足 13 個月（前 12 個月起點之前沒有資料）<br></span></span></td>
+      <td class="rev-remark"><details><summary>展開</summary>海外子公司之營收係以當月平均匯率換算之</details></td>
+    </tr>
+    
+    <tr id="row-2603" data-high="insufficient">
+      <td class="stock-cell rev-code"><a href="../stock/2603/#revenue" title="2603 長榮"><span class="cd">2603</span></a></td>
+      <td class="rev-name">長榮</td>
+      <td>上市</td>
+      <td class="r"><a class="v vlink" href="../source/q_revenue_month-2024-04_symbol-2603_table-monthly_revenues.html" data-src-link="1">318.14 億<span class="tip" role="tooltip">來源：monthly_revenues<br>資料日期：2024-04<br>來源表：monthly_revenues<br>主鍵：symbol=2603, revenue_month=2024-04<br>單位：新台幣元<br>原值：31,813,536,000<br>點擊開啟來源列 →</span></a></td>
+      <td class="r"><a class="v vlink" href="../source/q_revenue_month-2024-04_symbol-2603_table-monthly_revenues.html" data-src-link="1">223.37 億<span class="tip" role="tooltip">來源：monthly_revenues<br>資料日期：2024-04<br>來源表：monthly_revenues<br>主鍵：symbol=2603, revenue_month=2024-04<br>單位：新台幣元<br>原值：22,336,727,000<br>點擊開啟來源列 →</span></a></td>
+      <td class="r"><span class="chg up"><span class="arr" aria-hidden="true">▲</span><span class="sr">上漲</span><a class="v vlink" href="../source/q_revenue_month-2024-04_symbol-2603_table-monthly_revenues.html" data-src-link="1">+5.65%<span class="tip" role="tooltip">來源：monthly_revenues<br>資料日期：2024-04<br>來源表：monthly_revenues<br>主鍵：symbol=2603, revenue_month=2024-04<br>單位：%<br>註：來源值（monthly_revenues.mom_pct）<br>點擊開啟來源列 →</span></a></span></td>
+      <td class="r" data-yoy="ok"><span class="chg up"><span class="arr" aria-hidden="true">▲</span><span class="sr">上漲</span><a class="v vlink" href="../source/q_revenue_month-2024-04_symbol-2603_table-monthly_revenues.html" data-src-link="1">+42.43%<span class="tip" role="tooltip">來源：monthly_revenues<br>資料日期：2024-04<br>來源表：monthly_revenues<br>主鍵：symbol=2603, revenue_month=2024-04<br>單位：%<br>註：analysis rev_yoy-v1；來源值 42.42<br>點擊開啟來源列 →</span></a></span></td>
+      <td class="r"><a class="v vlink" href="../source/q_revenue_month-2024-04_symbol-2603_table-monthly_revenues.html" data-src-link="1">1,204.52 億<span class="tip" role="tooltip">來源：monthly_revenues<br>資料日期：2024-04<br>來源表：monthly_revenues<br>主鍵：symbol=2603, revenue_month=2024-04<br>單位：新台幣元<br>原值：120,452,195,000<br>點擊開啟來源列 →</span></a></td>
+      <td class="r"><span class="chg up"><span class="arr" aria-hidden="true">▲</span><span class="sr">上漲</span><a class="v vlink" href="../source/q_revenue_month-2024-04_symbol-2603_table-monthly_revenues.html" data-src-link="1">+35.09%<span class="tip" role="tooltip">來源：monthly_revenues<br>資料日期：2024-04<br>來源表：monthly_revenues<br>主鍵：symbol=2603, revenue_month=2024-04<br>單位：%<br>註：來源值（monthly_revenues.cumulative_yoy_pct）<br>點擊開啟來源列 →</span></a></span></td>
+      <td data-testid="high-2603"><span class="badge st-insufficient" tabindex="0">資料不足<span class="tip" role="tooltip">REV_INSUFFICIENT_HISTORY：歷史不足 13 個月（前 12 個月起點之前沒有資料）<br></span></span></td>
+      <td class="rev-remark">—</td>
+    </tr>
+    
+    <tr id="row-2801" data-high="insufficient">
+      <td class="stock-cell rev-code"><a href="../stock/2801/#revenue" title="2801 彰銀"><span class="cd">2801</span></a></td>
+      <td class="rev-name">彰銀<a class="fn" href="#fin-note" title="金融業註記">※</a></td>
+      <td>上市</td>
+      <td class="r"><a class="v vlink" href="../source/q_revenue_month-2024-04_symbol-2801_table-monthly_revenues.html" data-src-link="1">33.00 億<span class="tip" role="tooltip">來源：monthly_revenues<br>資料日期：2024-04<br>來源表：monthly_revenues<br>主鍵：symbol=2801, revenue_month=2024-04<br>單位：新台幣元<br>原值：3,300,234,000<br>點擊開啟來源列 →</span></a></td>
+      <td class="r"><a class="v vlink" href="../source/q_revenue_month-2024-04_symbol-2801_table-monthly_revenues.html" data-src-link="1">30.63 億<span class="tip" role="tooltip">來源：monthly_revenues<br>資料日期：2024-04<br>來源表：monthly_revenues<br>主鍵：symbol=2801, revenue_month=2024-04<br>單位：新台幣元<br>原值：3,062,977,000<br>點擊開啟來源列 →</span></a></td>
+      <td class="r"><span class="chg down"><span class="arr" aria-hidden="true">▼</span><span class="sr">下跌</span><a class="v vlink" href="../source/q_revenue_month-2024-04_symbol-2801_table-monthly_revenues.html" data-src-link="1">−0.30%<span class="tip" role="tooltip">來源：monthly_revenues<br>資料日期：2024-04<br>來源表：monthly_revenues<br>主鍵：symbol=2801, revenue_month=2024-04<br>單位：%<br>註：來源值（monthly_revenues.mom_pct）<br>點擊開啟來源列 →</span></a></span></td>
+      <td class="r" data-yoy="ok"><span class="chg up"><span class="arr" aria-hidden="true">▲</span><span class="sr">上漲</span><a class="v vlink" href="../source/q_revenue_month-2024-04_symbol-2801_table-monthly_revenues.html" data-src-link="1">+7.75%<span class="tip" role="tooltip">來源：monthly_revenues<br>資料日期：2024-04<br>來源表：monthly_revenues<br>主鍵：symbol=2801, revenue_month=2024-04<br>單位：%<br>註：analysis rev_yoy-v1；來源值 7.74<br>點擊開啟來源列 →</span></a></span></td>
+      <td class="r"><a class="v vlink" href="../source/q_revenue_month-2024-04_symbol-2801_table-monthly_revenues.html" data-src-link="1">135.87 億<span class="tip" role="tooltip">來源：monthly_revenues<br>資料日期：2024-04<br>來源表：monthly_revenues<br>主鍵：symbol=2801, revenue_month=2024-04<br>單位：新台幣元<br>原值：13,587,485,000<br>點擊開啟來源列 →</span></a></td>
+      <td class="r"><span class="chg up"><span class="arr" aria-hidden="true">▲</span><span class="sr">上漲</span><a class="v vlink" href="../source/q_revenue_month-2024-04_symbol-2801_table-monthly_revenues.html" data-src-link="1">+5.78%<span class="tip" role="tooltip">來源：monthly_revenues<br>資料日期：2024-04<br>來源表：monthly_revenues<br>主鍵：symbol=2801, revenue_month=2024-04<br>單位：%<br>註：來源值（monthly_revenues.cumulative_yoy_pct）<br>點擊開啟來源列 →</span></a></span></td>
+      <td data-testid="high-2801"><span class="badge st-insufficient" tabindex="0">資料不足<span class="tip" role="tooltip">REV_INSUFFICIENT_HISTORY：歷史不足 13 個月（前 12 個月起點之前沒有資料）<br></span></span></td>
+      <td class="rev-remark">—</td>
+    </tr>
+    
+    <tr id="row-2881" data-high="insufficient">
+      <td class="stock-cell rev-code"><a href="../stock/2881/#revenue" title="2881 富邦金"><span class="cd">2881</span></a></td>
+      <td class="rev-name">富邦金<a class="fn" href="#fin-note" title="金融業註記">※</a></td>
+      <td>上市</td>
+      <td class="r"><a class="v vlink" href="../source/q_revenue_month-2024-04_symbol-2881_table-monthly_revenues.html" data-src-link="1">270.23 億<span class="tip" role="tooltip">來源：monthly_revenues<br>資料日期：2024-04<br>來源表：monthly_revenues<br>主鍵：symbol=2881, revenue_month=2024-04<br>單位：新台幣元<br>原值：27,023,249,000<br>點擊開啟來源列 →</span></a></td>
+      <td class="r"><a class="v vlink" href="../source/q_revenue_month-2024-04_symbol-2881_table-monthly_revenues.html" data-src-link="1">186.66 億<span class="tip" role="tooltip">來源：monthly_revenues<br>資料日期：2024-04<br>來源表：monthly_revenues<br>主鍵：symbol=2881, revenue_month=2024-04<br>單位：新台幣元<br>原值：18,666,086,000<br>點擊開啟來源列 →</span></a></td>
+      <td class="r"><span class="chg up"><span class="arr" aria-hidden="true">▲</span><span class="sr">上漲</span><a class="v vlink" href="../source/q_revenue_month-2024-04_symbol-2881_table-monthly_revenues.html" data-src-link="1">+8.38%<span class="tip" role="tooltip">來源：monthly_revenues<br>資料日期：2024-04<br>來源表：monthly_revenues<br>主鍵：symbol=2881, revenue_month=2024-04<br>單位：%<br>註：來源值（monthly_revenues.mom_pct）<br>點擊開啟來源列 →</span></a></span></td>
+      <td class="r" data-yoy="ok"><span class="chg up"><span class="arr" aria-hidden="true">▲</span><span class="sr">上漲</span><a class="v vlink" href="../source/q_revenue_month-2024-04_symbol-2881_table-monthly_revenues.html" data-src-link="1">+44.77%<span class="tip" role="tooltip">來源：monthly_revenues<br>資料日期：2024-04<br>來源表：monthly_revenues<br>主鍵：symbol=2881, revenue_month=2024-04<br>單位：%<br>註：analysis rev_yoy-v1；來源值 44.77<br>點擊開啟來源列 →</span></a></span></td>
+      <td class="r"><a class="v vlink" href="../source/q_revenue_month-2024-04_symbol-2881_table-monthly_revenues.html" data-src-link="1">1,161.74 億<span class="tip" role="tooltip">來源：monthly_revenues<br>資料日期：2024-04<br>來源表：monthly_revenues<br>主鍵：symbol=2881, revenue_month=2024-04<br>單位：新台幣元<br>原值：116,174,372,000<br>點擊開啟來源列 →</span></a></td>
+      <td class="r"><span class="chg up"><span class="arr" aria-hidden="true">▲</span><span class="sr">上漲</span><a class="v vlink" href="../source/q_revenue_month-2024-04_symbol-2881_table-monthly_revenues.html" data-src-link="1">+129.93%<span class="tip" role="tooltip">來源：monthly_revenues<br>資料日期：2024-04<br>來源表：monthly_revenues<br>主鍵：symbol=2881, revenue_month=2024-04<br>單位：%<br>註：來源值（monthly_revenues.cumulative_yoy_pct）<br>點擊開啟來源列 →</span></a></span></td>
+      <td data-testid="high-2881"><span class="badge st-insufficient" tabindex="0">資料不足<span class="tip" role="tooltip">REV_INSUFFICIENT_HISTORY：歷史不足 13 個月（前 12 個月起點之前沒有資料）<br></span></span></td>
+      <td class="rev-remark"><details><summary>展開</summary>本年累計營業收入較去年累計營業收入增加，主係保險淨收益增加(保險賠款給付減少)及投資相關淨收益增加所致。</details></td>
+    </tr>
+    
+    <tr id="row-2882" data-high="insufficient">
+      <td class="stock-cell rev-code"><a href="../stock/2882/#revenue" title="2882 國泰金"><span class="cd">2882</span></a></td>
+      <td class="rev-name">國泰金<a class="fn" href="#fin-note" title="金融業註記">※</a></td>
+      <td>上市</td>
+      <td class="r"><a class="v vlink" href="../source/q_revenue_month-2024-04_symbol-2882_table-monthly_revenues.html" data-src-link="1">222.77 億<span class="tip" role="tooltip">來源：monthly_revenues<br>資料日期：2024-04<br>來源表：monthly_revenues<br>主鍵：symbol=2882, revenue_month=2024-04<br>單位：新台幣元<br>原值：22,276,977,000<br>點擊開啟來源列 →</span></a></td>
+      <td class="r"><a class="v vlink" href="../source/q_revenue_month-2024-04_symbol-2882_table-monthly_revenues.html" data-src-link="1">171.15 億<span class="tip" role="tooltip">來源：monthly_revenues<br>資料日期：2024-04<br>來源表：monthly_revenues<br>主鍵：symbol=2882, revenue_month=2024-04<br>單位：新台幣元<br>原值：17,115,192,000<br>點擊開啟來源列 →</span></a></td>
+      <td class="r"><span class="chg down"><span class="arr" aria-hidden="true">▼</span><span class="sr">下跌</span><a class="v vlink" href="../source/q_revenue_month-2024-04_symbol-2882_table-monthly_revenues.html" data-src-link="1">−51.70%<span class="tip" role="tooltip">來源：monthly_revenues<br>資料日期：2024-04<br>來源表：monthly_revenues<br>主鍵：symbol=2882, revenue_month=2024-04<br>單位：%<br>註：來源值（monthly_revenues.mom_pct）<br>點擊開啟來源列 →</span></a></span></td>
+      <td class="r" data-yoy="ok"><span class="chg up"><span class="arr" aria-hidden="true">▲</span><span class="sr">上漲</span><a class="v vlink" href="../source/q_revenue_month-2024-04_symbol-2882_table-monthly_revenues.html" data-src-link="1">+30.16%<span class="tip" role="tooltip">來源：monthly_revenues<br>資料日期：2024-04<br>來源表：monthly_revenues<br>主鍵：symbol=2882, revenue_month=2024-04<br>單位：%<br>註：analysis rev_yoy-v1；來源值 30.15<br>點擊開啟來源列 →</span></a></span></td>
+      <td class="r"><a class="v vlink" href="../source/q_revenue_month-2024-04_symbol-2882_table-monthly_revenues.html" data-src-link="1">1,404.57 億<span class="tip" role="tooltip">來源：monthly_revenues<br>資料日期：2024-04<br>來源表：monthly_revenues<br>主鍵：symbol=2882, revenue_month=2024-04<br>單位：新台幣元<br>原值：140,457,176,000<br>點擊開啟來源列 →</span></a></td>
+      <td class="r"><span class="chg up"><span class="arr" aria-hidden="true">▲</span><span class="sr">上漲</span><a class="v vlink" href="../source/q_revenue_month-2024-04_symbol-2882_table-monthly_revenues.html" data-src-link="1">+64.22%<span class="tip" role="tooltip">來源：monthly_revenues<br>資料日期：2024-04<br>來源表：monthly_revenues<br>主鍵：symbol=2882, revenue_month=2024-04<br>單位：%<br>註：來源值（monthly_revenues.cumulative_yoy_pct）<br>點擊開啟來源列 →</span></a></span></td>
+      <td data-testid="high-2882"><span class="badge st-insufficient" tabindex="0">資料不足<span class="tip" role="tooltip">REV_INSUFFICIENT_HISTORY：歷史不足 13 個月（前 12 個月起點之前沒有資料）<br></span></span></td>
+      <td class="rev-remark"><details><summary>展開</summary>本月營業收入淨額較去年同期增加，主係投資收益增加所致。</details></td>
+    </tr>
+    
+    <tr id="row-2912" data-high="insufficient">
+      <td class="stock-cell rev-code"><a href="../stock/2912/#revenue" title="2912 統一超"><span class="cd">2912</span></a></td>
+      <td class="rev-name">統一超</td>
+      <td>上市</td>
+      <td class="r"><a class="v vlink" href="../source/q_revenue_month-2024-04_symbol-2912_table-monthly_revenues.html" data-src-link="1">268.22 億<span class="tip" role="tooltip">來源：monthly_revenues<br>資料日期：2024-04<br>來源表：monthly_revenues<br>主鍵：symbol=2912, revenue_month=2024-04<br>單位：新台幣元<br>原值：26,821,771,000<br>點擊開啟來源列 →</span></a></td>
+      <td class="r"><a class="v vlink" href="../source/q_revenue_month-2024-04_symbol-2912_table-monthly_revenues.html" data-src-link="1">248.81 億<span class="tip" role="tooltip">來源：monthly_revenues<br>資料日期：2024-04<br>來源表：monthly_revenues<br>主鍵：symbol=2912, revenue_month=2024-04<br>單位：新台幣元<br>原值：24,881,454,000<br>點擊開啟來源列 →</span></a></td>
+      <td class="r"><span class="chg down"><span class="arr" aria-hidden="true">▼</span><span class="sr">下跌</span><a class="v vlink" href="../source/q_revenue_month-2024-04_symbol-2912_table-monthly_revenues.html" data-src-link="1">−1.61%<span class="tip" role="tooltip">來源：monthly_revenues<br>資料日期：2024-04<br>來源表：monthly_revenues<br>主鍵：symbol=2912, revenue_month=2024-04<br>單位：%<br>註：來源值（monthly_revenues.mom_pct）<br>點擊開啟來源列 →</span></a></span></td>
+      <td class="r" data-yoy="ok"><span class="chg up"><span class="arr" aria-hidden="true">▲</span><span class="sr">上漲</span><a class="v vlink" href="../source/q_revenue_month-2024-04_symbol-2912_table-monthly_revenues.html" data-src-link="1">+7.80%<span class="tip" role="tooltip">來源：monthly_revenues<br>資料日期：2024-04<br>來源表：monthly_revenues<br>主鍵：symbol=2912, revenue_month=2024-04<br>單位：%<br>註：analysis rev_yoy-v1；來源值 7.79<br>點擊開啟來源列 →</span></a></span></td>
+      <td class="r"><a class="v vlink" href="../source/q_revenue_month-2024-04_symbol-2912_table-monthly_revenues.html" data-src-link="1">1,078.93 億<span class="tip" role="tooltip">來源：monthly_revenues<br>資料日期：2024-04<br>來源表：monthly_revenues<br>主鍵：symbol=2912, revenue_month=2024-04<br>單位：新台幣元<br>原值：107,892,554,000<br>點擊開啟來源列 →</span></a></td>
+      <td class="r"><span class="chg up"><span class="arr" aria-hidden="true">▲</span><span class="sr">上漲</span><a class="v vlink" href="../source/q_revenue_month-2024-04_symbol-2912_table-monthly_revenues.html" data-src-link="1">+7.51%<span class="tip" role="tooltip">來源：monthly_revenues<br>資料日期：2024-04<br>來源表：monthly_revenues<br>主鍵：symbol=2912, revenue_month=2024-04<br>單位：%<br>註：來源值（monthly_revenues.cumulative_yoy_pct）<br>點擊開啟來源列 →</span></a></span></td>
+      <td data-testid="high-2912"><span class="badge st-insufficient" tabindex="0">資料不足<span class="tip" role="tooltip">REV_INSUFFICIENT_HISTORY：歷史不足 13 個月（前 12 個月起點之前沒有資料）<br></span></span></td>
+      <td class="rev-remark">—</td>
+    </tr>
+    
+    <tr id="row-3008" data-high="insufficient">
+      <td class="stock-cell rev-code"><a href="../stock/3008/#revenue" title="3008 大立光"><span class="cd">3008</span></a></td>
+      <td class="rev-name">大立光</td>
+      <td>上市</td>
+      <td class="r"><a class="v vlink" href="../source/q_revenue_month-2024-04_symbol-3008_table-monthly_revenues.html" data-src-link="1">34.58 億<span class="tip" role="tooltip">來源：monthly_revenues<br>資料日期：2024-04<br>來源表：monthly_revenues<br>主鍵：symbol=3008, revenue_month=2024-04<br>單位：新台幣元<br>原值：3,457,630,000<br>點擊開啟來源列 →</span></a></td>
+      <td class="r"><a class="v vlink" href="../source/q_revenue_month-2024-04_symbol-3008_table-monthly_revenues.html" data-src-link="1">28.72 億<span class="tip" role="tooltip">來源：monthly_revenues<br>資料日期：2024-04<br>來源表：monthly_revenues<br>主鍵：symbol=3008, revenue_month=2024-04<br>單位：新台幣元<br>原值：2,871,601,000<br>點擊開啟來源列 →</span></a></td>
+      <td class="r"><span class="chg up"><span class="arr" aria-hidden="true">▲</span><span class="sr">上漲</span><a class="v vlink" href="../source/q_revenue_month-2024-04_symbol-3008_table-monthly_revenues.html" data-src-link="1">+0.18%<span class="tip" role="tooltip">來源：monthly_revenues<br>資料日期：2024-04<br>來源表：monthly_revenues<br>主鍵：symbol=3008, revenue_month=2024-04<br>單位：%<br>註：來源值（monthly_revenues.mom_pct）<br>點擊開啟來源列 →</span></a></span></td>
+      <td class="r" data-yoy="ok"><span class="chg up"><span class="arr" aria-hidden="true">▲</span><span class="sr">上漲</span><a class="v vlink" href="../source/q_revenue_month-2024-04_symbol-3008_table-monthly_revenues.html" data-src-link="1">+20.41%<span class="tip" role="tooltip">來源：monthly_revenues<br>資料日期：2024-04<br>來源表：monthly_revenues<br>主鍵：symbol=3008, revenue_month=2024-04<br>單位：%<br>註：analysis rev_yoy-v1；來源值 20.4<br>點擊開啟來源列 →</span></a></span></td>
+      <td class="r"><a class="v vlink" href="../source/q_revenue_month-2024-04_symbol-3008_table-monthly_revenues.html" data-src-link="1">147.71 億<span class="tip" role="tooltip">來源：monthly_revenues<br>資料日期：2024-04<br>來源表：monthly_revenues<br>主鍵：symbol=3008, revenue_month=2024-04<br>單位：新台幣元<br>原值：14,770,821,000<br>點擊開啟來源列 →</span></a></td>
+      <td class="r"><span class="chg up"><span class="arr" aria-hidden="true">▲</span><span class="sr">上漲</span><a class="v vlink" href="../source/q_revenue_month-2024-04_symbol-3008_table-monthly_revenues.html" data-src-link="1">+23.01%<span class="tip" role="tooltip">來源：monthly_revenues<br>資料日期：2024-04<br>來源表：monthly_revenues<br>主鍵：symbol=3008, revenue_month=2024-04<br>單位：%<br>註：來源值（monthly_revenues.cumulative_yoy_pct）<br>點擊開啟來源列 →</span></a></span></td>
+      <td data-testid="high-3008"><span class="badge st-insufficient" tabindex="0">資料不足<span class="tip" role="tooltip">REV_INSUFFICIENT_HISTORY：歷史不足 13 個月（前 12 個月起點之前沒有資料）<br></span></span></td>
+      <td class="rev-remark">—</td>
+    </tr>
+    
+    <tr id="row-3711" data-high="insufficient">
+      <td class="stock-cell rev-code"><a href="../stock/3711/#revenue" title="3711 日月光投控"><span class="cd">3711</span></a></td>
+      <td class="rev-name">日月光投控</td>
+      <td>上市</td>
+      <td class="r"><a class="v vlink" href="../source/q_revenue_month-2024-04_symbol-3711_table-monthly_revenues.html" data-src-link="1">458.20 億<span class="tip" role="tooltip">來源：monthly_revenues<br>資料日期：2024-04<br>來源表：monthly_revenues<br>主鍵：symbol=3711, revenue_month=2024-04<br>單位：新台幣元<br>原值：45,819,887,000<br>點擊開啟來源列 →</span></a></td>
+      <td class="r"><a class="v vlink" href="../source/q_revenue_month-2024-04_symbol-3711_table-monthly_revenues.html" data-src-link="1">433.15 億<span class="tip" role="tooltip">來源：monthly_revenues<br>資料日期：2024-04<br>來源表：monthly_revenues<br>主鍵：symbol=3711, revenue_month=2024-04<br>單位：新台幣元<br>原值：43,314,938,000<br>點擊開啟來源列 →</span></a></td>
+      <td class="r"><span class="chg up"><span class="arr" aria-hidden="true">▲</span><span class="sr">上漲</span><a class="v vlink" href="../source/q_revenue_month-2024-04_symbol-3711_table-monthly_revenues.html" data-src-link="1">+0.34%<span class="tip" role="tooltip">來源：monthly_revenues<br>資料日期：2024-04<br>來源表：monthly_revenues<br>主鍵：symbol=3711, revenue_month=2024-04<br>單位：%<br>註：來源值（monthly_revenues.mom_pct）<br>點擊開啟來源列 →</span></a></span></td>
+      <td class="r" data-yoy="ok"><span class="chg up"><span class="arr" aria-hidden="true">▲</span><span class="sr">上漲</span><a class="v vlink" href="../source/q_revenue_month-2024-04_symbol-3711_table-monthly_revenues.html" data-src-link="1">+5.78%<span class="tip" role="tooltip">來源：monthly_revenues<br>資料日期：2024-04<br>來源表：monthly_revenues<br>主鍵：symbol=3711, revenue_month=2024-04<br>單位：%<br>註：analysis rev_yoy-v1；來源值 5.78<br>點擊開啟來源列 →</span></a></span></td>
+      <td class="r"><a class="v vlink" href="../source/q_revenue_month-2024-04_symbol-3711_table-monthly_revenues.html" data-src-link="1">1,786.23 億<span class="tip" role="tooltip">來源：monthly_revenues<br>資料日期：2024-04<br>來源表：monthly_revenues<br>主鍵：symbol=3711, revenue_month=2024-04<br>單位：新台幣元<br>原值：178,622,742,000<br>點擊開啟來源列 →</span></a></td>
+      <td class="r"><span class="chg up"><span class="arr" aria-hidden="true">▲</span><span class="sr">上漲</span><a class="v vlink" href="../source/q_revenue_month-2024-04_symbol-3711_table-monthly_revenues.html" data-src-link="1">+2.53%<span class="tip" role="tooltip">來源：monthly_revenues<br>資料日期：2024-04<br>來源表：monthly_revenues<br>主鍵：symbol=3711, revenue_month=2024-04<br>單位：%<br>註：來源值（monthly_revenues.cumulative_yoy_pct）<br>點擊開啟來源列 →</span></a></span></td>
+      <td data-testid="high-3711"><span class="badge st-insufficient" tabindex="0">資料不足<span class="tip" role="tooltip">REV_INSUFFICIENT_HISTORY：歷史不足 13 個月（前 12 個月起點之前沒有資料）<br></span></span></td>
+      <td class="rev-remark">—</td>
+    </tr>
+    
+    <tr id="row-6505" data-high="insufficient">
+      <td class="stock-cell rev-code"><a href="../stock/6505/#revenue" title="6505 台塑化"><span class="cd">6505</span></a></td>
+      <td class="rev-name">台塑化</td>
+      <td>上市</td>
+      <td class="r"><a class="v vlink" href="../source/q_revenue_month-2024-04_symbol-6505_table-monthly_revenues.html" data-src-link="1">507.17 億<span class="tip" role="tooltip">來源：monthly_revenues<br>資料日期：2024-04<br>來源表：monthly_revenues<br>主鍵：symbol=6505, revenue_month=2024-04<br>單位：新台幣元<br>原值：50,716,574,000<br>點擊開啟來源列 →</span></a></td>
+      <td class="r"><a class="v vlink" href="../source/q_revenue_month-2024-04_symbol-6505_table-monthly_revenues.html" data-src-link="1">480.62 億<span class="tip" role="tooltip">來源：monthly_revenues<br>資料日期：2024-04<br>來源表：monthly_revenues<br>主鍵：symbol=6505, revenue_month=2024-04<br>單位：新台幣元<br>原值：48,061,618,000<br>點擊開啟來源列 →</span></a></td>
+      <td class="r"><span class="chg down"><span class="arr" aria-hidden="true">▼</span><span class="sr">下跌</span><a class="v vlink" href="../source/q_revenue_month-2024-04_symbol-6505_table-monthly_revenues.html" data-src-link="1">−12.00%<span class="tip" role="tooltip">來源：monthly_revenues<br>資料日期：2024-04<br>來源表：monthly_revenues<br>主鍵：symbol=6505, revenue_month=2024-04<br>單位：%<br>註：來源值（monthly_revenues.mom_pct）<br>點擊開啟來源列 →</span></a></span></td>
+      <td class="r" data-yoy="ok"><span class="chg up"><span class="arr" aria-hidden="true">▲</span><span class="sr">上漲</span><a class="v vlink" href="../source/q_revenue_month-2024-04_symbol-6505_table-monthly_revenues.html" data-src-link="1">+5.52%<span class="tip" role="tooltip">來源：monthly_revenues<br>資料日期：2024-04<br>來源表：monthly_revenues<br>主鍵：symbol=6505, revenue_month=2024-04<br>單位：%<br>註：analysis rev_yoy-v1；來源值 5.52<br>點擊開啟來源列 →</span></a></span></td>
+      <td class="r"><a class="v vlink" href="../source/q_revenue_month-2024-04_symbol-6505_table-monthly_revenues.html" data-src-link="1">2,219.14 億<span class="tip" role="tooltip">來源：monthly_revenues<br>資料日期：2024-04<br>來源表：monthly_revenues<br>主鍵：symbol=6505, revenue_month=2024-04<br>單位：新台幣元<br>原值：221,913,512,000<br>點擊開啟來源列 →</span></a></td>
+      <td class="r"><span class="chg down"><span class="arr" aria-hidden="true">▼</span><span class="sr">下跌</span><a class="v vlink" href="../source/q_revenue_month-2024-04_symbol-6505_table-monthly_revenues.html" data-src-link="1">−4.63%<span class="tip" role="tooltip">來源：monthly_revenues<br>資料日期：2024-04<br>來源表：monthly_revenues<br>主鍵：symbol=6505, revenue_month=2024-04<br>單位：%<br>註：來源值（monthly_revenues.cumulative_yoy_pct）<br>點擊開啟來源列 →</span></a></span></td>
+      <td data-testid="high-6505"><span class="badge st-insufficient" tabindex="0">資料不足<span class="tip" role="tooltip">REV_INSUFFICIENT_HISTORY：歷史不足 13 個月（前 12 個月起點之前沒有資料）<br></span></span></td>
+      <td class="rev-remark">—</td>
+    </tr>
+    
+    <tr id="row-9910" data-high="insufficient">
+      <td class="stock-cell rev-code"><a href="../stock/9910/#revenue" title="9910 豐泰"><span class="cd">9910</span></a></td>
+      <td class="rev-name">豐泰</td>
+      <td>上市</td>
+      <td class="r"><a class="v vlink" href="../source/q_revenue_month-2024-04_symbol-9910_table-monthly_revenues.html" data-src-link="1">70.76 億<span class="tip" role="tooltip">來源：monthly_revenues<br>資料日期：2024-04<br>來源表：monthly_revenues<br>主鍵：symbol=9910, revenue_month=2024-04<br>單位：新台幣元<br>原值：7,075,672,000<br>點擊開啟來源列 →</span></a></td>
+      <td class="r"><a class="v vlink" href="../source/q_revenue_month-2024-04_symbol-9910_table-monthly_revenues.html" data-src-link="1">67.79 億<span class="tip" role="tooltip">來源：monthly_revenues<br>資料日期：2024-04<br>來源表：monthly_revenues<br>主鍵：symbol=9910, revenue_month=2024-04<br>單位：新台幣元<br>原值：6,778,833,000<br>點擊開啟來源列 →</span></a></td>
+      <td class="r"><span class="chg down"><span class="arr" aria-hidden="true">▼</span><span class="sr">下跌</span><a class="v vlink" href="../source/q_revenue_month-2024-04_symbol-9910_table-monthly_revenues.html" data-src-link="1">−2.48%<span class="tip" role="tooltip">來源：monthly_revenues<br>資料日期：2024-04<br>來源表：monthly_revenues<br>主鍵：symbol=9910, revenue_month=2024-04<br>單位：%<br>註：來源值（monthly_revenues.mom_pct）<br>點擊開啟來源列 →</span></a></span></td>
+      <td class="r" data-yoy="ok"><span class="chg up"><span class="arr" aria-hidden="true">▲</span><span class="sr">上漲</span><a class="v vlink" href="../source/q_revenue_month-2024-04_symbol-9910_table-monthly_revenues.html" data-src-link="1">+4.38%<span class="tip" role="tooltip">來源：monthly_revenues<br>資料日期：2024-04<br>來源表：monthly_revenues<br>主鍵：symbol=9910, revenue_month=2024-04<br>單位：%<br>註：analysis rev_yoy-v1；來源值 4.37<br>點擊開啟來源列 →</span></a></span></td>
+      <td class="r"><a class="v vlink" href="../source/q_revenue_month-2024-04_symbol-9910_table-monthly_revenues.html" data-src-link="1">276.92 億<span class="tip" role="tooltip">來源：monthly_revenues<br>資料日期：2024-04<br>來源表：monthly_revenues<br>主鍵：symbol=9910, revenue_month=2024-04<br>單位：新台幣元<br>原值：27,692,183,000<br>點擊開啟來源列 →</span></a></td>
+      <td class="r"><span class="chg up"><span class="arr" aria-hidden="true">▲</span><span class="sr">上漲</span><a class="v vlink" href="../source/q_revenue_month-2024-04_symbol-9910_table-monthly_revenues.html" data-src-link="1">+5.93%<span class="tip" role="tooltip">來源：monthly_revenues<br>資料日期：2024-04<br>來源表：monthly_revenues<br>主鍵：symbol=9910, revenue_month=2024-04<br>單位：%<br>註：來源值（monthly_revenues.cumulative_yoy_pct）<br>點擊開啟來源列 →</span></a></span></td>
+      <td data-testid="high-9910"><span class="badge st-insufficient" tabindex="0">資料不足<span class="tip" role="tooltip">REV_INSUFFICIENT_HISTORY：歷史不足 13 個月（前 12 個月起點之前沒有資料）<br></span></span></td>
+      <td class="rev-remark"><details><summary>展開</summary>合併營業收入為本公司自結數.</details></td>
+    </tr>
+    
+    </tbody>
+  </table></div>
+  <p class="scroll-hint" aria-hidden="true">← 左右滑動看更多欄 →</p>
+  
+  
+</section>
+
+
+
+
+<section class="card fine" id="explain" aria-labelledby="explain-h">
+  <h2 id="explain-h">說明</h2>
+  <p data-testid="revenue-fixed-note">近 12 個月新高＝當月營收高於前 12 個月（不含當月）的最高值；相等不算。只代表數字比較，不代表利多或買進訊號。年增率可能因去年同月基期低而偏高，請一併看去年同月金額。本頁不是投資建議。</p>
+  <p class="srcline">近 12 個月新高與年增率：analysis/revenue.py evaluate_revenue()（rev_12m_high-v1／rev_yoy-v1）；月增率、累計營收、累計年增率為來源值。金額單位：新台幣元。</p>
+  
+  <div id="fin-note" class="fin-note" data-testid="fin-note"><p>※ 金融業：申報口徑不同，不宜跨產業比較。</p>
+    <ul><li>「產業別：金融保險業（其中金控公司係控股公司，其申報之「營業收入」係認列所有子公司損益之合計數）」——公開資訊觀測站 上市公司月營收彙總表（t21sc03），<a href="https://mopsov.twse.com.tw/nas/t21/sii/t21sc03_115_9_0.html" rel="noopener" target="_blank">https://mopsov.twse.com.tw/nas/t21/sii/t21sc03_115_9_0.html</a>（查閱 2026-11-10）</li><li>「營業收入：為利各業別比較，本項目對應至各業別之會計項目名稱列示如下。一般行業：營業收入｜金融業：淨收益｜保險業：營業收入｜證券期貨業：收益｜金控：淨收益｜異業合併：收入」——公開資訊觀測站 財務比較E點通（mopsfin）使用說明及應注意事項，<a href="https://mopsfin.twse.com.tw/terms" rel="noopener" target="_blank">https://mopsfin.twse.com.tw/terms</a>（查閱 2026-11-10）</li></ul></div>
+  
+</section>
+<p class="srcline">來源：monthly_revenues｜資料日期：2024-04｜追蹤範圍：30 檔驗證樣本</p>
+
+</main>
+<footer class="site">
+  <div class="wrap foot-grid">
+    <div><h2>資料來源與更新</h2><p>行情：證交所、櫃買中心；月營收、財報、重大訊息：公開資訊觀測站。每交易日 18:00 盤後更新、22:00 補查公告與營收。時間皆為台北時間（UTC+8）。<a href="../status/">各來源狀態 →</a></p></div>
+    <div><h2>單位</h2><p>價格：新台幣元；金額：億元（新台幣）；成交量：股；指數：點；漲跌：▲ 上漲（紅）、▼ 下跌（綠）、■ 平盤，並加 +／− 號。</p></div>
+    <div><h2>聲明</h2><p>本站僅供研究參考，不構成投資建議；技術訊號不代表獲利保證；本站不提供下單功能。數值由程式計算，文字說明不推論未經證實的原因。</p>
+      <p class="muted">圖表：<a href="https://www.tradingview.com/" rel="noopener">TradingView Lightweight Charts™</a>（Apache-2.0，本地檔案）。</p></div>
+  </div>
+</footer>
+<script src="../static/js/site.js" defer></script>
+
+<script src="../static/js/static.js" defer></script>
+</body>
+</html>

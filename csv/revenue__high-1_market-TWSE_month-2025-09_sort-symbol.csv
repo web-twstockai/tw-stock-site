@@ -1,0 +1,9 @@
+﻿# 營收月份 2025-09｜追蹤範圍：30 檔驗證樣本｜市場 上市｜只看近 12 個月新高 是｜排序 代號
+# 金額單位：新台幣元（來源仟元×1000）；百分比單位：%；定義版本 rev_12m_high-v1／rev_yoy-v1
+# 近 12 個月新高＝當月營收高於前 12 個月（不含當月）的最高值；相等不算。只代表數字比較，不代表利多或買進訊號。年增率可能因去年同月基期低而偏高，請一併看去年同月金額。本頁不是投資建議。
+# yoy_note：當月營收為負時標「當月營收為負」；年增率數字照 analysis 定義，不改為不適用
+revenue_month,symbol,name,market,revenue_twd,revenue_prev_year_twd,mom_pct,yoy_pct,yoy_status,yoy_reason,yoy_note,cumulative_twd,cumulative_yoy_pct,rev_12m_high_status,rev_12m_high_reason,prior_12m_max_twd,rev_12m_high_version,yoy_version,industry,remark,source,fetched_at
+2025-09,2308,台達電,TWSE,57060781000.0,37094029000.0,19.22,53.827401709315524,ok,,,393272069000.0,28.12,true,,47859758000.0,rev_12m_high-v1,rev_yoy-v1,電子零組件業,本月與去年同期增加百分比達50％以上，係因AI相關產品需求旺盛,https://mopsov.twse.com.tw/nas/t21/sii/t21sc03_114_9.html,2026-11-10T04:55:27+08:00
+2025-09,2317,鴻海,TWSE,837067572000.0,733023957000.0,38.01,14.193753697466116,ok,,,5496964888000.0,16.27,true,,804847646000.0,rev_12m_high-v1,rev_yoy-v1,其他電子業,-,https://mopsov.twse.com.tw/nas/t21/sii/t21sc03_114_9.html,2026-11-10T04:55:27+08:00
+2025-09,2357,華碩,TWSE,82594906000.0,62092255000.0,31.48,33.01965921514689,ok,,,535980852000.0,23.73,true,,68573006000.0,rev_12m_high-v1,rev_yoy-v1,電腦及週邊設備業,-,https://mopsov.twse.com.tw/nas/t21/sii/t21sc03_114_9.html,2026-11-10T04:55:27+08:00
+2025-09,3711,日月光投控,TWSE,60561227000.0,55579391000.0,7.25,8.963459135419448,ok,,,467472473000.0,7.92,true,,56465628000.0,rev_12m_high-v1,rev_yoy-v1,半導體業,-,https://mopsov.twse.com.tw/nas/t21/sii/t21sc03_114_9.html,2026-11-10T04:55:27+08:00

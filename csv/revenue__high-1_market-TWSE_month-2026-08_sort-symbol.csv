@@ -1,0 +1,11 @@
+﻿# 營收月份 2026-08｜追蹤範圍：30 檔驗證樣本｜市場 上市｜只看近 12 個月新高 是｜排序 代號
+# 金額單位：新台幣元（來源仟元×1000）；百分比單位：%；定義版本 rev_12m_high-v1／rev_yoy-v1
+# 近 12 個月新高＝當月營收高於前 12 個月（不含當月）的最高值；相等不算。只代表數字比較，不代表利多或買進訊號。年增率可能因去年同月基期低而偏高，請一併看去年同月金額。本頁不是投資建議。
+# yoy_note：當月營收為負時標「當月營收為負」；年增率數字照 analysis 定義，不改為不適用
+revenue_month,symbol,name,market,revenue_twd,revenue_prev_year_twd,mom_pct,yoy_pct,yoy_status,yoy_reason,yoy_note,cumulative_twd,cumulative_yoy_pct,rev_12m_high_status,rev_12m_high_reason,prior_12m_max_twd,rev_12m_high_version,yoy_version,industry,remark,source,fetched_at
+2026-08,2330,台積電,TWSE,514805337000.0,335771691000.0,10.09,53.320053714712955,ok,,,3386869575000.0,39.26,true,,467580548000.0,rev_12m_high-v1,rev_yoy-v1,半導體業,因先進製程產品需求增加所致。,https://mopsov.twse.com.tw/nas/t21/sii/t21sc03_115_8.html,2026-11-10T04:53:15+08:00
+2026-08,2412,中華電,TWSE,23309496000.0,18556785000.0,17.22,25.611715606986873,ok,,,164546265000.0,9.49,true,,23264555000.0,rev_12m_high-v1,rev_yoy-v1,通信網路業,-,https://mopsov.twse.com.tw/nas/t21/sii/t21sc03_115_8.html,2026-11-10T04:53:15+08:00
+2026-08,2454,聯發科,TWSE,64183361000.0,44546643000.0,32.4,44.081252093451795,ok,,,413991412000.0,5.75,true,,63219184000.0,rev_12m_high-v1,rev_yoy-v1,半導體業,海外子公司之營收係以當月平均匯率換算之,https://mopsov.twse.com.tw/nas/t21/sii/t21sc03_115_8.html,2026-11-10T04:53:15+08:00
+2026-08,2603,長榮,TWSE,48985697000.0,32956841000.0,1.88,48.63589929629482,ok,,,288737251000.0,9.77,true,,48079100000.0,rev_12m_high-v1,rev_yoy-v1,航運業,-,https://mopsov.twse.com.tw/nas/t21/sii/t21sc03_115_8.html,2026-11-10T04:53:15+08:00
+2026-08,3711,日月光投控,TWSE,82247374000.0,56465628000.0,11.47,45.65918579706578,ok,,,520756749000.0,27.97,true,,73783701000.0,rev_12m_high-v1,rev_yoy-v1,半導體業,-,https://mopsov.twse.com.tw/nas/t21/sii/t21sc03_115_8.html,2026-11-10T04:53:15+08:00
+2026-08,6505,台塑化,TWSE,81905673000.0,54499634000.0,9.46,50.28664779657053,ok,,,501698826000.0,16.71,true,,74820787000.0,rev_12m_high-v1,rev_yoy-v1,油電燃氣業,本月營收較去年同期增加，主要係原油價格上漲帶動產品平均售價調漲所致。,https://mopsov.twse.com.tw/nas/t21/sii/t21sc03_115_8.html,2026-11-10T04:53:15+08:00

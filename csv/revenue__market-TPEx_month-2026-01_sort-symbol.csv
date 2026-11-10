@@ -1,0 +1,15 @@
+﻿# 營收月份 2026-01｜追蹤範圍：30 檔驗證樣本｜市場 上櫃｜只看近 12 個月新高 否｜排序 代號
+# 金額單位：新台幣元（來源仟元×1000）；百分比單位：%；定義版本 rev_12m_high-v1／rev_yoy-v1
+# 近 12 個月新高＝當月營收高於前 12 個月（不含當月）的最高值；相等不算。只代表數字比較，不代表利多或買進訊號。年增率可能因去年同月基期低而偏高，請一併看去年同月金額。本頁不是投資建議。
+# yoy_note：當月營收為負時標「當月營收為負」；年增率數字照 analysis 定義，不改為不適用
+revenue_month,symbol,name,market,revenue_twd,revenue_prev_year_twd,mom_pct,yoy_pct,yoy_status,yoy_reason,yoy_note,cumulative_twd,cumulative_yoy_pct,rev_12m_high_status,rev_12m_high_reason,prior_12m_max_twd,rev_12m_high_version,yoy_version,industry,remark,source,fetched_at
+2026-01,3105,穩懋,TPEx,1467701000.0,1177334000.0,-9.09,24.663094754759474,ok,,,1467701000.0,24.66,false,,1620599000.0,rev_12m_high-v1,rev_yoy-v1,半導體業,-,https://mopsov.twse.com.tw/nas/t21/otc/t21sc03_115_1.html,2026-11-10T04:54:45+08:00
+2026-01,3293,鈊象,TPEx,1987806000.0,1750233000.0,1.84,13.573792746451474,ok,,,1987806000.0,13.57,true,,1951831000.0,rev_12m_high-v1,rev_yoy-v1,文化創意業,-,https://mopsov.twse.com.tw/nas/t21/otc/t21sc03_115_1.html,2026-11-10T04:54:45+08:00
+2026-01,4105,東洋,TPEx,561125000.0,482990000.0,-12.53,16.177353568396867,ok,,,561125000.0,16.17,false,,879494000.0,rev_12m_high-v1,rev_yoy-v1,生技醫療業,-,https://mopsov.twse.com.tw/nas/t21/otc/t21sc03_115_1.html,2026-11-10T04:54:45+08:00
+2026-01,5274,信驊,TPEx,900364000.0,700869000.0,3.22,28.46394975380564,ok,,,900364000.0,28.46,true,,872214000.0,rev_12m_high-v1,rev_yoy-v1,半導體業,-,https://mopsov.twse.com.tw/nas/t21/otc/t21sc03_115_1.html,2026-11-10T04:54:45+08:00
+2026-01,5347,世界,TPEx,4011598000.0,3388946000.0,-18.62,18.373028074215412,ok,,,4011598000.0,18.37,false,,5110837000.0,rev_12m_high-v1,rev_yoy-v1,半導體業,-,https://mopsov.twse.com.tw/nas/t21/otc/t21sc03_115_1.html,2026-11-10T04:54:45+08:00
+2026-01,5483,中美晶,TPEx,5897140000.0,5971668000.0,-17.94,-1.2480265145349723,ok,,,5897140000.0,-1.24,false,,7590948000.0,rev_12m_high-v1,rev_yoy-v1,半導體業,-,https://mopsov.twse.com.tw/nas/t21/otc/t21sc03_115_1.html,2026-11-10T04:54:45+08:00
+2026-01,6488,環球晶,TPEx,4139278000.0,4829183000.0,-24.81,-14.286163932905415,ok,,,4139278000.0,-14.28,false,,5903533000.0,rev_12m_high-v1,rev_yoy-v1,半導體業,-,https://mopsov.twse.com.tw/nas/t21/otc/t21sc03_115_1.html,2026-11-10T04:54:45+08:00
+2026-01,6547,高端疫苗,TPEx,37098000.0,35963000.0,-12.45,3.1560214665072417,ok,,,37098000.0,3.15,false,,104199000.0,rev_12m_high-v1,rev_yoy-v1,生技醫療業,-,https://mopsov.twse.com.tw/nas/t21/otc/t21sc03_115_1.html,2026-11-10T04:54:45+08:00
+2026-01,8069,元太,TPEx,2780203000.0,2262862000.0,8.0,22.8622425936712,ok,,,2780203000.0,22.86,false,,4066430000.0,rev_12m_high-v1,rev_yoy-v1,光電業,-,https://mopsov.twse.com.tw/nas/t21/otc/t21sc03_115_1.html,2026-11-10T04:54:45+08:00
+2026-01,8299,群聯,TPEx,10451593000.0,3613390000.0,19.97,189.24619263351036,ok,,,10451593000.0,189.24,true,,8711746000.0,rev_12m_high-v1,rev_yoy-v1,半導體業,係總出貨量增加,https://mopsov.twse.com.tw/nas/t21/otc/t21sc03_115_1.html,2026-11-10T04:54:45+08:00

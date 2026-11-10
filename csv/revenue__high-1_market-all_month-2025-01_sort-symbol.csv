@@ -1,0 +1,9 @@
+﻿# 營收月份 2025-01｜追蹤範圍：30 檔驗證樣本｜市場 全部｜只看近 12 個月新高 是｜排序 代號
+# 金額單位：新台幣元（來源仟元×1000）；百分比單位：%；定義版本 rev_12m_high-v1／rev_yoy-v1
+# 近 12 個月新高＝當月營收高於前 12 個月（不含當月）的最高值；相等不算。只代表數字比較，不代表利多或買進訊號。年增率可能因去年同月基期低而偏高，請一併看去年同月金額。本頁不是投資建議。
+# yoy_note：當月營收為負時標「當月營收為負」；年增率數字照 analysis 定義，不改為不適用
+revenue_month,symbol,name,market,revenue_twd,revenue_prev_year_twd,mom_pct,yoy_pct,yoy_status,yoy_reason,yoy_note,cumulative_twd,cumulative_yoy_pct,rev_12m_high_status,rev_12m_high_reason,prior_12m_max_twd,rev_12m_high_version,yoy_version,industry,remark,source,fetched_at
+2025-01,1216,統一,TWSE,65755516000.0,58667213000.0,27.83,12.082222143397203,ok,,,65755516000.0,12.08,true,,61624958000.0,rev_12m_high-v1,rev_yoy-v1,食品工業,-,https://mopsov.twse.com.tw/nas/t21/sii/t21sc03_114_1.html,2026-11-10T04:57:04+08:00
+2025-01,2454,聯發科,TWSE,51144288000.0,44496290000.0,22.69,14.940566955132661,ok,,,51144288000.0,14.94,true,,51117348000.0,rev_12m_high-v1,rev_yoy-v1,半導體業,海外子公司之營收係以當月平均匯率換算之,https://mopsov.twse.com.tw/nas/t21/sii/t21sc03_114_1.html,2026-11-10T04:57:04+08:00
+2025-01,2912,統一超,TWSE,30573457000.0,27892872000.0,4.9,9.610286814495117,ok,,,30573457000.0,9.61,true,,29596830000.0,rev_12m_high-v1,rev_yoy-v1,貿易百貨業,-,https://mopsov.twse.com.tw/nas/t21/sii/t21sc03_114_1.html,2026-11-10T04:57:04+08:00
+2025-01,3293,鈊象,TPEx,1750233000.0,1310995000.0,2.33,33.504170496454975,ok,,,1750233000.0,33.5,true,,1710380000.0,rev_12m_high-v1,rev_yoy-v1,文化創意業,-,https://mopsov.twse.com.tw/nas/t21/otc/t21sc03_114_1.html,2026-11-10T04:57:10+08:00

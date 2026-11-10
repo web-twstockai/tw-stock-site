@@ -1,0 +1,12 @@
+﻿# 營收月份 2026-04｜追蹤範圍：30 檔驗證樣本｜市場 全部｜只看近 12 個月新高 是｜排序 代號
+# 金額單位：新台幣元（來源仟元×1000）；百分比單位：%；定義版本 rev_12m_high-v1／rev_yoy-v1
+# 近 12 個月新高＝當月營收高於前 12 個月（不含當月）的最高值；相等不算。只代表數字比較，不代表利多或買進訊號。年增率可能因去年同月基期低而偏高，請一併看去年同月金額。本頁不是投資建議。
+# yoy_note：當月營收為負時標「當月營收為負」；年增率數字照 analysis 定義，不改為不適用
+revenue_month,symbol,name,market,revenue_twd,revenue_prev_year_twd,mom_pct,yoy_pct,yoy_status,yoy_reason,yoy_note,cumulative_twd,cumulative_yoy_pct,rev_12m_high_status,rev_12m_high_reason,prior_12m_max_twd,rev_12m_high_version,yoy_version,industry,remark,source,fetched_at
+2026-04,1301,台塑,TWSE,18326272000.0,16172957000.0,5.6,13.314293731195836,ok,,,60311394000.0,-4.83,true,,17354391000.0,rev_12m_high-v1,rev_yoy-v1,塑膠工業,-,https://mopsov.twse.com.tw/nas/t21/sii/t21sc03_115_4.html,2026-11-10T04:54:03+08:00
+2026-04,2002,中鋼,TWSE,30891428000.0,30241696000.0,7.92,2.1484641602111276,ok,,,110053317000.0,-2.96,true,,30241696000.0,rev_12m_high-v1,rev_yoy-v1,鋼鐵工業,-,https://mopsov.twse.com.tw/nas/t21/sii/t21sc03_115_4.html,2026-11-10T04:54:03+08:00
+2026-04,2207,和泰車,TWSE,30160251000.0,23195658000.0,25.0,30.025416825855935,ok,,,100781222000.0,5.75,true,,27711296000.0,rev_12m_high-v1,rev_yoy-v1,汽車工業,-,https://mopsov.twse.com.tw/nas/t21/sii/t21sc03_115_4.html,2026-11-10T04:54:03+08:00
+2026-04,3105,穩懋,TPEx,1734086000.0,1164676000.0,5.18,48.88999172301995,ok,,,6324146000.0,33.4,true,,1648656000.0,rev_12m_high-v1,rev_yoy-v1,半導體業,-,https://mopsov.twse.com.tw/nas/t21/otc/t21sc03_115_4.html,2026-11-10T04:54:09+08:00
+2026-04,3711,日月光投控,TWSE,62247107000.0,52210767000.0,1.08,19.22274001452613,ok,,,235909259000.0,17.74,true,,61576674000.0,rev_12m_high-v1,rev_yoy-v1,半導體業,-,https://mopsov.twse.com.tw/nas/t21/sii/t21sc03_115_4.html,2026-11-10T04:54:03+08:00
+2026-04,5274,信驊,TPEx,1279040000.0,704344000.0,3.53,81.593085197006,ok,,,4425797000.0,59.8,true,,1235429000.0,rev_12m_high-v1,rev_yoy-v1,半導體業,本月及本年增減百分比達50%以上者，主係伺服器晶片營收較去年同期成長所致。,https://mopsov.twse.com.tw/nas/t21/otc/t21sc03_115_4.html,2026-11-10T04:54:09+08:00
+2026-04,8299,群聯,TPEx,20207493000.0,6002833000.0,10.32,236.63260330580576,ok,,,61174446000.0,208.31,true,,18316974000.0,rev_12m_high-v1,rev_yoy-v1,半導體業,係總出貨量及均價增加,https://mopsov.twse.com.tw/nas/t21/otc/t21sc03_115_4.html,2026-11-10T04:54:09+08:00

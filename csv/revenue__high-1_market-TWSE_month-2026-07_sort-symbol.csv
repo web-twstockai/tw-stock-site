@@ -1,0 +1,12 @@
+﻿# 營收月份 2026-07｜追蹤範圍：30 檔驗證樣本｜市場 上市｜只看近 12 個月新高 是｜排序 代號
+# 金額單位：新台幣元（來源仟元×1000）；百分比單位：%；定義版本 rev_12m_high-v1／rev_yoy-v1
+# 近 12 個月新高＝當月營收高於前 12 個月（不含當月）的最高值；相等不算。只代表數字比較，不代表利多或買進訊號。年增率可能因去年同月基期低而偏高，請一併看去年同月金額。本頁不是投資建議。
+# yoy_note：當月營收為負時標「當月營收為負」；年增率數字照 analysis 定義，不改為不適用
+revenue_month,symbol,name,market,revenue_twd,revenue_prev_year_twd,mom_pct,yoy_pct,yoy_status,yoy_reason,yoy_note,cumulative_twd,cumulative_yoy_pct,rev_12m_high_status,rev_12m_high_reason,prior_12m_max_twd,rev_12m_high_version,yoy_version,industry,remark,source,fetched_at
+2026-07,2308,台達電,TWSE,67073192000.0,45397038000.0,2.24,47.74794778461098,ok,,,409681924000.0,42.07,true,,65602611000.0,rev_12m_high-v1,rev_yoy-v1,電子零組件業,-,https://mopsov.twse.com.tw/nas/t21/sii/t21sc03_115_7.html,2026-11-10T04:53:27+08:00
+2026-07,2317,鴻海,TWSE,946512543000.0,613864601000.0,15.18,54.18913901503828,ok,,,5589373251000.0,37.89,true,,895708525000.0,rev_12m_high-v1,rev_yoy-v1,其他電子業,主要受惠於伺服器產品需求提升及出貨成長所致,https://mopsov.twse.com.tw/nas/t21/sii/t21sc03_115_7.html,2026-11-10T04:53:27+08:00
+2026-07,2330,台積電,TWSE,467580548000.0,323165707000.0,5.62,44.68755126916979,ok,,,2872064238000.0,37.01,true,,442679969000.0,rev_12m_high-v1,rev_yoy-v1,半導體業,-,https://mopsov.twse.com.tw/nas/t21/sii/t21sc03_115_7.html,2026-11-10T04:53:27+08:00
+2026-07,2603,長榮,TWSE,48079100000.0,33605171000.0,22.83,43.07054113785047,ok,,,239751554000.0,4.21,true,,39141253000.0,rev_12m_high-v1,rev_yoy-v1,航運業,-,https://mopsov.twse.com.tw/nas/t21/sii/t21sc03_115_7.html,2026-11-10T04:53:27+08:00
+2026-07,2912,統一超,TWSE,32199895000.0,29683217000.0,5.16,8.47845434004002,ok,,,212903284000.0,5.55,true,,31643252000.0,rev_12m_high-v1,rev_yoy-v1,貿易百貨業,-,https://mopsov.twse.com.tw/nas/t21/sii/t21sc03_115_7.html,2026-11-10T04:53:27+08:00
+2026-07,3711,日月光投控,TWSE,73783701000.0,51542033000.0,12.16,43.15248488549142,ok,,,438509375000.0,25.12,true,,65783102000.0,rev_12m_high-v1,rev_yoy-v1,半導體業,-,https://mopsov.twse.com.tw/nas/t21/sii/t21sc03_115_7.html,2026-11-10T04:53:27+08:00
+2026-07,6505,台塑化,TWSE,74820787000.0,56534425000.0,17.48,32.34553460126286,ok,,,419793153000.0,11.84,true,,63683339000.0,rev_12m_high-v1,rev_yoy-v1,油電燃氣業,-,https://mopsov.twse.com.tw/nas/t21/sii/t21sc03_115_7.html,2026-11-10T04:53:27+08:00

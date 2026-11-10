@@ -1,0 +1,211 @@
+<!doctype html>
+<html data-static="1" lang="zh-Hant-TW">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>選股｜台股盤後研究</title>
+<link rel="icon" href="data:,">
+<link rel="stylesheet" href="../static/css/site.css">
+<script>document.documentElement.classList.add('js')</script>
+<meta name="site-root" content="../">
+<link rel="stylesheet" href="../static/css/static.css">
+</head>
+<body>
+<a class="skip" href="#main">跳到主要內容</a>
+
+<header class="site">
+  <div class="wrap mast">
+    <a class="brand" href="../" aria-label="台股盤後研究 首頁"><span class="seal" aria-hidden="true">盤後</span><span class="brand-name">台股盤後研究</span></a>
+    <nav class="mainnav" aria-label="主要功能">
+      <a href="../">盤後總覽</a>
+      <a href="./" class="on" aria-current="page">條件選股</a>
+      <a href="../revenue/">營收</a>
+      <a href="../status/">資料狀態</a>
+    </nav>
+    <form class="search" action="#" data-static-path="/search" method="get" role="search">
+      <label class="sr" for="site-q">搜尋股票代號或名稱（按 / 快速聚焦）</label>
+      <input id="site-q" type="search" name="q" list="stocklist" placeholder="代號或名稱，如 2330、台積" value="" autocomplete="off">
+      <kbd class="kbd" aria-hidden="true" title="按 / 聚焦搜尋">/</kbd>
+      <datalist id="stocklist"></datalist>
+      <button type="submit">前往個股</button>
+    </form>
+  </div><div class="wrap meta-bar" role="status" aria-label="資料更新狀態">
+    <span class="mi">資料日期 <strong data-date="2026-11-09">2026-11-09</strong></span>
+    <span class="mi">更新 <span class="pill pill-warn">◐ 部分成功</span></span>
+    <span class="mi src-ok">行情 <span class="dot ok" aria-hidden="true"></span>正常</span>
+    <span class="mi src-ok">月營收 <span class="dot ok" aria-hidden="true"></span>正常</span>
+    <span class="mi src-ok">重大訊息 <span class="dot ok" aria-hidden="true"></span>正常</span>
+    <span class="mi muted">最後更新 2026-11-10 07:45（台北）</span>
+    
+    <a class="mi status-link" href="../status/">資料狀態 →</a>
+  </div>
+</header>
+<main id="main" class="wrap">
+<div class="static-banner" role="note" data-testid="static-banner"><strong>公開靜態版</strong><span>資料日期 <b>2026-11-09</b>｜最近一次更新工作完成 2026-11-10 07:45（台北時間）｜本頁產生於 2026-11-10 10:21（台北時間）。每交易日 18:00、每日 22:00 更新後重新產生；資料全部來自證交所、櫃買中心、公開資訊觀測站。</span></div>
+
+<h1>技術條件選股 <small>趨勢＋突破＋量能</small></h1>
+<p class="basis-note" data-testid="volume-basis">量與金額口徑：上市：STOCK_DAY 官方總量口徑（含零股、盤後定價、鉅額）；上櫃：tradingStock 官方總量口徑（上櫃不含鉅額，已知限制）。</p>
+
+
+
+<form data-static-form="/screener" class="card params" method="get" action="../screener/index.html" data-static-path="/screener" novalidate><p class="static-form-note" data-testid="static-form-note">公開靜態版：四項條件可開關、可改排序（結果已預先由同一套程式算好）；均線天數、倍數、金額門檻與進階設定固定為預設值，無法在靜態版重算，數字欄已鎖定。</p>
+  <input type="hidden" name="f" value="1">
+  <fieldset>
+    <legend>條件（全部同時成立；期間以交易日計）</legend>
+    <p class="state state-nondefault" data-state="non-default" role="note">⚠ 目前條件<b>不是預設</b>：已調整 條件2 突破（已關閉）。預設為收盤 &gt; MA20 &gt; MA60、前 20 日最高、前 20 日均量 × 1.5、成交金額 ≥ 1 億元，四條件全開。<a href="./">回預設 →</a></p>
+    <div class="cond">
+    <label class="cond-main"><input type="checkbox" name="enable_trend" value="1" checked aria-label="enable_trend" aria-describedby="exp-trend">
+      <span>1. 收盤 &gt; MA<input type="text" disabled inputmode="decimal" name="ma_short" value="20"
+  aria-label="短均線（ma_short）" class=""> &gt; MA<input type="text" disabled inputmode="decimal" name="ma_long" value="60"
+  aria-label="長均線（ma_long）" class=""></span></label>
+    <p class="cond-exp" id="exp-trend" data-testid="plain-trend">趨勢：今天收盤價高於最近 20 個有效交易日（含今天）的平均收盤價（MA20），而且 MA20 高於最近 60 個有效交易日的平均收盤價（MA60）；均線用前復權還原價計算。</p>
+    </div>
+    <div class="cond off">
+    <label class="cond-main"><input type="checkbox" name="enable_breakout" value="1"  aria-label="enable_breakout" aria-describedby="exp-breakout">
+      <span>2. 收盤 &gt; 前<input type="text" disabled inputmode="decimal" name="breakout_lookback" value="20"
+  aria-label="突破回看日數（breakout_lookback）" class="">日最高（不含當日）</span></label>
+    <p class="cond-exp" id="exp-breakout" data-testid="plain-breakout"><b>未啟用，不檢查。</b>今天收盤價高於前 20 個有效交易日（不含今天）每日最高價中的最高值；過去的最高價同樣用前復權還原價比較。</p>
+    </div>
+    <div class="cond">
+    <label class="cond-main"><input type="checkbox" name="enable_volume" value="1" checked aria-label="enable_volume" aria-describedby="exp-volume">
+      <span>3. 成交量 ≥ 前<input type="text" disabled inputmode="decimal" name="volume_lookback" value="20"
+  aria-label="均量回看日數（volume_lookback）" class="">日均量 × <input type="text" disabled inputmode="decimal" name="volume_multiplier" value="1.5"
+  aria-label="量能倍數（volume_multiplier）" class=""></span></label>
+    <p class="cond-exp" id="exp-volume" data-testid="plain-volume">量能：今天成交量（股）至少是前 20 個有效交易日（不含今天）平均成交量的 1.5 倍；過去的成交量依配股、減資等股數變化調整。</p>
+    </div>
+    <div class="cond">
+    <label class="cond-main"><input type="checkbox" name="enable_turnover" value="1" checked aria-label="enable_turnover" aria-describedby="exp-turnover">
+      <span>4. 成交金額 ≥ <input type="text" disabled inputmode="decimal" name="min_turnover_yi" value="1"
+  aria-label="金額門檻（億元）（min_turnover）" class=""> 億元</span></label>
+    <p class="cond-exp" id="exp-turnover" data-testid="plain-turnover">成交金額：今天成交金額至少新台幣 1 億元；用來源公布的當日金額，不還原，也不以成交量乘價格估算。</p>
+    </div>
+    <p class="cond-common" data-testid="plain-common">「有效交易日」指有成交、有收盤價的交易日，停牌或無成交的日子跳過不算；有效交易日不足 60 天，或計算期間內跳過的交易日超過 3 天，該股不評估，列入排除名單並寫明原因。除權息、減資等事件資料未完整涵蓋計算期間時，該股同樣排除，不以未還原價格替代。啟用的條件要全部同時成立才列入結果。以上數字為目前已套用的參數，改參數後按「重新篩選」才會更新。
+      <small class="muted">說明文字來源：analysis/explain.py；算法依據：analysis/screener.py、docs/indicators.md。</small></p>
+  </fieldset>
+  <details class="advanced" id="advanced" data-testid="advanced" >
+    <summary>進階設定（資料品質；一般不需調整）</summary>
+    <input disabled type="hidden" name="adv" value="1">
+    <p class="muted">以下為 analysis/screener.py 的資料品質參數，預設值取自 analysis。正式結果採 strict 覆蓋政策。</p>
+    <div class="adv-grid">
+    
+      <label>視窗內最多停牌／無成交日數 <code>max_gap_days</code><input disabled type="text" disabled inputmode="decimal" name="max_gap_days" value="3"
+  aria-label="視窗內最多停牌／無成交日數（max_gap_days）" class=""></label>
+    
+      <label>單日漲跌幅上限（2015-06-01 起） <code>max_daily_move</code><input disabled type="text" disabled inputmode="decimal" name="max_daily_move" value="0.11"
+  aria-label="單日漲跌幅上限（2015-06-01 起）（max_daily_move）" class=""></label>
+    
+      <label>單日漲跌幅上限（2015-06-01 前） <code>legacy_max_daily_move</code><input disabled type="text" disabled inputmode="decimal" name="legacy_max_daily_move" value="0.07"
+  aria-label="單日漲跌幅上限（2015-06-01 前）（legacy_max_daily_move）" class=""></label>
+    
+      <label>最低上市櫃交易日數 <code>min_listing_days</code><input disabled type="text" disabled inputmode="decimal" name="min_listing_days" value="60"
+  aria-label="最低上市櫃交易日數（min_listing_days）" class=""></label>
+    
+      <label>新上市無漲跌幅限制日數 <code>new_listing_no_limit_days</code><input disabled type="text" disabled inputmode="decimal" name="new_listing_no_limit_days" value="5"
+  aria-label="新上市無漲跌幅限制日數（new_listing_no_limit_days）" class=""></label>
+    
+      <label>除權息前收容差 <code>adj_prev_close_tolerance</code><input disabled type="text" disabled inputmode="decimal" name="adj_prev_close_tolerance" value="0.005"
+  aria-label="除權息前收容差（adj_prev_close_tolerance）" class=""></label>
+    
+      <p class="fixed-policy" data-testid="coverage-policy">覆蓋政策：<strong>strict</strong>（固定；依 analysis/USAGE.md 不開放調整，正式結果一律 strict）</p>
+    
+      <label><input disabled type="checkbox" name="derive_share_factor" value="1" checked> 推導股數調整因子 <code>derive_share_factor</code></label>
+    
+      <label><input disabled type="checkbox" name="check_unexplained_gap" value="1" checked> 檢查無法解釋的跳空 <code>check_unexplained_gap</code></label>
+    
+    </div>
+  </details>
+  <div class="row">
+    <label>排序 <select name="sort"><option value="code" >代號</option><option value="change_pct" selected>漲跌幅</option><option value="turnover" >成交金額</option><option value="vol_ratio" >量比</option><option value="close" >收盤</option></select></label>
+    <label><select name="order"><option value="desc" selected>大到小</option><option value="asc" >小到大</option></select></label>
+    <button type="submit" class="primary">重新篩選</button>
+    <span class="params-dirty" data-testid="params-dirty" role="status" aria-live="polite"></span>
+    <a class="btn" href="./">回預設</a>
+    <a class="btn" href="../csv/screener__enable_trend-1_enable_turnover-1_enable_volume-1_f-1_order-desc_sort-change_pct.csv" download>匯出 CSV</a>
+  </div>
+</form>
+
+
+
+
+<section class="card exclusion-stats" id="exclusion-stats" data-testid="exclusion-stats">
+  <h2>排除原因統計 <small>檢查 30 檔｜排除 0 檔</small></h2>
+  <p class="muted">無排除。</p>
+  <p class="muted"><a href="#excluded">逐檔排除明細 ↓</a></p>
+</section>
+
+
+<p class="note">追蹤範圍：30 檔驗證樣本（設定 TWSITE_UNIVERSE；清單來源 pipeline/config.py SAMPLE30）。範圍外的股票不評估、不計入排除。</p>
+
+<section class="card" id="results">
+  <h2>結果 <small>1 檔／檢查 30 檔｜交易日 2026-11-09</small></h2>
+  
+  <p class="sortbar">排序：<a href="q_enable_trend-1_enable_turnover-1_enable_volume-1_f-1_order-desc_sort-code.html" class="">代號</a> <a href="q_enable_trend-1_enable_turnover-1_enable_volume-1_f-1_order-asc_sort-change_pct.html" class="on">漲跌幅↓</a> <a href="q_enable_trend-1_enable_turnover-1_enable_volume-1_f-1_order-desc_sort-turnover.html" class="">成交金額</a> <a href="q_enable_trend-1_enable_turnover-1_enable_volume-1_f-1_order-desc_sort-vol_ratio.html" class="">量比</a> <a href="q_enable_trend-1_enable_turnover-1_enable_volume-1_f-1_order-desc_sort-close.html" class="">收盤</a> </p>
+  
+  
+
+<div class="table-wrap cards-m" tabindex="0" role="region" aria-label="選股結果表">
+<table class="data result-cards">
+  
+  <thead><tr>
+    <th>代號</th><th>名稱</th><th>市場</th><th>交易日期</th>
+    <th class="r" scope="col" data-key="close">收盤（元）</th><th class="r" scope="col" data-key="chg">漲跌幅</th><th class="r" scope="col" data-key="turnover">成交金額</th>
+    <th class="r">MA20（元）</th><th class="r">MA60（元）</th>
+    <th class="r" scope="col" data-key="vr">量比（倍）</th><th>符合原因</th>
+  </tr></thead>
+  <tbody>
+  
+  <tr id="row-2412">
+    <td class="c-code"><a href="../stock/2412/">2412</a></td><td class="c-name"><a href="../stock/2412/">中華電</a><button type="button" class="more-toggle" aria-expanded="false" aria-controls="row-2412" data-more>更多欄位</button></td><td class="c-sec c-mkt">上市</td><td class="c-sec c-date">2026-11-09</td>
+    <td class="r c-key c-close" data-sort="159.0"><a class="v vlink" href="../source/q_price_date-2026-11-09_symbol-2412_table-daily_prices.html" data-src-link="1">159.00<span class="tip" role="tooltip">來源：daily_prices（經 analysis/screener.py 計算）<br>資料日期：2026-11-09<br>來源表：daily_prices<br>主鍵：symbol=2412, price_date=2026-11-09<br>單位：新台幣元<br>點擊開啟來源列 →</span></a></td>
+    <td class="r c-key c-chg" data-sort="-2.752293577981646"><span class="chg down"><span class="arr" aria-hidden="true">▼</span><span class="sr">下跌</span><a class="v vlink" href="./#row-2412" data-src-link="1">−2.75%<span class="tip" role="tooltip">來源：daily_prices（經 analysis/screener.py 計算）<br>資料日期：2026-11-09<br>來源表：analysis/screener.py 輸出<br>主鍵：symbol=2412, as_of=2026-11-09<br>單位：%<br>點擊開啟來源列 →</span></a></span></td>
+    <td class="r c-sec" data-sort="3889052948.0"><a class="v vlink" href="../source/q_price_date-2026-11-09_symbol-2412_table-daily_prices.html" data-src-link="1">38.89 億<span class="tip" role="tooltip">來源：daily_prices（經 analysis/screener.py 計算）<br>資料日期：2026-11-09<br>來源表：daily_prices<br>主鍵：symbol=2412, price_date=2026-11-09<br>單位：新台幣元<br>原值：3,889,052,948<br>點擊開啟來源列 →</span></a></td>
+    <td class="r c-sec"><a class="v vlink" href="./#row-2412" data-src-link="1">155.62<span class="tip" role="tooltip">來源：daily_prices（經 analysis/screener.py 計算）<br>資料日期：2026-11-09<br>來源表：analysis/screener.py 輸出<br>主鍵：symbol=2412, as_of=2026-11-09<br>單位：新台幣元<br>點擊開啟來源列 →</span></a></td><td class="r c-sec"><a class="v vlink" href="./#row-2412" data-src-link="1">145.24<span class="tip" role="tooltip">來源：daily_prices（經 analysis/screener.py 計算）<br>資料日期：2026-11-09<br>來源表：analysis/screener.py 輸出<br>主鍵：symbol=2412, as_of=2026-11-09<br>單位：新台幣元<br>點擊開啟來源列 →</span></a></td>
+    <td class="r c-sec" data-sort="1.7866620970408778"><a class="v vlink" href="./#row-2412" data-src-link="1">1.79<span class="tip" role="tooltip">來源：daily_prices（經 analysis/screener.py 計算）<br>資料日期：2026-11-09<br>來源表：analysis/screener.py 輸出<br>主鍵：symbol=2412, as_of=2026-11-09<br>單位：倍<br>點擊開啟來源列 →</span></a></td>
+    <td class="reasons c-key"><details><summary>3 條全部通過</summary>
+      <ol><li class="pass">
+        ✅
+        趨勢：收盤 &gt; MA短 &gt; MA長（門檻 收盤 &gt; MA20 且 MA20 &gt; MA60）：<span class="actual">成立：收盤 159.00 &gt; MA20 155.62，MA20 155.62 &gt; MA60 145.24</span></li><li class="fail off">
+        ⚪ 未啟用
+        突破：收盤 &gt; 前 N 個交易日最高價（不含當日）（門檻 收盤 &gt; 166.50）：<span class="actual">未啟用（不列入判斷）；參考：收盤 159.00 ≤ 前 20 日最高 166.50</span></li><li class="pass">
+        ✅
+        量能：成交量 ≥ 前 N 個交易日平均量（不含當日）× 倍數（門檻 量比 ≥ 1.5）：<span class="actual">成立：當日 24,349,598 股 ≥ 均量 13,628,541 股 × 1.5 = 20,442,812 股</span></li><li class="pass">
+        ✅
+        成交金額 ≥ 門檻（新台幣元）（門檻 ≥ 100,000,000 元）：<span class="actual">成立：成交金額 3,889,052,948 元 ≥ 100,000,000 元</span></li></ol></details></td>
+  </tr>
+  
+  </tbody>
+</table>
+</div>
+
+
+
+  <p class="srcline">來源：analysis/screener.py screen()｜資料日期：2026-11-09｜價格調整方式待 docs/indicators.md 定案</p>
+</section>
+
+<section class="card" id="excluded">
+  <h2>排除名單 <small>篩選時排除 0 檔</small></h2>
+  <p class="muted">無。</p>
+  <h3>非普通股（不列入範圍）<small>securities_excluded 54778 檔</small></h3>
+  
+  <p class="excl-cats" data-testid="excl-cats"><span class="badge st-insufficient">權證／牛熊 54,313</span><span class="badge st-insufficient">ETF／ETN／主動式 386</span><span class="badge st-insufficient">創新板（第一版排除） 31</span><span class="badge st-insufficient">特別股 28</span><span class="badge st-insufficient">TDR 10</span><span class="badge st-insufficient">受益證券 6</span><span class="badge st-insufficient">非普通股 4</span></p>
+<details class="excl-cfi"><summary>依 CFI 代碼細分（36 種）</summary>
+<p class="excl-cats"><span class="badge st-insufficient">CFI=CBCIXU 受益證券 6</span><span class="badge st-insufficient">CFI=CEOGBU ETF／ETN／主動式 10</span><span class="badge st-insufficient">CFI=CEOGCU ETF／ETN／主動式 2</span><span class="badge st-insufficient">CFI=CEOGDU ETF／ETN／主動式 33</span><span class="badge st-insufficient">CFI=CEOGEU ETF／ETN／主動式 80</span><span class="badge st-insufficient">CFI=CEOGMU ETF／ETN／主動式 3</span><span class="badge st-insufficient">CFI=CEOIBU ETF／ETN／主動式 84</span><span class="badge st-insufficient">CFI=CEOIEU ETF／ETN／主動式 109</span><span class="badge st-insufficient">CFI=CEOILU ETF／ETN／主動式 1</span><span class="badge st-insufficient">CFI=CEOIRU ETF／ETN／主動式 1</span><span class="badge st-insufficient">CFI=CEOJBU ETF／ETN／主動式 20</span><span class="badge st-insufficient">CFI=CEOJEU ETF／ETN／主動式 19</span><span class="badge st-insufficient">CFI=CEOJLU ETF／ETN／主動式 4</span><span class="badge st-insufficient">CFI=CMXXXU ETF／ETN／主動式 20</span><span class="badge st-insufficient">CFI=DAFUFR 非普通股 4</span><span class="badge st-insufficient">CFI=EDSDDR TDR 10</span><span class="badge st-insufficient">CFI=EFNRAR 特別股 1</span><span class="badge st-insufficient">CFI=EPNCAR 特別股 1</span><span class="badge st-insufficient">CFI=EPNNFB 特別股 1</span><span class="badge st-insufficient">CFI=EPNRAR 特別股 16</span><span class="badge st-insufficient">CFI=EPNRCR 特別股 1</span><span class="badge st-insufficient">CFI=EPNRFR 特別股 1</span><span class="badge st-insufficient">CFI=EPNRQR 特別股 1</span><span class="badge st-insufficient">CFI=EPNTAR 特別股 3</span><span class="badge st-insufficient">CFI=EPRNAR 特別股 1</span><span class="badge st-insufficient">CFI=EPRRAR 特別股 1</span><span class="badge st-insufficient">CFI=EPRRQR 特別股 1</span><span class="badge st-insufficient">CFI=RWBCCA 權證／牛熊 1,966</span><span class="badge st-insufficient">CFI=RWBCCE 權證／牛熊 452</span><span class="badge st-insufficient">CFI=RWBCPE 權證／牛熊 513</span><span class="badge st-insufficient">CFI=RWICCE 權證／牛熊 523</span><span class="badge st-insufficient">CFI=RWICPE 權證／牛熊 383</span><span class="badge st-insufficient">CFI=RWSCCA 權證／牛熊 43,948</span><span class="badge st-insufficient">CFI=RWSCCE 權證／牛熊 4,500</span><span class="badge st-insufficient">CFI=RWSCPE 權證／牛熊 2,028</span><span class="badge st-insufficient">創新板（第一版排除） 31</span></p></details>
+  <details><summary>明細（前 50 檔）</summary>
+  <ul class="excluded"><li>01001T 土銀富邦R1（TWSE）：CFI=CBCIXU 受益證券 <small class="muted">清單日 2026-11-10</small></li><li>01002T 土銀國泰R1（TWSE）：CFI=CBCIXU 受益證券 <small class="muted">清單日 2026-11-10</small></li><li>01004T 土銀富邦R2（TWSE）：CFI=CBCIXU 受益證券 <small class="muted">清單日 2026-11-10</small></li><li>01007T 兆豐國泰R2（TWSE）：CFI=CBCIXU 受益證券 <small class="muted">清單日 2026-11-10</small></li><li>01009T 王道圓滿R1（TWSE）：CFI=CBCIXU 受益證券 <small class="muted">清單日 2026-11-10</small></li><li>01010T 京城樂富R1（TWSE）：CFI=CBCIXU 受益證券 <small class="muted">清單日 2026-11-10</small></li><li>00687C 國泰20年美債+櫃U（TPEx）：CFI=CEOGBU ETF／ETN／主動式 <small class="muted">清單日 2026-11-10</small></li><li>00688L 國泰20年美債正2（TWSE）：CFI=CEOGBU ETF／ETN／主動式 <small class="muted">清單日 2026-11-10</small></li><li>00689R 國泰20年美債反1（TWSE）：CFI=CEOGBU ETF／ETN／主動式 <small class="muted">清單日 2026-11-10</small></li><li>00694B 富邦美債1-3年（TPEx）：CFI=CEOGBU ETF／ETN／主動式 <small class="muted">清單日 2026-11-10</small></li><li>00695B 富邦美債7-10年（TPEx）：CFI=CEOGBU ETF／ETN／主動式 <small class="muted">清單日 2026-11-10</small></li><li>00696B 富邦美債20年（TPEx）：CFI=CEOGBU ETF／ETN／主動式 <small class="muted">清單日 2026-11-10</small></li><li>00697B 元大美債7-10（TPEx）：CFI=CEOGBU ETF／ETN／主動式 <small class="muted">清單日 2026-11-10</small></li><li>00768B 復華20年美債（TPEx）：CFI=CEOGBU ETF／ETN／主動式 <small class="muted">清單日 2026-11-10</small></li><li>00864B 中信美國公債0-1（TPEx）：CFI=CEOGBU ETF／ETN／主動式 <small class="muted">清單日 2026-11-10</small></li><li>00865B 國泰US短期公債（TWSE）：CFI=CEOGBU ETF／ETN／主動式 <small class="muted">清單日 2026-11-10</small></li><li>00693U 期街口S&amp;P黃豆（TWSE）：CFI=CEOGCU ETF／ETN／主動式 <small class="muted">清單日 2026-11-10</small></li><li>00738U 期元大道瓊白銀（TWSE）：CFI=CEOGCU ETF／ETN／主動式 <small class="muted">清單日 2026-11-10</small></li><li>00631L 元大台灣50正2（TWSE）：CFI=CEOGDU ETF／ETN／主動式 <small class="muted">清單日 2026-11-10</small></li><li>00632R 元大台灣50反1（TWSE）：CFI=CEOGDU ETF／ETN／主動式 <small class="muted">清單日 2026-11-10</small></li><li>00633L 富邦上証正2（TWSE）：CFI=CEOGDU ETF／ETN／主動式 <small class="muted">清單日 2026-11-10</small></li><li>00634R 富邦上証反1（TWSE）：CFI=CEOGDU ETF／ETN／主動式 <small class="muted">清單日 2026-11-10</small></li><li>00635U 期元大S&amp;P黃金（TWSE）：CFI=CEOGDU ETF／ETN／主動式 <small class="muted">清單日 2026-11-10</small></li><li>00637L 元大滬深300正2（TWSE）：CFI=CEOGDU ETF／ETN／主動式 <small class="muted">清單日 2026-11-10</small></li><li>00638R 元大滬深300反1（TWSE）：CFI=CEOGDU ETF／ETN／主動式 <small class="muted">清單日 2026-11-10</small></li><li>00640L 富邦日本正2（TWSE）：CFI=CEOGDU ETF／ETN／主動式 <small class="muted">清單日 2026-11-10</small></li><li>00641R 富邦日本反1（TWSE）：CFI=CEOGDU ETF／ETN／主動式 <small class="muted">清單日 2026-11-10</small></li><li>00642U 期元大S&amp;P石油（TWSE）：CFI=CEOGDU ETF／ETN／主動式 <small class="muted">清單日 2026-11-10</small></li><li>00647L 元大S&amp;P500正2（TWSE）：CFI=CEOGDU ETF／ETN／主動式 <small class="muted">清單日 2026-11-10</small></li><li>00648R 元大S&amp;P500反1（TWSE）：CFI=CEOGDU ETF／ETN／主動式 <small class="muted">清單日 2026-11-10</small></li><li>00650L 復華香港正2（TWSE）：CFI=CEOGDU ETF／ETN／主動式 <small class="muted">清單日 2026-11-10</small></li><li>00651R 復華香港反1（TWSE）：CFI=CEOGDU ETF／ETN／主動式 <small class="muted">清單日 2026-11-10</small></li><li>00655L 國泰中國A50正2（TWSE）：CFI=CEOGDU ETF／ETN／主動式 <small class="muted">清單日 2026-11-10</small></li><li>00656R 國泰中國A50反1（TWSE）：CFI=CEOGDU ETF／ETN／主動式 <small class="muted">清單日 2026-11-10</small></li><li>00663L 國泰臺灣加權正2（TWSE）：CFI=CEOGDU ETF／ETN／主動式 <small class="muted">清單日 2026-11-10</small></li><li>00664R 國泰臺灣加權反1（TWSE）：CFI=CEOGDU ETF／ETN／主動式 <small class="muted">清單日 2026-11-10</small></li><li>00665L 富邦恒生國企正2（TWSE）：CFI=CEOGDU ETF／ETN／主動式 <small class="muted">清單日 2026-11-10</small></li><li>00666R 富邦恒生國企反1（TWSE）：CFI=CEOGDU ETF／ETN／主動式 <small class="muted">清單日 2026-11-10</small></li><li>00670L 富邦NASDAQ正2（TWSE）：CFI=CEOGDU ETF／ETN／主動式 <small class="muted">清單日 2026-11-10</small></li><li>00671R 富邦NASDAQ反1（TWSE）：CFI=CEOGDU ETF／ETN／主動式 <small class="muted">清單日 2026-11-10</small></li><li>00673R 期元大S&amp;P原油反1（TWSE）：CFI=CEOGDU ETF／ETN／主動式 <small class="muted">清單日 2026-11-10</small></li><li>00674R 期元大S&amp;P黃金反1（TWSE）：CFI=CEOGDU ETF／ETN／主動式 <small class="muted">清單日 2026-11-10</small></li><li>00675L 富邦臺灣加權正2（TWSE）：CFI=CEOGDU ETF／ETN／主動式 <small class="muted">清單日 2026-11-10</small></li><li>00676R 富邦臺灣加權反1（TWSE）：CFI=CEOGDU ETF／ETN／主動式 <small class="muted">清單日 2026-11-10</small></li><li>00680L 元大美債20正2（TWSE）：CFI=CEOGDU ETF／ETN／主動式 <small class="muted">清單日 2026-11-10</small></li><li>00681R 元大美債20反1（TWSE）：CFI=CEOGDU ETF／ETN／主動式 <small class="muted">清單日 2026-11-10</small></li><li>00706L 期元大S&amp;P日圓正2（TWSE）：CFI=CEOGDU ETF／ETN／主動式 <small class="muted">清單日 2026-11-10</small></li><li>00707R 期元大S&amp;P日圓反1（TWSE）：CFI=CEOGDU ETF／ETN／主動式 <small class="muted">清單日 2026-11-10</small></li><li>00708L 期元大S&amp;P黃金正2（TWSE）：CFI=CEOGDU ETF／ETN／主動式 <small class="muted">清單日 2026-11-10</small></li><li>00715L 期街口S&amp;P布蘭特油正2（TWSE）：CFI=CEOGDU ETF／ETN／主動式 <small class="muted">清單日 2026-11-10</small></li></ul></details>
+  
+</section>
+
+</main>
+<footer class="site">
+  <div class="wrap foot-grid">
+    <div><h2>資料來源與更新</h2><p>行情：證交所、櫃買中心；月營收、財報、重大訊息：公開資訊觀測站。每交易日 18:00 盤後更新、22:00 補查公告與營收。時間皆為台北時間（UTC+8）。<a href="../status/">各來源狀態 →</a></p></div>
+    <div><h2>單位</h2><p>價格：新台幣元；金額：億元（新台幣）；成交量：股；指數：點；漲跌：▲ 上漲（紅）、▼ 下跌（綠）、■ 平盤，並加 +／− 號。</p></div>
+    <div><h2>聲明</h2><p>本站僅供研究參考，不構成投資建議；技術訊號不代表獲利保證；本站不提供下單功能。數值由程式計算，文字說明不推論未經證實的原因。</p>
+      <p class="muted">圖表：<a href="https://www.tradingview.com/" rel="noopener">TradingView Lightweight Charts™</a>（Apache-2.0，本地檔案）。</p></div>
+  </div>
+</footer>
+<script src="../static/js/site.js" defer></script>
+
+<script src="../static/js/static.js" defer></script>
+</body>
+</html>

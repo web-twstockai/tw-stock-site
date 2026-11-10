@@ -1,0 +1,85 @@
+<!doctype html>
+<html data-static="1" lang="zh-Hant-TW">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>來源明細 cash_flow_statements｜台股盤後研究</title>
+<link rel="icon" href="data:,">
+<link rel="stylesheet" href="../static/css/site.css">
+<script>document.documentElement.classList.add('js')</script>
+<meta name="site-root" content="../">
+<link rel="stylesheet" href="../static/css/static.css">
+</head>
+<body>
+<a class="skip" href="#main">跳到主要內容</a>
+
+<header class="site">
+  <div class="wrap mast">
+    <a class="brand" href="../" aria-label="台股盤後研究 首頁"><span class="seal" aria-hidden="true">盤後</span><span class="brand-name">台股盤後研究</span></a>
+    <nav class="mainnav" aria-label="主要功能">
+      <a href="../">盤後總覽</a>
+      <a href="../screener/">條件選股</a>
+      <a href="../revenue/">營收</a>
+      <a href="../status/">資料狀態</a>
+    </nav>
+    <form class="search" action="#" data-static-path="/search" method="get" role="search">
+      <label class="sr" for="site-q">搜尋股票代號或名稱（按 / 快速聚焦）</label>
+      <input id="site-q" type="search" name="q" list="stocklist" placeholder="代號或名稱，如 2330、台積" value="" autocomplete="off">
+      <kbd class="kbd" aria-hidden="true" title="按 / 聚焦搜尋">/</kbd>
+      <datalist id="stocklist"></datalist>
+      <button type="submit">前往個股</button>
+    </form>
+  </div><div class="wrap meta-bar" role="status" aria-label="資料更新狀態">
+    <span class="mi">資料日期 <strong data-date="2026-11-09">2026-11-09</strong></span>
+    <span class="mi">更新 <span class="pill pill-warn">◐ 部分成功</span></span>
+    <span class="mi src-ok">行情 <span class="dot ok" aria-hidden="true"></span>正常</span>
+    <span class="mi src-ok">月營收 <span class="dot ok" aria-hidden="true"></span>正常</span>
+    <span class="mi src-ok">重大訊息 <span class="dot ok" aria-hidden="true"></span>正常</span>
+    <span class="mi muted">最後更新 2026-11-10 07:45（台北）</span>
+    
+    <a class="mi status-link" href="../status/">資料狀態 →</a>
+  </div>
+</header>
+<main id="main" class="wrap">
+<div class="static-banner" role="note" data-testid="static-banner"><strong>公開靜態版</strong><span>資料日期 <b>2026-11-09</b>｜最近一次更新工作完成 2026-11-10 07:45（台北時間）｜本頁產生於 2026-11-10 10:21（台北時間）。每交易日 18:00、每日 22:00 更新後重新產生；資料全部來自證交所、櫃買中心、公開資訊觀測站。</span></div>
+
+<h1>來源明細 <small>現金流量</small></h1>
+<section class="card source-panel" data-testid="source-panel">
+  <dl class="kv">
+    <dt>來源資料表</dt><dd><code>cash_flow_statements</code></dd>
+    <dt>主鍵</dt><dd><code>symbol=2801</code> <code>fiscal_year=2026</code> <code>fiscal_quarter=2</code> </dd>
+    <dt>版本</dt><dd>只顯示現行列（is_current=1）</dd>
+    <dt>單位</dt><dd>*_twd＝新台幣元（來源仟元×1000）</dd>
+    
+    <dt>資料日期</dt><dd>2026</dd>
+    <dt>來源</dt><dd class="wrap">https://mopsov.twse.com.tw/mops/web/ajax_t163sb20?TYPEK=sii&amp;year=115&amp;season=02</dd>
+    <dt>抓取時間</dt><dd>2026-11-10T05:00:08+08:00</dd>
+    <dt>原始單位</dt><dd>新台幣仟元（換算：*1000）；入庫單位：amount=新台幣元</dd>
+    
+    
+  </dl>
+  <p class="related">相關頁面：<a class="btn" href="../stock/2801/#fin">個股頁 2801 →</a> </p>
+</section>
+
+
+<section class="card"><h2>原始列</h2>
+  <div class="table-wrap"><table class="data kvtable"><tbody>
+  <tr><th>symbol</th><td class="wrap">2801</td></tr><tr><th>market</th><td class="wrap">TWSE</td></tr><tr><th>fiscal_year</th><td class="wrap">2026</td></tr><tr><th>fiscal_quarter</th><td class="wrap">2</td></tr><tr><th>report_basis</th><td class="wrap">合併</td></tr><tr><th>period_type</th><td class="wrap">累計</td></tr><tr><th>operating_cf_twd</th><td class="wrap">-37473949000</td></tr><tr><th>investing_cf_twd</th><td class="wrap">-585373000</td></tr><tr><th>financing_cf_twd</th><td class="wrap">59007855000</td></tr><tr><th>fx_effect_twd</th><td class="wrap">763163000</td></tr><tr><th>net_increase_twd</th><td class="wrap">21711696000</td></tr><tr><th>cash_begin_twd</th><td class="wrap">111896611000</td></tr><tr><th>cash_end_twd</th><td class="wrap">133608307000</td></tr><tr><th>derived</th><td class="wrap">0</td></tr><tr><th>derivation_method</th><td class="wrap">—</td></tr><tr><th>source</th><td class="wrap">https://mopsov.twse.com.tw/mops/web/ajax_t163sb20?TYPEK=sii&amp;year=115&amp;season=02</td></tr><tr><th>announced_at</th><td class="wrap">—</td></tr><tr><th>announced_at_note</th><td class="wrap">來源無公告時間；MOPS 季報彙總預設合併／累計（依頁面口徑）</td></tr><tr><th>fetched_at</th><td class="wrap">2026-11-10T05:00:08+08:00</td></tr><tr><th>unit</th><td class="wrap">amount=新台幣元</td></tr><tr><th>source_unit</th><td class="wrap">新台幣仟元</td></tr><tr><th>unit_conversion</th><td class="wrap">*1000</td></tr><tr><th>version</th><td class="wrap">2</td></tr><tr><th>is_current</th><td class="wrap">1</td></tr><tr><th>checksum</th><td class="wrap">cef7c18fd7374682fd932ff713f56e9e301f4292</td></tr>
+  </tbody></table></div>
+</section>
+
+
+</main>
+<footer class="site">
+  <div class="wrap foot-grid">
+    <div><h2>資料來源與更新</h2><p>行情：證交所、櫃買中心；月營收、財報、重大訊息：公開資訊觀測站。每交易日 18:00 盤後更新、22:00 補查公告與營收。時間皆為台北時間（UTC+8）。<a href="../status/">各來源狀態 →</a></p></div>
+    <div><h2>單位</h2><p>價格：新台幣元；金額：億元（新台幣）；成交量：股；指數：點；漲跌：▲ 上漲（紅）、▼ 下跌（綠）、■ 平盤，並加 +／− 號。</p></div>
+    <div><h2>聲明</h2><p>本站僅供研究參考，不構成投資建議；技術訊號不代表獲利保證；本站不提供下單功能。數值由程式計算，文字說明不推論未經證實的原因。</p>
+      <p class="muted">圖表：<a href="https://www.tradingview.com/" rel="noopener">TradingView Lightweight Charts™</a>（Apache-2.0，本地檔案）。</p></div>
+  </div>
+</footer>
+<script src="../static/js/site.js" defer></script>
+
+<script src="../static/js/static.js" defer></script>
+</body>
+</html>

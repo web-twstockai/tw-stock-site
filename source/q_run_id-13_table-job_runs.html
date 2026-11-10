@@ -1,0 +1,85 @@
+<!doctype html>
+<html data-static="1" lang="zh-Hant-TW">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>來源明細 job_runs｜台股盤後研究</title>
+<link rel="icon" href="data:,">
+<link rel="stylesheet" href="../static/css/site.css">
+<script>document.documentElement.classList.add('js')</script>
+<meta name="site-root" content="../">
+<link rel="stylesheet" href="../static/css/static.css">
+</head>
+<body>
+<a class="skip" href="#main">跳到主要內容</a>
+
+<header class="site">
+  <div class="wrap mast">
+    <a class="brand" href="../" aria-label="台股盤後研究 首頁"><span class="seal" aria-hidden="true">盤後</span><span class="brand-name">台股盤後研究</span></a>
+    <nav class="mainnav" aria-label="主要功能">
+      <a href="../">盤後總覽</a>
+      <a href="../screener/">條件選股</a>
+      <a href="../revenue/">營收</a>
+      <a href="../status/">資料狀態</a>
+    </nav>
+    <form class="search" action="#" data-static-path="/search" method="get" role="search">
+      <label class="sr" for="site-q">搜尋股票代號或名稱（按 / 快速聚焦）</label>
+      <input id="site-q" type="search" name="q" list="stocklist" placeholder="代號或名稱，如 2330、台積" value="" autocomplete="off">
+      <kbd class="kbd" aria-hidden="true" title="按 / 聚焦搜尋">/</kbd>
+      <datalist id="stocklist"></datalist>
+      <button type="submit">前往個股</button>
+    </form>
+  </div><div class="wrap meta-bar" role="status" aria-label="資料更新狀態">
+    <span class="mi">資料日期 <strong data-date="2026-11-09">2026-11-09</strong></span>
+    <span class="mi">更新 <span class="pill pill-warn">◐ 部分成功</span></span>
+    <span class="mi src-ok">行情 <span class="dot ok" aria-hidden="true"></span>正常</span>
+    <span class="mi src-ok">月營收 <span class="dot ok" aria-hidden="true"></span>正常</span>
+    <span class="mi src-ok">重大訊息 <span class="dot ok" aria-hidden="true"></span>正常</span>
+    <span class="mi muted">最後更新 2026-11-10 07:45（台北）</span>
+    
+    <a class="mi status-link" href="../status/">資料狀態 →</a>
+  </div>
+</header>
+<main id="main" class="wrap">
+<div class="static-banner" role="note" data-testid="static-banner"><strong>公開靜態版</strong><span>資料日期 <b>2026-11-09</b>｜最近一次更新工作完成 2026-11-10 07:45（台北時間）｜本頁產生於 2026-11-10 10:21（台北時間）。每交易日 18:00、每日 22:00 更新後重新產生；資料全部來自證交所、櫃買中心、公開資訊觀測站。</span></div>
+
+<h1>來源明細 <small>工作紀錄</small></h1>
+<section class="card source-panel" data-testid="source-panel">
+  <dl class="kv">
+    <dt>來源資料表</dt><dd><code>job_runs</code></dd>
+    <dt>主鍵</dt><dd><code>run_id=13</code> </dd>
+    
+    <dt>單位</dt><dd>—</dd>
+    
+    <dt>資料日期</dt><dd>2026-11-10</dd>
+    
+    
+    
+    
+    
+  </dl>
+  <p class="related">相關頁面：<a class="btn" href="../status/#jobs">資料狀態頁 →</a> </p>
+</section>
+
+
+<section class="card"><h2>原始列</h2>
+  <div class="table-wrap"><table class="data kvtable"><tbody>
+  <tr><th>run_id</th><td class="wrap">13</td></tr><tr><th>job_name</th><td class="wrap">daily</td></tr><tr><th>started_at</th><td class="wrap">2026-11-10T06:56:23+08:00</td></tr><tr><th>finished_at</th><td class="wrap">2026-11-10T07:08:35+08:00</td></tr><tr><th>status</th><td class="wrap">partial</td></tr><tr><th>data_date</th><td class="wrap">2026-11-10</td></tr><tr><th>symbols_scope</th><td class="wrap">sample30</td></tr><tr><th>success_items</th><td class="wrap">[&#34;calendar&#34;, &#34;securities:{&#39;twse_common&#39;: 1058, &#39;tpex_common&#39;: 897, &#39;excluded&#39;: 54235}&#34;, &#34;prices:[&#39;2330:5&#39;, &#39;2317:5&#39;, &#39;2454:5&#39;, &#39;2308:5&#39;, &#39;2412:5&#39;, &#39;2881:5&#39;, &#39;2882:5&#39;, &#39;2801:5&#39;, &#39;1301:5&#39;, &#39;6505:5&#39;, &#39;2002:5&#39;, &#39;1101:5&#39;, &#39;1216:5&#39;, &#39;2912:5&#39;, &#39;2207:5&#39;, &#39;2603:5&#39;, &#39;3008:5&#39;, &#39;2357:5&#39;, &#39;3711:5&#39;, &#39;9910:5&#39;, &#39;6488:5&#39;, &#39;5347:5&#39;, &#39;8299:5&#39;, &#39;3105:5&#39;, &#39;3293:5&#39;, &#39;8069:5&#39;, &#39;5483:5&#39;, &#39;5274:5&#39;, &#39;6547:5&#39;, &#39;4105:5&#39;]:days=5&#34;, &#34;analysis:{&#39;inserted&#39;: 0, &#39;versioned&#39;: 30, &#39;skipped&#39;: 0, &#39;dropped_columns&#39;: [], &#39;as_of&#39;: &#39;2026-11-09&#39;, &#39;n_pass&#39;: 0, &#39;screen_run_id&#39;: 13}&#34;, &#34;corp:{&#39;twse_ex&#39;: 25, &#39;twse_cr_restore&#39;: 0, &#39;twse_par_value&#39;: 0, &#39;tpex_ex&#39;: 13, &#39;tpex_cr_restore&#39;: 0, &#39;tpex_par_value&#39;: 0, &#39;mops_div_enrich&#39;: {&#39;filled&#39;: 0, &#39;failed&#39;: [], &#39;skipped&#39;: 0}}&#34;, &#34;halts:{&#39;twse&#39;: 477, &#39;tpex&#39;: 181}&#34;, &#34;indices:{&#39;twse&#39;: 149, &#39;tpex&#39;: 149, &#39;failed&#39;: [], &#39;derived&#39;: {&#39;TAIEX&#39;: 0, &#39;TPEX&#39;: 0}, &#39;official_pct&#39;: {&#39;twse&#39;: 1, &#39;tpex&#39;: 1, &#39;failed&#39;: []}}&#34;, &#34;revenue:months=2:target=2&#34;, &#34;financials:skipped_on_daily&#34;, &#34;material:rows=120:days=7&#34;]</td></tr><tr><th>failed_items</th><td class="wrap">[]</td></tr><tr><th>error_summary</th><td class="wrap">2330 營收僅 35 月（目標&gt;=36）; 2454 營收僅 35 月（目標&gt;=36）; 2412 營收僅 35 月（目標&gt;=36）; 2881 營收僅 35 月（目標&gt;=36）; 2882 營收僅 35 月（目標&gt;=36）; 2002 營收僅 35 月（目標&gt;=36）; 1101 營收僅 35 月（目標&gt;=36）; 1216 營收僅 35 月（目標&gt;=36）; 2912 營收僅 35 月（目標&gt;=36）; 2207 營收僅 35 月（目標&gt;=36）; 3711 營收僅 35 月（目標&gt;=36）; 6547 營收僅 35 月（目標&gt;=36）</td></tr><tr><th>retry_count</th><td class="wrap">0</td></tr><tr><th>host_note</th><td class="wrap">—</td></tr>
+  </tbody></table></div>
+</section>
+
+
+</main>
+<footer class="site">
+  <div class="wrap foot-grid">
+    <div><h2>資料來源與更新</h2><p>行情：證交所、櫃買中心；月營收、財報、重大訊息：公開資訊觀測站。每交易日 18:00 盤後更新、22:00 補查公告與營收。時間皆為台北時間（UTC+8）。<a href="../status/">各來源狀態 →</a></p></div>
+    <div><h2>單位</h2><p>價格：新台幣元；金額：億元（新台幣）；成交量：股；指數：點；漲跌：▲ 上漲（紅）、▼ 下跌（綠）、■ 平盤，並加 +／− 號。</p></div>
+    <div><h2>聲明</h2><p>本站僅供研究參考，不構成投資建議；技術訊號不代表獲利保證；本站不提供下單功能。數值由程式計算，文字說明不推論未經證實的原因。</p>
+      <p class="muted">圖表：<a href="https://www.tradingview.com/" rel="noopener">TradingView Lightweight Charts™</a>（Apache-2.0，本地檔案）。</p></div>
+  </div>
+</footer>
+<script src="../static/js/site.js" defer></script>
+
+<script src="../static/js/static.js" defer></script>
+</body>
+</html>

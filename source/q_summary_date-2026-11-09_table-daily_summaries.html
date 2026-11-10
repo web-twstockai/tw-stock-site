@@ -1,0 +1,89 @@
+<!doctype html>
+<html data-static="1" lang="zh-Hant-TW">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>來源明細 daily_summaries｜台股盤後研究</title>
+<link rel="icon" href="data:,">
+<link rel="stylesheet" href="../static/css/site.css">
+<script>document.documentElement.classList.add('js')</script>
+<meta name="site-root" content="../">
+<link rel="stylesheet" href="../static/css/static.css">
+</head>
+<body>
+<a class="skip" href="#main">跳到主要內容</a>
+
+<header class="site">
+  <div class="wrap mast">
+    <a class="brand" href="../" aria-label="台股盤後研究 首頁"><span class="seal" aria-hidden="true">盤後</span><span class="brand-name">台股盤後研究</span></a>
+    <nav class="mainnav" aria-label="主要功能">
+      <a href="../">盤後總覽</a>
+      <a href="../screener/">條件選股</a>
+      <a href="../revenue/">營收</a>
+      <a href="../status/">資料狀態</a>
+    </nav>
+    <form class="search" action="#" data-static-path="/search" method="get" role="search">
+      <label class="sr" for="site-q">搜尋股票代號或名稱（按 / 快速聚焦）</label>
+      <input id="site-q" type="search" name="q" list="stocklist" placeholder="代號或名稱，如 2330、台積" value="" autocomplete="off">
+      <kbd class="kbd" aria-hidden="true" title="按 / 聚焦搜尋">/</kbd>
+      <datalist id="stocklist"></datalist>
+      <button type="submit">前往個股</button>
+    </form>
+  </div><div class="wrap meta-bar" role="status" aria-label="資料更新狀態">
+    <span class="mi">資料日期 <strong data-date="2026-11-09">2026-11-09</strong></span>
+    <span class="mi">更新 <span class="pill pill-warn">◐ 部分成功</span></span>
+    <span class="mi src-ok">行情 <span class="dot ok" aria-hidden="true"></span>正常</span>
+    <span class="mi src-ok">月營收 <span class="dot ok" aria-hidden="true"></span>正常</span>
+    <span class="mi src-ok">重大訊息 <span class="dot ok" aria-hidden="true"></span>正常</span>
+    <span class="mi muted">最後更新 2026-11-10 07:45（台北）</span>
+    
+    <a class="mi status-link" href="../status/">資料狀態 →</a>
+  </div>
+</header>
+<main id="main" class="wrap">
+<div class="static-banner" role="note" data-testid="static-banner"><strong>公開靜態版</strong><span>資料日期 <b>2026-11-09</b>｜最近一次更新工作完成 2026-11-10 07:45（台北時間）｜本頁產生於 2026-11-10 10:21（台北時間）。每交易日 18:00、每日 22:00 更新後重新產生；資料全部來自證交所、櫃買中心、公開資訊觀測站。</span></div>
+
+<h1>來源明細 <small>每日摘要存檔</small></h1>
+<section class="card source-panel" data-testid="source-panel">
+  <dl class="kv">
+    <dt>來源資料表</dt><dd><code>daily_summaries</code></dd>
+    <dt>查詢條件</dt><dd><code>summary_date=2026-11-09</code> <small class="muted">（主鍵欄位：summary_date, summary_kind, params_hash）</small></dd>
+    <dt>版本</dt><dd>只顯示現行列（is_current=1）</dd>
+    <dt>單位</dt><dd>—</dd>
+    
+    <dt>資料日期</dt><dd>2026-11-09</dd>
+    
+    
+    
+    
+    
+  </dl>
+  
+</section>
+
+
+<section class="card"><h2>原始列</h2>
+  <div class="table-wrap"><table class="data kvtable"><tbody>
+  <tr><th>summary_date</th><td class="wrap">2026-11-09</td></tr><tr><th>summary_kind</th><td class="wrap">post_market</td></tr><tr><th>params_hash</th><td class="wrap">e23a968138de7108dc77430293b883e3981b779a95e2d5e389bb0a03523d60f9</td></tr><tr><th>screen_ref_json</th><td class="wrap">{&#34;as_of&#34;: &#34;2026-11-09&#34;, &#34;n_rows&#34;: 30, &#34;params_hash&#34;: &#34;e23a968138de7108dc77430293b883e3981b779a95e2d5e389bb0a03523d60f9&#34;, &#34;screen_checksum&#34;: &#34;3c2baac99412b4013ecdb68b346f785defc017a5caf024059ae37d69c0a90e90&#34;}</td></tr><tr><th>text</th><td class="wrap">【盤後技術篩選摘要】資料日期：2026-11-09
+篩選條件：收盤 &gt; MA20 &gt; MA60；收盤 &gt; 前 20 個交易日最高價；成交量 ≥ 前 20 日均量 × 1.5；成交金額 ≥ 100,000,000 元。
+評估 30 檔：符合 0 檔、未符合 30 檔、排除 0 檔。
+今日 0 檔符合全部已啟用條件。
+說明：以上僅陳述程式計算的數值與已發布資訊的標題，不說明漲跌原因；技術條件為篩選結果，非投資建議，亦不代表未來表現。</td></tr><tr><th>facts_json</th><td class="wrap">[{&#34;fact_id&#34;: &#34;F001&#34;, &#34;label&#34;: &#34;資料日期&#34;, &#34;value&#34;: &#34;2026-11-09&#34;, &#34;display&#34;: &#34;2026-11-09&#34;, &#34;unit&#34;: null, &#34;source_table&#34;: &#34;screen_results&#34;, &#34;source_field&#34;: &#34;as_of&#34;, &#34;source_key&#34;: {&#34;as_of&#34;: &#34;2026-11-09&#34;, &#34;params_hash&#34;: &#34;e23a968138de7108dc77430293b883e3981b779a95e2d5e389bb0a03523d60f9&#34;}, &#34;data_date&#34;: &#34;2026-11-09&#34;, &#34;upstream&#34;: null}, {&#34;fact_id&#34;: &#34;F002&#34;, &#34;label&#34;: &#34;短均線日數&#34;, &#34;value&#34;: 20, &#34;display&#34;: &#34;20&#34;, &#34;unit&#34;: &#34;交易日&#34;, &#34;source_table&#34;: &#34;screen_results&#34;, &#34;source_field&#34;: &#34;params_json.ma_short&#34;, &#34;source_key&#34;: {&#34;as_of&#34;: &#34;2026-11-09&#34;, &#34;params_hash&#34;: &#34;e23a968138de7108dc77430293b883e3981b779a95e2d5e389bb0a03523d60f9&#34;}, &#34;data_date&#34;: &#34;2026-11-09&#34;, &#34;upstream&#34;: null}, {&#34;fact_id&#34;: &#34;F003&#34;, &#34;label&#34;: &#34;長均線日數&#34;, &#34;value&#34;: 60, &#34;display&#34;: &#34;60&#34;, &#34;unit&#34;: &#34;交易日&#34;, &#34;source_table&#34;: &#34;screen_results&#34;, &#34;source_field&#34;: &#34;params_json.ma_long&#34;, &#34;source_key&#34;: {&#34;as_of&#34;: &#34;2026-11-09&#34;, &#34;params_hash&#34;: &#34;e23a968138de7108dc77430293b883e3981b779a95e2d5e389bb0a03523d60f9&#34;}, &#34;data_date&#34;: &#34;2026-11-09&#34;, &#34;upstream&#34;: null}, {&#34;fact_id&#34;: &#34;F004&#34;, &#34;label&#34;: &#34;突破回看日數&#34;, &#34;value&#34;: 20, &#34;display&#34;: &#34;20&#34;, &#34;unit&#34;: &#34;交易日&#34;, &#34;source_table&#34;: &#34;screen_results&#34;, &#34;source_field&#34;: &#34;params_json.breakout_lookback&#34;, &#34;source_key&#34;: {&#34;as_of&#34;: &#34;2026-11-09&#34;, &#34;params_hash&#34;: &#34;e23a968138de7108dc77430293b883e3981b779a95e2d5e389bb0a03523d60f9&#34;}, &#34;data_date&#34;: &#34;2026-11-09&#34;, &#34;upstream&#34;: null}, {&#34;fact_id&#34;: &#34;F005&#34;, &#34;label&#34;: &#34;均量回看日數&#34;, &#34;value&#34;: 20, &#34;display&#34;: &#34;20&#34;, &#34;unit&#34;: &#34;交易日&#34;, &#34;source_table&#34;: &#34;screen_results&#34;, &#34;source_field&#34;: &#34;params_json.volume_lookback&#34;, &#34;source_key&#34;: {&#34;as_of&#34;: &#34;2026-11-09&#34;, &#34;params_hash&#34;: &#34;e23a968138de7108dc77430293b883e3981b779a95e2d5e389bb0a03523d60f9&#34;}, &#34;data_date&#34;: &#34;2026-11-09&#34;, &#34;upstream&#34;: null}, {&#34;fact_id&#34;: &#34;F006&#34;, &#34;label&#34;: &#34;量能倍數&#34;, &#34;value&#34;: 1.5, &#34;display&#34;: &#34;1.5&#34;, &#34;unit&#34;: &#34;倍&#34;, &#34;source_table&#34;: &#34;screen_results&#34;, &#34;source_field&#34;: &#34;params_json.volume_multiplier&#34;, &#34;source_key&#34;: {&#34;as_of&#34;: &#34;2026-11-09&#34;, &#34;params_hash&#34;: &#34;e23a968138de7108dc77430293b883e3981b779a95e2d5e389bb0a03523d60f9&#34;}, &#34;data_date&#34;: &#34;2026-11-09&#34;, &#34;upstream&#34;: null}, {&#34;fact_id&#34;: &#34;F007&#34;, &#34;label&#34;: &#34;成交金額門檻&#34;, &#34;value&#34;: 100000000.0, &#34;display&#34;: &#34;100,000,000&#34;, &#34;unit&#34;: &#34;元&#34;, &#34;source_table&#34;: &#34;screen_results&#34;, &#34;source_field&#34;: &#34;params_json.min_turnover&#34;, &#34;source_key&#34;: {&#34;as_of&#34;: &#34;2026-11-09&#34;, &#34;params_hash&#34;: &#34;e23a968138de7108dc77430293b883e3981b779a95e2d5e389bb0a03523d60f9&#34;}, &#34;data_date&#34;: &#34;2026-11-09&#34;, &#34;upstream&#34;: null}, {&#34;fact_id&#34;: &#34;F008&#34;, &#34;label&#34;: &#34;評估檔數&#34;, &#34;value&#34;: 30, &#34;display&#34;: &#34;30&#34;, &#34;unit&#34;: &#34;檔&#34;, &#34;source_table&#34;: &#34;screen_results&#34;, &#34;source_field&#34;: &#34;count(*)&#34;, &#34;source_key&#34;: {&#34;as_of&#34;: &#34;2026-11-09&#34;, &#34;params_hash&#34;: &#34;e23a968138de7108dc77430293b883e3981b779a95e2d5e389bb0a03523d60f9&#34;}, &#34;data_date&#34;: &#34;2026-11-09&#34;, &#34;upstream&#34;: null}, {&#34;fact_id&#34;: &#34;F009&#34;, &#34;label&#34;: &#34;符合檔數&#34;, &#34;value&#34;: 0, &#34;display&#34;: &#34;0&#34;, &#34;unit&#34;: &#34;檔&#34;, &#34;source_table&#34;: &#34;screen_results&#34;, &#34;source_field&#34;: &#34;count(status=PASS)&#34;, &#34;source_key&#34;: {&#34;as_of&#34;: &#34;2026-11-09&#34;, &#34;params_hash&#34;: &#34;e23a968138de7108dc77430293b883e3981b779a95e2d5e389bb0a03523d60f9&#34;}, &#34;data_date&#34;: &#34;2026-11-09&#34;, &#34;upstream&#34;: null}, {&#34;fact_id&#34;: &#34;F010&#34;, &#34;label&#34;: &#34;未符合檔數&#34;, &#34;value&#34;: 30, &#34;display&#34;: &#34;30&#34;, &#34;unit&#34;: &#34;檔&#34;, &#34;source_table&#34;: &#34;screen_results&#34;, &#34;source_field&#34;: &#34;count(status=FAIL)&#34;, &#34;source_key&#34;: {&#34;as_of&#34;: &#34;2026-11-09&#34;, &#34;params_hash&#34;: &#34;e23a968138de7108dc77430293b883e3981b779a95e2d5e389bb0a03523d60f9&#34;}, &#34;data_date&#34;: &#34;2026-11-09&#34;, &#34;upstream&#34;: null}, {&#34;fact_id&#34;: &#34;F011&#34;, &#34;label&#34;: &#34;排除檔數&#34;, &#34;value&#34;: 0, &#34;display&#34;: &#34;0&#34;, &#34;unit&#34;: &#34;檔&#34;, &#34;source_table&#34;: &#34;screen_results&#34;, &#34;source_field&#34;: &#34;count(status=EXCLUDED)&#34;, &#34;source_key&#34;: {&#34;as_of&#34;: &#34;2026-11-09&#34;, &#34;params_hash&#34;: &#34;e23a968138de7108dc77430293b883e3981b779a95e2d5e389bb0a03523d60f9&#34;}, &#34;data_date&#34;: &#34;2026-11-09&#34;, &#34;upstream&#34;: null}, {&#34;fact_id&#34;: &#34;F012&#34;, &#34;label&#34;: &#34;符合檔數&#34;, &#34;value&#34;: 0, &#34;display&#34;: &#34;0&#34;, &#34;unit&#34;: &#34;檔&#34;, &#34;source_table&#34;: &#34;screen_results&#34;, &#34;source_field&#34;: &#34;count(status=PASS)&#34;, &#34;source_key&#34;: {&#34;as_of&#34;: &#34;2026-11-09&#34;, &#34;params_hash&#34;: &#34;e23a968138de7108dc77430293b883e3981b779a95e2d5e389bb0a03523d60f9&#34;}, &#34;data_date&#34;: &#34;2026-11-09&#34;, &#34;upstream&#34;: null}]</td></tr><tr><th>news_event_ids_json</th><td class="wrap">[]</td></tr><tr><th>news_categories_json</th><td class="wrap">{}</td></tr><tr><th>n_pass</th><td class="wrap">0</td></tr><tr><th>n_fail</th><td class="wrap">30</td></tr><tr><th>n_excluded</th><td class="wrap">0</td></tr><tr><th>generation_method</th><td class="wrap">rule</td></tr><tr><th>ai_prompt_version</th><td class="wrap">—</td></tr><tr><th>traceability_check</th><td class="wrap">pass</td></tr><tr><th>untraceable_json</th><td class="wrap">[]</td></tr><tr><th>review_status</th><td class="wrap">not_required</td></tr><tr><th>reviewed_by</th><td class="wrap">—</td></tr><tr><th>reviewed_at</th><td class="wrap">—</td></tr><tr><th>review_note</th><td class="wrap">—</td></tr><tr><th>analysis_version</th><td class="wrap">analysis-0.7.0</td></tr><tr><th>generated_at</th><td class="wrap">2026-11-10T07:24:02+08:00</td></tr><tr><th>checksum</th><td class="wrap">5131495592eb1bf6e283e521cc0448ef90e5818480f4c7e0dd986e5124070e07</td></tr><tr><th>version</th><td class="wrap">5</td></tr><tr><th>is_current</th><td class="wrap">1</td></tr><tr><th>data_date</th><td class="wrap">2026-11-09</td></tr><tr><th>provider</th><td class="wrap">研究分析規則（analysis/narrative.py）</td></tr><tr><th>screen_run_id</th><td class="wrap">14</td></tr><tr><th>computed_at</th><td class="wrap">2026-11-10T07:24:02+08:00</td></tr><tr><th>input_max_fetched_at</th><td class="wrap">2026-11-10T07:19:31+08:00</td></tr>
+  </tbody></table></div>
+</section>
+
+
+</main>
+<footer class="site">
+  <div class="wrap foot-grid">
+    <div><h2>資料來源與更新</h2><p>行情：證交所、櫃買中心；月營收、財報、重大訊息：公開資訊觀測站。每交易日 18:00 盤後更新、22:00 補查公告與營收。時間皆為台北時間（UTC+8）。<a href="../status/">各來源狀態 →</a></p></div>
+    <div><h2>單位</h2><p>價格：新台幣元；金額：億元（新台幣）；成交量：股；指數：點；漲跌：▲ 上漲（紅）、▼ 下跌（綠）、■ 平盤，並加 +／− 號。</p></div>
+    <div><h2>聲明</h2><p>本站僅供研究參考，不構成投資建議；技術訊號不代表獲利保證；本站不提供下單功能。數值由程式計算，文字說明不推論未經證實的原因。</p>
+      <p class="muted">圖表：<a href="https://www.tradingview.com/" rel="noopener">TradingView Lightweight Charts™</a>（Apache-2.0，本地檔案）。</p></div>
+  </div>
+</footer>
+<script src="../static/js/site.js" defer></script>
+
+<script src="../static/js/static.js" defer></script>
+</body>
+</html>

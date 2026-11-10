@@ -1,0 +1,86 @@
+<!doctype html>
+<html data-static="1" lang="zh-Hant-TW">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>來源明細 daily_prices｜台股盤後研究</title>
+<link rel="icon" href="data:,">
+<link rel="stylesheet" href="../static/css/site.css">
+<script>document.documentElement.classList.add('js')</script>
+<meta name="site-root" content="../">
+<link rel="stylesheet" href="../static/css/static.css">
+</head>
+<body>
+<a class="skip" href="#main">跳到主要內容</a>
+
+<header class="site">
+  <div class="wrap mast">
+    <a class="brand" href="../" aria-label="台股盤後研究 首頁"><span class="seal" aria-hidden="true">盤後</span><span class="brand-name">台股盤後研究</span></a>
+    <nav class="mainnav" aria-label="主要功能">
+      <a href="../">盤後總覽</a>
+      <a href="../screener/">條件選股</a>
+      <a href="../revenue/">營收</a>
+      <a href="../status/">資料狀態</a>
+    </nav>
+    <form class="search" action="#" data-static-path="/search" method="get" role="search">
+      <label class="sr" for="site-q">搜尋股票代號或名稱（按 / 快速聚焦）</label>
+      <input id="site-q" type="search" name="q" list="stocklist" placeholder="代號或名稱，如 2330、台積" value="" autocomplete="off">
+      <kbd class="kbd" aria-hidden="true" title="按 / 聚焦搜尋">/</kbd>
+      <datalist id="stocklist"></datalist>
+      <button type="submit">前往個股</button>
+    </form>
+  </div><div class="wrap meta-bar" role="status" aria-label="資料更新狀態">
+    <span class="mi">資料日期 <strong data-date="2026-11-09">2026-11-09</strong></span>
+    <span class="mi">更新 <span class="pill pill-warn">◐ 部分成功</span></span>
+    <span class="mi src-ok">行情 <span class="dot ok" aria-hidden="true"></span>正常</span>
+    <span class="mi src-ok">月營收 <span class="dot ok" aria-hidden="true"></span>正常</span>
+    <span class="mi src-ok">重大訊息 <span class="dot ok" aria-hidden="true"></span>正常</span>
+    <span class="mi muted">最後更新 2026-11-10 07:45（台北）</span>
+    
+    <a class="mi status-link" href="../status/">資料狀態 →</a>
+  </div>
+</header>
+<main id="main" class="wrap">
+<div class="static-banner" role="note" data-testid="static-banner"><strong>公開靜態版</strong><span>資料日期 <b>2026-11-09</b>｜最近一次更新工作完成 2026-11-10 07:45（台北時間）｜本頁產生於 2026-11-10 10:21（台北時間）。每交易日 18:00、每日 22:00 更新後重新產生；資料全部來自證交所、櫃買中心、公開資訊觀測站。</span></div>
+
+<h1>來源明細 <small>日行情</small></h1>
+<section class="card source-panel" data-testid="source-panel">
+  <dl class="kv">
+    <dt>來源資料表</dt><dd><code>daily_prices</code></dd>
+    <dt>查詢條件</dt><dd><code>price_date=2026-11-09</code> <code>漲跌方向=change&lt;0（無 change 欄時 change_sign=&#39;-&#39;）</code> <small class="muted">（主鍵欄位：symbol, price_date）</small></dd>
+    <dt>版本</dt><dd>只顯示現行列（is_current=1）</dd>
+    <dt>單位</dt><dd>價格欄 *_twd＝新台幣元；volume_shares＝股；amount_twd＝新台幣元</dd>
+    
+    <dt>資料日期</dt><dd>2026-11-09 等 4 列</dd>
+    <dt>來源</dt><dd class="wrap">https://www.twse.com.tw/exchangeReport/STOCK_DAY?response=json&amp;date=20261101&amp;stockNo=2412</dd>
+    <dt>抓取時間</dt><dd>2026-11-10T05:31:15+08:00</dd>
+    <dt>原始單位</dt><dd>股;元（換算：none）；入庫單位：volume=股;amount=新台幣元</dd>
+    
+    <dt>彙總算式</dt><dd><code>count(*)</code> ＝ <strong data-agg>4</strong></dd>
+  </dl>
+  
+</section>
+
+
+<section class="card"><h2>原始列 <small>4 列</small></h2>
+  <div class="table-wrap"><table class="data">
+    <thead><tr><th>symbol</th><th>market</th><th>price_date</th><th>open_twd</th><th>high_twd</th><th>low_twd</th><th>close_twd</th><th>change_twd</th><th>change_sign</th><th>volume_shares</th><th>amount_twd</th><th>transactions</th><th>avg_twd</th><th>pe_ratio</th><th>raw_volume</th><th>raw_amount</th><th>source</th><th>announced_at</th><th>announced_at_note</th><th>fetched_at</th><th>unit</th><th>source_unit</th><th>unit_conversion</th><th>version</th><th>is_current</th><th>checksum</th><th>change</th><th>is_halted</th><th>source_table</th></tr></thead>
+    <tbody><tr><td><a href="q_price_date-2026-11-09_symbol-2412_table-daily_prices.html">2412</a></td><td>TWSE</td><td>2026-11-09</td><td>162.0</td><td>163.0</td><td>158.0</td><td>159.0</td><td>-4.5</td><td>-</td><td>24349598</td><td>3889052948</td><td>14797</td><td>—</td><td>—</td><td>24,349,598</td><td>3,889,052,948</td><td>https://www.twse.com.tw/exchangeReport/STOCK_DAY?response=json&amp;date=20261101&amp;stockNo=2412</td><td>—</td><td>來源無公告時間</td><td>2026-11-10T05:31:15+08:00</td><td>volume=股;amount=新台幣元</td><td>股;元</td><td>none</td><td>3</td><td>1</td><td>64ec9a3666ad0ab6c0558ccc728816381b11d02d</td><td>-4.5</td><td>0</td><td>STOCK_DAY</td></tr><tr><td><a href="q_price_date-2026-11-09_symbol-1216_table-daily_prices.html">1216</a></td><td>TWSE</td><td>2026-11-09</td><td>77.3</td><td>78.0</td><td>76.3</td><td>76.7</td><td>-0.1</td><td>-</td><td>17522945</td><td>1347701255</td><td>18816</td><td>—</td><td>—</td><td>17,522,945</td><td>1,347,701,255</td><td>https://www.twse.com.tw/exchangeReport/STOCK_DAY?response=json&amp;date=20261101&amp;stockNo=1216</td><td>—</td><td>來源無公告時間</td><td>2026-11-10T05:32:22+08:00</td><td>volume=股;amount=新台幣元</td><td>股;元</td><td>none</td><td>2</td><td>1</td><td>ca79dc4a3a221d47a9affc6458da8162d8cef625</td><td>-0.1</td><td>0</td><td>STOCK_DAY</td></tr><tr><td><a href="q_price_date-2026-11-09_symbol-2603_table-daily_prices.html">2603</a></td><td>TWSE</td><td>2026-11-09</td><td>244.5</td><td>249.5</td><td>243.5</td><td>245.5</td><td>-1.0</td><td>-</td><td>10186147</td><td>2509152270</td><td>8799</td><td>—</td><td>—</td><td>10,186,147</td><td>2,509,152,270</td><td>https://www.twse.com.tw/exchangeReport/STOCK_DAY?response=json&amp;date=20261101&amp;stockNo=2603</td><td>—</td><td>來源無公告時間</td><td>2026-11-10T05:32:48+08:00</td><td>volume=股;amount=新台幣元</td><td>股;元</td><td>none</td><td>2</td><td>1</td><td>77cd079f3b95938287e98cbe0ee858523401b999</td><td>-1.0</td><td>0</td><td>STOCK_DAY</td></tr><tr><td><a href="q_price_date-2026-11-09_symbol-9910_table-daily_prices.html">9910</a></td><td>TWSE</td><td>2026-11-09</td><td>69.6</td><td>70.5</td><td>68.1</td><td>68.1</td><td>-1.5</td><td>-</td><td>1157865</td><td>79642430</td><td>2127</td><td>—</td><td>—</td><td>1,157,865</td><td>79,642,430</td><td>https://www.twse.com.tw/exchangeReport/STOCK_DAY?response=json&amp;date=20261101&amp;stockNo=9910</td><td>—</td><td>來源無公告時間</td><td>2026-11-10T05:33:21+08:00</td><td>volume=股;amount=新台幣元</td><td>股;元</td><td>none</td><td>2</td><td>1</td><td>ffee17c0cb26d63661b7a0cc0e48847e3de52c49</td><td>-1.5</td><td>0</td><td>STOCK_DAY</td></tr></tbody>
+  </table></div>
+</section>
+
+
+</main>
+<footer class="site">
+  <div class="wrap foot-grid">
+    <div><h2>資料來源與更新</h2><p>行情：證交所、櫃買中心；月營收、財報、重大訊息：公開資訊觀測站。每交易日 18:00 盤後更新、22:00 補查公告與營收。時間皆為台北時間（UTC+8）。<a href="../status/">各來源狀態 →</a></p></div>
+    <div><h2>單位</h2><p>價格：新台幣元；金額：億元（新台幣）；成交量：股；指數：點；漲跌：▲ 上漲（紅）、▼ 下跌（綠）、■ 平盤，並加 +／− 號。</p></div>
+    <div><h2>聲明</h2><p>本站僅供研究參考，不構成投資建議；技術訊號不代表獲利保證；本站不提供下單功能。數值由程式計算，文字說明不推論未經證實的原因。</p>
+      <p class="muted">圖表：<a href="https://www.tradingview.com/" rel="noopener">TradingView Lightweight Charts™</a>（Apache-2.0，本地檔案）。</p></div>
+  </div>
+</footer>
+<script src="../static/js/site.js" defer></script>
+
+<script src="../static/js/static.js" defer></script>
+</body>
+</html>

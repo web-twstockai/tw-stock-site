@@ -1,0 +1,390 @@
+<!doctype html>
+<html data-static="1" lang="zh-Hant-TW">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>月營收追蹤｜台股盤後研究</title>
+<link rel="icon" href="data:,">
+<link rel="stylesheet" href="../static/css/site.css">
+<script>document.documentElement.classList.add('js')</script>
+<meta name="site-root" content="../">
+<link rel="stylesheet" href="../static/css/static.css">
+</head>
+<body>
+<a class="skip" href="#main">跳到主要內容</a>
+
+<header class="site">
+  <div class="wrap mast">
+    <a class="brand" href="../" aria-label="台股盤後研究 首頁"><span class="seal" aria-hidden="true">盤後</span><span class="brand-name">台股盤後研究</span></a>
+    <nav class="mainnav" aria-label="主要功能">
+      <a href="../">盤後總覽</a>
+      <a href="../screener/">條件選股</a>
+      <a href="./" class="on" aria-current="page">營收</a>
+      <a href="../status/">資料狀態</a>
+    </nav>
+    <form class="search" action="#" data-static-path="/search" method="get" role="search">
+      <label class="sr" for="site-q">搜尋股票代號或名稱（按 / 快速聚焦）</label>
+      <input id="site-q" type="search" name="q" list="stocklist" placeholder="代號或名稱，如 2330、台積" value="" autocomplete="off">
+      <kbd class="kbd" aria-hidden="true" title="按 / 聚焦搜尋">/</kbd>
+      <datalist id="stocklist"></datalist>
+      <button type="submit">前往個股</button>
+    </form>
+  </div><div class="wrap meta-bar" role="status" aria-label="資料更新狀態">
+    <span class="mi">資料日期 <strong data-date="2026-11-09">2026-11-09</strong></span>
+    <span class="mi">更新 <span class="pill pill-warn">◐ 部分成功</span></span>
+    <span class="mi src-ok">行情 <span class="dot ok" aria-hidden="true"></span>正常</span>
+    <span class="mi src-ok">月營收 <span class="dot ok" aria-hidden="true"></span>正常</span>
+    <span class="mi src-ok">重大訊息 <span class="dot ok" aria-hidden="true"></span>正常</span>
+    <span class="mi muted">最後更新 2026-11-10 07:45（台北）</span>
+    
+    <a class="mi status-link" href="../status/">資料狀態 →</a>
+  </div>
+</header>
+<main id="main" class="wrap">
+<div class="static-banner" role="note" data-testid="static-banner"><strong>公開靜態版</strong><span>資料日期 <b>2026-11-09</b>｜最近一次更新工作完成 2026-11-10 07:45（台北時間）｜本頁產生於 2026-11-10 10:21（台北時間）。每交易日 18:00、每日 22:00 更新後重新產生；資料全部來自證交所、櫃買中心、公開資訊觀測站。</span></div>
+
+<h1>月營收追蹤 <small>2026-05</small></h1>
+<p class="basis-note" data-testid="revenue-universe">追蹤範圍：30 檔驗證樣本｜目前僅收錄 30 檔驗證樣本，數字不代表全市場。</p>
+
+<form class="rev-filter" method="get" action="../revenue/index.html" data-static-path="/revenue" data-testid="revenue-filter">
+  <label class="f-field"><span>營收月份</span> <select name="month"><option value="2026-10">2026-10（預設）</option><option value="2026-09">2026-09</option><option value="2026-08">2026-08</option><option value="2026-07">2026-07</option><option value="2026-06">2026-06</option><option value="2026-05" selected>2026-05</option><option value="2026-04">2026-04</option><option value="2026-03">2026-03</option><option value="2026-02">2026-02</option><option value="2026-01">2026-01</option><option value="2025-12">2025-12</option><option value="2025-11">2025-11</option><option value="2025-10">2025-10</option><option value="2025-09">2025-09</option><option value="2025-08">2025-08</option><option value="2025-07">2025-07</option><option value="2025-06">2025-06</option><option value="2025-05">2025-05</option><option value="2025-04">2025-04</option><option value="2025-03">2025-03</option><option value="2025-02">2025-02</option><option value="2025-01">2025-01</option><option value="2024-12">2024-12</option><option value="2024-11">2024-11</option><option value="2024-10">2024-10</option><option value="2024-09">2024-09</option><option value="2024-08">2024-08</option><option value="2024-07">2024-07</option><option value="2024-06">2024-06</option><option value="2024-05">2024-05</option><option value="2024-04">2024-04</option><option value="2024-03">2024-03</option><option value="2024-02">2024-02</option><option value="2024-01">2024-01</option><option value="2023-12">2023-12</option><option value="2023-11">2023-11</option></select></label>
+  <label class="f-field"><span>市場</span> <select name="market"><option value="all">全部</option><option value="TWSE" selected>上市</option><option value="TPEx">上櫃</option></select></label>
+  <label class="f-check"><input type="checkbox" name="high" value="1"> 只看近 12 個月新高</label>
+  <input type="hidden" name="sort" value="symbol">
+  <button type="submit" class="primary">套用</button>
+  <a class="btn" href="../csv/revenue__market-TWSE_month-2026-05_sort-symbol.csv" data-testid="revenue-csv">匯出 CSV<span class="f-sub">（目前篩選與排序）</span></a>
+</form>
+
+
+<p class="rev-count" data-testid="revenue-count">2026-05 已有營收 <span class="nw"><a href="../source/q_agg-count_revenue_month-2026-05_table-monthly_revenues_universe-1.html"><b>30</b></a>／30 檔</span><span class="sep" aria-hidden="true">｜</span><span class="nw">近 12 個月新高 <a href="q_high-1_market-TWSE_month-2026-05_sort-symbol.html"><b>7</b></a> 檔</span></p>
+
+
+<p class="state state-nondefault rev-filtered" data-state="revenue-filtered"><span aria-hidden="true">⚑</span> 篩選中：市場＝上市，共 20 列。<a href="q_month-2026-05.html">清除篩選</a></p>
+
+
+
+<section class="card" id="have" aria-labelledby="have-h">
+  <h2 id="have-h">已有營收（20 列）</h2>
+  
+  <div class="table-wrap sticky-first rev-wrap" tabindex="0" role="region" aria-label="已有營收表，可左右捲動"><table class="data rev-table" data-testid="revenue-table">
+    <thead><tr>
+      
+      <th aria-sort="ascending"><a data-static-off="1" title="公開靜態版未提供此頁">代號 ↑</a></th><th>名稱</th><th><a data-static-off="1" title="公開靜態版未提供此頁">市場</a></th><th class="r"><a data-static-off="1" title="公開靜態版未提供此頁">營收</a></th><th class="r"><a data-static-off="1" title="公開靜態版未提供此頁">去年同月營收</a></th><th class="r"><a data-static-off="1" title="公開靜態版未提供此頁">月增率</a></th><th class="r"><a data-static-off="1" title="公開靜態版未提供此頁">年增率</a></th><th class="r"><a data-static-off="1" title="公開靜態版未提供此頁">累計營收</a></th><th class="r"><a data-static-off="1" title="公開靜態版未提供此頁">累計年增率</a></th><th><a data-static-off="1" title="公開靜態版未提供此頁">近 12 個月新高</a></th><th>公司差異說明</th>
+    </tr></thead>
+    <tbody>
+    
+    <tr id="row-1101" data-high="false">
+      <td class="stock-cell rev-code"><a href="../stock/1101/#revenue" title="1101 台泥"><span class="cd">1101</span></a></td>
+      <td class="rev-name">台泥</td>
+      <td>上市</td>
+      <td class="r"><a class="v vlink" href="../source/q_revenue_month-2026-05_symbol-1101_table-monthly_revenues.html" data-src-link="1">126.12 億<span class="tip" role="tooltip">來源：monthly_revenues<br>資料日期：2026-05<br>來源表：monthly_revenues<br>主鍵：symbol=1101, revenue_month=2026-05<br>單位：新台幣元<br>原值：12,612,013,000<br>點擊開啟來源列 →</span></a></td>
+      <td class="r"><a class="v vlink" href="../source/q_revenue_month-2026-05_symbol-1101_table-monthly_revenues.html" data-src-link="1">126.19 億<span class="tip" role="tooltip">來源：monthly_revenues<br>資料日期：2026-05<br>來源表：monthly_revenues<br>主鍵：symbol=1101, revenue_month=2026-05<br>單位：新台幣元<br>原值：12,619,495,000<br>點擊開啟來源列 →</span></a></td>
+      <td class="r"><span class="chg up"><span class="arr" aria-hidden="true">▲</span><span class="sr">上漲</span><a class="v vlink" href="../source/q_revenue_month-2026-05_symbol-1101_table-monthly_revenues.html" data-src-link="1">+3.26%<span class="tip" role="tooltip">來源：monthly_revenues<br>資料日期：2026-05<br>來源表：monthly_revenues<br>主鍵：symbol=1101, revenue_month=2026-05<br>單位：%<br>註：來源值（monthly_revenues.mom_pct）<br>點擊開啟來源列 →</span></a></span></td>
+      <td class="r" data-yoy="ok"><span class="chg down"><span class="arr" aria-hidden="true">▼</span><span class="sr">下跌</span><a class="v vlink" href="../source/q_revenue_month-2026-05_symbol-1101_table-monthly_revenues.html" data-src-link="1">−0.06%<span class="tip" role="tooltip">來源：monthly_revenues<br>資料日期：2026-05<br>來源表：monthly_revenues<br>主鍵：symbol=1101, revenue_month=2026-05<br>單位：%<br>註：analysis rev_yoy-v1；來源值 -0.05<br>點擊開啟來源列 →</span></a></span></td>
+      <td class="r"><a class="v vlink" href="../source/q_revenue_month-2026-05_symbol-1101_table-monthly_revenues.html" data-src-link="1">580.85 億<span class="tip" role="tooltip">來源：monthly_revenues<br>資料日期：2026-05<br>來源表：monthly_revenues<br>主鍵：symbol=1101, revenue_month=2026-05<br>單位：新台幣元<br>原值：58,084,626,000<br>點擊開啟來源列 →</span></a></td>
+      <td class="r"><span class="chg down"><span class="arr" aria-hidden="true">▼</span><span class="sr">下跌</span><a class="v vlink" href="../source/q_revenue_month-2026-05_symbol-1101_table-monthly_revenues.html" data-src-link="1">−3.63%<span class="tip" role="tooltip">來源：monthly_revenues<br>資料日期：2026-05<br>來源表：monthly_revenues<br>主鍵：symbol=1101, revenue_month=2026-05<br>單位：%<br>註：來源值（monthly_revenues.cumulative_yoy_pct）<br>點擊開啟來源列 →</span></a></span></td>
+      <td data-testid="high-1101"><span class="muted" title="">—<span class="sr">（未創新高：）</span></span></td>
+      <td class="rev-remark">—</td>
+    </tr>
+    
+    <tr id="row-1216" data-high="false">
+      <td class="stock-cell rev-code"><a href="../stock/1216/#revenue" title="1216 統一"><span class="cd">1216</span></a></td>
+      <td class="rev-name">統一</td>
+      <td>上市</td>
+      <td class="r"><a class="v vlink" href="../source/q_revenue_month-2026-05_symbol-1216_table-monthly_revenues.html" data-src-link="1">591.80 億<span class="tip" role="tooltip">來源：monthly_revenues<br>資料日期：2026-05<br>來源表：monthly_revenues<br>主鍵：symbol=1216, revenue_month=2026-05<br>單位：新台幣元<br>原值：59,180,335,000<br>點擊開啟來源列 →</span></a></td>
+      <td class="r"><a class="v vlink" href="../source/q_revenue_month-2026-05_symbol-1216_table-monthly_revenues.html" data-src-link="1">576.26 億<span class="tip" role="tooltip">來源：monthly_revenues<br>資料日期：2026-05<br>來源表：monthly_revenues<br>主鍵：symbol=1216, revenue_month=2026-05<br>單位：新台幣元<br>原值：57,625,519,000<br>點擊開啟來源列 →</span></a></td>
+      <td class="r"><span class="chg up"><span class="arr" aria-hidden="true">▲</span><span class="sr">上漲</span><a class="v vlink" href="../source/q_revenue_month-2026-05_symbol-1216_table-monthly_revenues.html" data-src-link="1">+2.95%<span class="tip" role="tooltip">來源：monthly_revenues<br>資料日期：2026-05<br>來源表：monthly_revenues<br>主鍵：symbol=1216, revenue_month=2026-05<br>單位：%<br>註：來源值（monthly_revenues.mom_pct）<br>點擊開啟來源列 →</span></a></span></td>
+      <td class="r" data-yoy="ok"><span class="chg up"><span class="arr" aria-hidden="true">▲</span><span class="sr">上漲</span><a class="v vlink" href="../source/q_revenue_month-2026-05_symbol-1216_table-monthly_revenues.html" data-src-link="1">+2.70%<span class="tip" role="tooltip">來源：monthly_revenues<br>資料日期：2026-05<br>來源表：monthly_revenues<br>主鍵：symbol=1216, revenue_month=2026-05<br>單位：%<br>註：analysis rev_yoy-v1；來源值 2.69<br>點擊開啟來源列 →</span></a></span></td>
+      <td class="r"><a class="v vlink" href="../source/q_revenue_month-2026-05_symbol-1216_table-monthly_revenues.html" data-src-link="1">2,916.77 億<span class="tip" role="tooltip">來源：monthly_revenues<br>資料日期：2026-05<br>來源表：monthly_revenues<br>主鍵：symbol=1216, revenue_month=2026-05<br>單位：新台幣元<br>原值：291,676,878,000<br>點擊開啟來源列 →</span></a></td>
+      <td class="r"><span class="chg up"><span class="arr" aria-hidden="true">▲</span><span class="sr">上漲</span><a class="v vlink" href="../source/q_revenue_month-2026-05_symbol-1216_table-monthly_revenues.html" data-src-link="1">+3.02%<span class="tip" role="tooltip">來源：monthly_revenues<br>資料日期：2026-05<br>來源表：monthly_revenues<br>主鍵：symbol=1216, revenue_month=2026-05<br>單位：%<br>註：來源值（monthly_revenues.cumulative_yoy_pct）<br>點擊開啟來源列 →</span></a></span></td>
+      <td data-testid="high-1216"><span class="muted" title="">—<span class="sr">（未創新高：）</span></span></td>
+      <td class="rev-remark">—</td>
+    </tr>
+    
+    <tr id="row-1301" data-high="false">
+      <td class="stock-cell rev-code"><a href="../stock/1301/#revenue" title="1301 台塑"><span class="cd">1301</span></a></td>
+      <td class="rev-name">台塑</td>
+      <td>上市</td>
+      <td class="r"><a class="v vlink" href="../source/q_revenue_month-2026-05_symbol-1301_table-monthly_revenues.html" data-src-link="1">149.51 億<span class="tip" role="tooltip">來源：monthly_revenues<br>資料日期：2026-05<br>來源表：monthly_revenues<br>主鍵：symbol=1301, revenue_month=2026-05<br>單位：新台幣元<br>原值：14,951,422,000<br>點擊開啟來源列 →</span></a></td>
+      <td class="r"><a class="v vlink" href="../source/q_revenue_month-2026-05_symbol-1301_table-monthly_revenues.html" data-src-link="1">148.52 億<span class="tip" role="tooltip">來源：monthly_revenues<br>資料日期：2026-05<br>來源表：monthly_revenues<br>主鍵：symbol=1301, revenue_month=2026-05<br>單位：新台幣元<br>原值：14,852,023,000<br>點擊開啟來源列 →</span></a></td>
+      <td class="r"><span class="chg down"><span class="arr" aria-hidden="true">▼</span><span class="sr">下跌</span><a class="v vlink" href="../source/q_revenue_month-2026-05_symbol-1301_table-monthly_revenues.html" data-src-link="1">−18.41%<span class="tip" role="tooltip">來源：monthly_revenues<br>資料日期：2026-05<br>來源表：monthly_revenues<br>主鍵：symbol=1301, revenue_month=2026-05<br>單位：%<br>註：來源值（monthly_revenues.mom_pct）<br>點擊開啟來源列 →</span></a></span></td>
+      <td class="r" data-yoy="ok"><span class="chg up"><span class="arr" aria-hidden="true">▲</span><span class="sr">上漲</span><a class="v vlink" href="../source/q_revenue_month-2026-05_symbol-1301_table-monthly_revenues.html" data-src-link="1">+0.67%<span class="tip" role="tooltip">來源：monthly_revenues<br>資料日期：2026-05<br>來源表：monthly_revenues<br>主鍵：symbol=1301, revenue_month=2026-05<br>單位：%<br>註：analysis rev_yoy-v1；來源值 0.66<br>點擊開啟來源列 →</span></a></span></td>
+      <td class="r"><a class="v vlink" href="../source/q_revenue_month-2026-05_symbol-1301_table-monthly_revenues.html" data-src-link="1">752.63 億<span class="tip" role="tooltip">來源：monthly_revenues<br>資料日期：2026-05<br>來源表：monthly_revenues<br>主鍵：symbol=1301, revenue_month=2026-05<br>單位：新台幣元<br>原值：75,262,816,000<br>點擊開啟來源列 →</span></a></td>
+      <td class="r"><span class="chg down"><span class="arr" aria-hidden="true">▼</span><span class="sr">下跌</span><a class="v vlink" href="../source/q_revenue_month-2026-05_symbol-1301_table-monthly_revenues.html" data-src-link="1">−3.78%<span class="tip" role="tooltip">來源：monthly_revenues<br>資料日期：2026-05<br>來源表：monthly_revenues<br>主鍵：symbol=1301, revenue_month=2026-05<br>單位：%<br>註：來源值（monthly_revenues.cumulative_yoy_pct）<br>點擊開啟來源列 →</span></a></span></td>
+      <td data-testid="high-1301"><span class="muted" title="">—<span class="sr">（未創新高：）</span></span></td>
+      <td class="rev-remark">—</td>
+    </tr>
+    
+    <tr id="row-2002" data-high="false">
+      <td class="stock-cell rev-code"><a href="../stock/2002/#revenue" title="2002 中鋼"><span class="cd">2002</span></a></td>
+      <td class="rev-name">中鋼</td>
+      <td>上市</td>
+      <td class="r"><a class="v vlink" href="../source/q_revenue_month-2026-05_symbol-2002_table-monthly_revenues.html" data-src-link="1">299.55 億<span class="tip" role="tooltip">來源：monthly_revenues<br>資料日期：2026-05<br>來源表：monthly_revenues<br>主鍵：symbol=2002, revenue_month=2026-05<br>單位：新台幣元<br>原值：29,955,286,000<br>點擊開啟來源列 →</span></a></td>
+      <td class="r"><a class="v vlink" href="../source/q_revenue_month-2026-05_symbol-2002_table-monthly_revenues.html" data-src-link="1">293.15 億<span class="tip" role="tooltip">來源：monthly_revenues<br>資料日期：2026-05<br>來源表：monthly_revenues<br>主鍵：symbol=2002, revenue_month=2026-05<br>單位：新台幣元<br>原值：29,314,725,000<br>點擊開啟來源列 →</span></a></td>
+      <td class="r"><span class="chg down"><span class="arr" aria-hidden="true">▼</span><span class="sr">下跌</span><a class="v vlink" href="../source/q_revenue_month-2026-05_symbol-2002_table-monthly_revenues.html" data-src-link="1">−3.03%<span class="tip" role="tooltip">來源：monthly_revenues<br>資料日期：2026-05<br>來源表：monthly_revenues<br>主鍵：symbol=2002, revenue_month=2026-05<br>單位：%<br>註：來源值（monthly_revenues.mom_pct）<br>點擊開啟來源列 →</span></a></span></td>
+      <td class="r" data-yoy="ok"><span class="chg up"><span class="arr" aria-hidden="true">▲</span><span class="sr">上漲</span><a class="v vlink" href="../source/q_revenue_month-2026-05_symbol-2002_table-monthly_revenues.html" data-src-link="1">+2.19%<span class="tip" role="tooltip">來源：monthly_revenues<br>資料日期：2026-05<br>來源表：monthly_revenues<br>主鍵：symbol=2002, revenue_month=2026-05<br>單位：%<br>註：analysis rev_yoy-v1；來源值 2.18<br>點擊開啟來源列 →</span></a></span></td>
+      <td class="r"><a class="v vlink" href="../source/q_revenue_month-2026-05_symbol-2002_table-monthly_revenues.html" data-src-link="1">1,400.09 億<span class="tip" role="tooltip">來源：monthly_revenues<br>資料日期：2026-05<br>來源表：monthly_revenues<br>主鍵：symbol=2002, revenue_month=2026-05<br>單位：新台幣元<br>原值：140,008,603,000<br>點擊開啟來源列 →</span></a></td>
+      <td class="r"><span class="chg down"><span class="arr" aria-hidden="true">▼</span><span class="sr">下跌</span><a class="v vlink" href="../source/q_revenue_month-2026-05_symbol-2002_table-monthly_revenues.html" data-src-link="1">−1.90%<span class="tip" role="tooltip">來源：monthly_revenues<br>資料日期：2026-05<br>來源表：monthly_revenues<br>主鍵：symbol=2002, revenue_month=2026-05<br>單位：%<br>註：來源值（monthly_revenues.cumulative_yoy_pct）<br>點擊開啟來源列 →</span></a></span></td>
+      <td data-testid="high-2002"><span class="muted" title="">—<span class="sr">（未創新高：）</span></span></td>
+      <td class="rev-remark">—</td>
+    </tr>
+    
+    <tr id="row-2207" data-high="false">
+      <td class="stock-cell rev-code"><a href="../stock/2207/#revenue" title="2207 和泰車"><span class="cd">2207</span></a></td>
+      <td class="rev-name">和泰車</td>
+      <td>上市</td>
+      <td class="r"><a class="v vlink" href="../source/q_revenue_month-2026-05_symbol-2207_table-monthly_revenues.html" data-src-link="1">278.15 億<span class="tip" role="tooltip">來源：monthly_revenues<br>資料日期：2026-05<br>來源表：monthly_revenues<br>主鍵：symbol=2207, revenue_month=2026-05<br>單位：新台幣元<br>原值：27,815,281,000<br>點擊開啟來源列 →</span></a></td>
+      <td class="r"><a class="v vlink" href="../source/q_revenue_month-2026-05_symbol-2207_table-monthly_revenues.html" data-src-link="1">245.41 億<span class="tip" role="tooltip">來源：monthly_revenues<br>資料日期：2026-05<br>來源表：monthly_revenues<br>主鍵：symbol=2207, revenue_month=2026-05<br>單位：新台幣元<br>原值：24,540,649,000<br>點擊開啟來源列 →</span></a></td>
+      <td class="r"><span class="chg down"><span class="arr" aria-hidden="true">▼</span><span class="sr">下跌</span><a class="v vlink" href="../source/q_revenue_month-2026-05_symbol-2207_table-monthly_revenues.html" data-src-link="1">−7.77%<span class="tip" role="tooltip">來源：monthly_revenues<br>資料日期：2026-05<br>來源表：monthly_revenues<br>主鍵：symbol=2207, revenue_month=2026-05<br>單位：%<br>註：來源值（monthly_revenues.mom_pct）<br>點擊開啟來源列 →</span></a></span></td>
+      <td class="r" data-yoy="ok"><span class="chg up"><span class="arr" aria-hidden="true">▲</span><span class="sr">上漲</span><a class="v vlink" href="../source/q_revenue_month-2026-05_symbol-2207_table-monthly_revenues.html" data-src-link="1">+13.34%<span class="tip" role="tooltip">來源：monthly_revenues<br>資料日期：2026-05<br>來源表：monthly_revenues<br>主鍵：symbol=2207, revenue_month=2026-05<br>單位：%<br>註：analysis rev_yoy-v1；來源值 13.34<br>點擊開啟來源列 →</span></a></span></td>
+      <td class="r"><a class="v vlink" href="../source/q_revenue_month-2026-05_symbol-2207_table-monthly_revenues.html" data-src-link="1">1,285.97 億<span class="tip" role="tooltip">來源：monthly_revenues<br>資料日期：2026-05<br>來源表：monthly_revenues<br>主鍵：symbol=2207, revenue_month=2026-05<br>單位：新台幣元<br>原值：128,596,503,000<br>點擊開啟來源列 →</span></a></td>
+      <td class="r"><span class="chg up"><span class="arr" aria-hidden="true">▲</span><span class="sr">上漲</span><a class="v vlink" href="../source/q_revenue_month-2026-05_symbol-2207_table-monthly_revenues.html" data-src-link="1">+7.30%<span class="tip" role="tooltip">來源：monthly_revenues<br>資料日期：2026-05<br>來源表：monthly_revenues<br>主鍵：symbol=2207, revenue_month=2026-05<br>單位：%<br>註：來源值（monthly_revenues.cumulative_yoy_pct）<br>點擊開啟來源列 →</span></a></span></td>
+      <td data-testid="high-2207"><span class="muted" title="">—<span class="sr">（未創新高：）</span></span></td>
+      <td class="rev-remark">—</td>
+    </tr>
+    
+    <tr id="row-2308" data-high="false">
+      <td class="stock-cell rev-code"><a href="../stock/2308/#revenue" title="2308 台達電"><span class="cd">2308</span></a></td>
+      <td class="rev-name">台達電</td>
+      <td>上市</td>
+      <td class="r"><a class="v vlink" href="../source/q_revenue_month-2026-05_symbol-2308_table-monthly_revenues.html" data-src-link="1">589.62 億<span class="tip" role="tooltip">來源：monthly_revenues<br>資料日期：2026-05<br>來源表：monthly_revenues<br>主鍵：symbol=2308, revenue_month=2026-05<br>單位：新台幣元<br>原值：58,961,817,000<br>點擊開啟來源列 →</span></a></td>
+      <td class="r"><a class="v vlink" href="../source/q_revenue_month-2026-05_symbol-2308_table-monthly_revenues.html" data-src-link="1">410.45 億<span class="tip" role="tooltip">來源：monthly_revenues<br>資料日期：2026-05<br>來源表：monthly_revenues<br>主鍵：symbol=2308, revenue_month=2026-05<br>單位：新台幣元<br>原值：41,044,766,000<br>點擊開啟來源列 →</span></a></td>
+      <td class="r"><span class="chg up"><span class="arr" aria-hidden="true">▲</span><span class="sr">上漲</span><a class="v vlink" href="../source/q_revenue_month-2026-05_symbol-2308_table-monthly_revenues.html" data-src-link="1">+0.46%<span class="tip" role="tooltip">來源：monthly_revenues<br>資料日期：2026-05<br>來源表：monthly_revenues<br>主鍵：symbol=2308, revenue_month=2026-05<br>單位：%<br>註：來源值（monthly_revenues.mom_pct）<br>點擊開啟來源列 →</span></a></span></td>
+      <td class="r" data-yoy="ok"><span class="chg up"><span class="arr" aria-hidden="true">▲</span><span class="sr">上漲</span><a class="v vlink" href="../source/q_revenue_month-2026-05_symbol-2308_table-monthly_revenues.html" data-src-link="1">+43.65%<span class="tip" role="tooltip">來源：monthly_revenues<br>資料日期：2026-05<br>來源表：monthly_revenues<br>主鍵：symbol=2308, revenue_month=2026-05<br>單位：%<br>註：analysis rev_yoy-v1；來源值 43.65<br>點擊開啟來源列 →</span></a></span></td>
+      <td class="r"><a class="v vlink" href="../source/q_revenue_month-2026-05_symbol-2308_table-monthly_revenues.html" data-src-link="1">2,770.06 億<span class="tip" role="tooltip">來源：monthly_revenues<br>資料日期：2026-05<br>來源表：monthly_revenues<br>主鍵：symbol=2308, revenue_month=2026-05<br>單位：新台幣元<br>原值：277,006,121,000<br>點擊開啟來源列 →</span></a></td>
+      <td class="r"><span class="chg up"><span class="arr" aria-hidden="true">▲</span><span class="sr">上漲</span><a class="v vlink" href="../source/q_revenue_month-2026-05_symbol-2308_table-monthly_revenues.html" data-src-link="1">+37.98%<span class="tip" role="tooltip">來源：monthly_revenues<br>資料日期：2026-05<br>來源表：monthly_revenues<br>主鍵：symbol=2308, revenue_month=2026-05<br>單位：%<br>註：來源值（monthly_revenues.cumulative_yoy_pct）<br>點擊開啟來源列 →</span></a></span></td>
+      <td data-testid="high-2308"><span class="muted" title="">—<span class="sr">（未創新高：）</span></span></td>
+      <td class="rev-remark">—</td>
+    </tr>
+    
+    <tr id="row-2317" data-high="false">
+      <td class="stock-cell rev-code"><a href="../stock/2317/#revenue" title="2317 鴻海"><span class="cd">2317</span></a></td>
+      <td class="rev-name">鴻海</td>
+      <td>上市</td>
+      <td class="r"><a class="v vlink" href="../source/q_revenue_month-2026-05_symbol-2317_table-monthly_revenues.html" data-src-link="1">8,594.09 億<span class="tip" role="tooltip">來源：monthly_revenues<br>資料日期：2026-05<br>來源表：monthly_revenues<br>主鍵：symbol=2317, revenue_month=2026-05<br>單位：新台幣元<br>原值：859,409,333,000<br>點擊開啟來源列 →</span></a></td>
+      <td class="r"><a class="v vlink" href="../source/q_revenue_month-2026-05_symbol-2317_table-monthly_revenues.html" data-src-link="1">6,157.45 億<span class="tip" role="tooltip">來源：monthly_revenues<br>資料日期：2026-05<br>來源表：monthly_revenues<br>主鍵：symbol=2317, revenue_month=2026-05<br>單位：新台幣元<br>原值：615,744,933,000<br>點擊開啟來源列 →</span></a></td>
+      <td class="r"><span class="chg up"><span class="arr" aria-hidden="true">▲</span><span class="sr">上漲</span><a class="v vlink" href="../source/q_revenue_month-2026-05_symbol-2317_table-monthly_revenues.html" data-src-link="1">+3.28%<span class="tip" role="tooltip">來源：monthly_revenues<br>資料日期：2026-05<br>來源表：monthly_revenues<br>主鍵：symbol=2317, revenue_month=2026-05<br>單位：%<br>註：來源值（monthly_revenues.mom_pct）<br>點擊開啟來源列 →</span></a></span></td>
+      <td class="r" data-yoy="ok"><span class="chg up"><span class="arr" aria-hidden="true">▲</span><span class="sr">上漲</span><a class="v vlink" href="../source/q_revenue_month-2026-05_symbol-2317_table-monthly_revenues.html" data-src-link="1">+39.57%<span class="tip" role="tooltip">來源：monthly_revenues<br>資料日期：2026-05<br>來源表：monthly_revenues<br>主鍵：symbol=2317, revenue_month=2026-05<br>單位：%<br>註：analysis rev_yoy-v1；來源值 39.57<br>點擊開啟來源列 →</span></a></span></td>
+      <td class="r"><a class="v vlink" href="../source/q_revenue_month-2026-05_symbol-2317_table-monthly_revenues.html" data-src-link="1">38,210.98 億<span class="tip" role="tooltip">來源：monthly_revenues<br>資料日期：2026-05<br>來源表：monthly_revenues<br>主鍵：symbol=2317, revenue_month=2026-05<br>單位：新台幣元<br>原值：3,821,097,773,000<br>點擊開啟來源列 →</span></a></td>
+      <td class="r"><span class="chg up"><span class="arr" aria-hidden="true">▲</span><span class="sr">上漲</span><a class="v vlink" href="../source/q_revenue_month-2026-05_symbol-2317_table-monthly_revenues.html" data-src-link="1">+31.79%<span class="tip" role="tooltip">來源：monthly_revenues<br>資料日期：2026-05<br>來源表：monthly_revenues<br>主鍵：symbol=2317, revenue_month=2026-05<br>單位：%<br>註：來源值（monthly_revenues.cumulative_yoy_pct）<br>點擊開啟來源列 →</span></a></span></td>
+      <td data-testid="high-2317"><span class="muted" title="">—<span class="sr">（未創新高：）</span></span></td>
+      <td class="rev-remark">—</td>
+    </tr>
+    
+    <tr id="row-2330" data-high="true">
+      <td class="stock-cell rev-code"><a href="../stock/2330/#revenue" title="2330 台積電"><span class="cd">2330</span></a></td>
+      <td class="rev-name">台積電</td>
+      <td>上市</td>
+      <td class="r"><a class="v vlink" href="../source/q_revenue_month-2026-05_symbol-2330_table-monthly_revenues.html" data-src-link="1">4,169.75 億<span class="tip" role="tooltip">來源：monthly_revenues<br>資料日期：2026-05<br>來源表：monthly_revenues<br>主鍵：symbol=2330, revenue_month=2026-05<br>單位：新台幣元<br>原值：416,975,163,000<br>點擊開啟來源列 →</span></a></td>
+      <td class="r"><a class="v vlink" href="../source/q_revenue_month-2026-05_symbol-2330_table-monthly_revenues.html" data-src-link="1">3,205.16 億<span class="tip" role="tooltip">來源：monthly_revenues<br>資料日期：2026-05<br>來源表：monthly_revenues<br>主鍵：symbol=2330, revenue_month=2026-05<br>單位：新台幣元<br>原值：320,515,951,000<br>點擊開啟來源列 →</span></a></td>
+      <td class="r"><span class="chg up"><span class="arr" aria-hidden="true">▲</span><span class="sr">上漲</span><a class="v vlink" href="../source/q_revenue_month-2026-05_symbol-2330_table-monthly_revenues.html" data-src-link="1">+1.52%<span class="tip" role="tooltip">來源：monthly_revenues<br>資料日期：2026-05<br>來源表：monthly_revenues<br>主鍵：symbol=2330, revenue_month=2026-05<br>單位：%<br>註：來源值（monthly_revenues.mom_pct）<br>點擊開啟來源列 →</span></a></span></td>
+      <td class="r" data-yoy="ok"><span class="chg up"><span class="arr" aria-hidden="true">▲</span><span class="sr">上漲</span><a class="v vlink" href="../source/q_revenue_month-2026-05_symbol-2330_table-monthly_revenues.html" data-src-link="1">+30.09%<span class="tip" role="tooltip">來源：monthly_revenues<br>資料日期：2026-05<br>來源表：monthly_revenues<br>主鍵：symbol=2330, revenue_month=2026-05<br>單位：%<br>註：analysis rev_yoy-v1；來源值 30.09<br>點擊開啟來源列 →</span></a></span></td>
+      <td class="r"><a class="v vlink" href="../source/q_revenue_month-2026-05_symbol-2330_table-monthly_revenues.html" data-src-link="1">19,618.04 億<span class="tip" role="tooltip">來源：monthly_revenues<br>資料日期：2026-05<br>來源表：monthly_revenues<br>主鍵：symbol=2330, revenue_month=2026-05<br>單位：新台幣元<br>原值：1,961,803,721,000<br>點擊開啟來源列 →</span></a></td>
+      <td class="r"><span class="chg up"><span class="arr" aria-hidden="true">▲</span><span class="sr">上漲</span><a class="v vlink" href="../source/q_revenue_month-2026-05_symbol-2330_table-monthly_revenues.html" data-src-link="1">+29.97%<span class="tip" role="tooltip">來源：monthly_revenues<br>資料日期：2026-05<br>來源表：monthly_revenues<br>主鍵：symbol=2330, revenue_month=2026-05<br>單位：%<br>註：來源值（monthly_revenues.cumulative_yoy_pct）<br>點擊開啟來源列 →</span></a></span></td>
+      <td data-testid="high-2330"><span class="badge st-high" tabindex="0"><span aria-hidden="true">★</span> 近 12 個月新高<span class="tip" role="tooltip">高於前 12 個月（2025-05～2026-04）最高值 415,191,699,000 元</span></span></td>
+      <td class="rev-remark">—</td>
+    </tr>
+    
+    <tr id="row-2357" data-high="false">
+      <td class="stock-cell rev-code"><a href="../stock/2357/#revenue" title="2357 華碩"><span class="cd">2357</span></a></td>
+      <td class="rev-name">華碩</td>
+      <td>上市</td>
+      <td class="r"><a class="v vlink" href="../source/q_revenue_month-2026-05_symbol-2357_table-monthly_revenues.html" data-src-link="1">690.94 億<span class="tip" role="tooltip">來源：monthly_revenues<br>資料日期：2026-05<br>來源表：monthly_revenues<br>主鍵：symbol=2357, revenue_month=2026-05<br>單位：新台幣元<br>原值：69,094,002,000<br>點擊開啟來源列 →</span></a></td>
+      <td class="r"><a class="v vlink" href="../source/q_revenue_month-2026-05_symbol-2357_table-monthly_revenues.html" data-src-link="1">632.16 億<span class="tip" role="tooltip">來源：monthly_revenues<br>資料日期：2026-05<br>來源表：monthly_revenues<br>主鍵：symbol=2357, revenue_month=2026-05<br>單位：新台幣元<br>原值：63,215,719,000<br>點擊開啟來源列 →</span></a></td>
+      <td class="r"><span class="chg down"><span class="arr" aria-hidden="true">▼</span><span class="sr">下跌</span><a class="v vlink" href="../source/q_revenue_month-2026-05_symbol-2357_table-monthly_revenues.html" data-src-link="1">−15.65%<span class="tip" role="tooltip">來源：monthly_revenues<br>資料日期：2026-05<br>來源表：monthly_revenues<br>主鍵：symbol=2357, revenue_month=2026-05<br>單位：%<br>註：來源值（monthly_revenues.mom_pct）<br>點擊開啟來源列 →</span></a></span></td>
+      <td class="r" data-yoy="ok"><span class="chg up"><span class="arr" aria-hidden="true">▲</span><span class="sr">上漲</span><a class="v vlink" href="../source/q_revenue_month-2026-05_symbol-2357_table-monthly_revenues.html" data-src-link="1">+9.30%<span class="tip" role="tooltip">來源：monthly_revenues<br>資料日期：2026-05<br>來源表：monthly_revenues<br>主鍵：symbol=2357, revenue_month=2026-05<br>單位：%<br>註：analysis rev_yoy-v1；來源值 9.29<br>點擊開啟來源列 →</span></a></span></td>
+      <td class="r"><a class="v vlink" href="../source/q_revenue_month-2026-05_symbol-2357_table-monthly_revenues.html" data-src-link="1">3,593.79 億<span class="tip" role="tooltip">來源：monthly_revenues<br>資料日期：2026-05<br>來源表：monthly_revenues<br>主鍵：symbol=2357, revenue_month=2026-05<br>單位：新台幣元<br>原值：359,379,228,000<br>點擊開啟來源列 →</span></a></td>
+      <td class="r"><span class="chg up"><span class="arr" aria-hidden="true">▲</span><span class="sr">上漲</span><a class="v vlink" href="../source/q_revenue_month-2026-05_symbol-2357_table-monthly_revenues.html" data-src-link="1">+34.53%<span class="tip" role="tooltip">來源：monthly_revenues<br>資料日期：2026-05<br>來源表：monthly_revenues<br>主鍵：symbol=2357, revenue_month=2026-05<br>單位：%<br>註：來源值（monthly_revenues.cumulative_yoy_pct）<br>點擊開啟來源列 →</span></a></span></td>
+      <td data-testid="high-2357"><span class="muted" title="">—<span class="sr">（未創新高：）</span></span></td>
+      <td class="rev-remark">—</td>
+    </tr>
+    
+    <tr id="row-2412" data-high="false">
+      <td class="stock-cell rev-code"><a href="../stock/2412/#revenue" title="2412 中華電"><span class="cd">2412</span></a></td>
+      <td class="rev-name">中華電</td>
+      <td>上市</td>
+      <td class="r"><a class="v vlink" href="../source/q_revenue_month-2026-05_symbol-2412_table-monthly_revenues.html" data-src-link="1">195.23 億<span class="tip" role="tooltip">來源：monthly_revenues<br>資料日期：2026-05<br>來源表：monthly_revenues<br>主鍵：symbol=2412, revenue_month=2026-05<br>單位：新台幣元<br>原值：19,523,164,000<br>點擊開啟來源列 →</span></a></td>
+      <td class="r"><a class="v vlink" href="../source/q_revenue_month-2026-05_symbol-2412_table-monthly_revenues.html" data-src-link="1">185.24 億<span class="tip" role="tooltip">來源：monthly_revenues<br>資料日期：2026-05<br>來源表：monthly_revenues<br>主鍵：symbol=2412, revenue_month=2026-05<br>單位：新台幣元<br>原值：18,524,239,000<br>點擊開啟來源列 →</span></a></td>
+      <td class="r"><span class="chg down"><span class="arr" aria-hidden="true">▼</span><span class="sr">下跌</span><a class="v vlink" href="../source/q_revenue_month-2026-05_symbol-2412_table-monthly_revenues.html" data-src-link="1">−4.75%<span class="tip" role="tooltip">來源：monthly_revenues<br>資料日期：2026-05<br>來源表：monthly_revenues<br>主鍵：symbol=2412, revenue_month=2026-05<br>單位：%<br>註：來源值（monthly_revenues.mom_pct）<br>點擊開啟來源列 →</span></a></span></td>
+      <td class="r" data-yoy="ok"><span class="chg up"><span class="arr" aria-hidden="true">▲</span><span class="sr">上漲</span><a class="v vlink" href="../source/q_revenue_month-2026-05_symbol-2412_table-monthly_revenues.html" data-src-link="1">+5.39%<span class="tip" role="tooltip">來源：monthly_revenues<br>資料日期：2026-05<br>來源表：monthly_revenues<br>主鍵：symbol=2412, revenue_month=2026-05<br>單位：%<br>註：analysis rev_yoy-v1；來源值 5.39<br>點擊開啟來源列 →</span></a></span></td>
+      <td class="r"><a class="v vlink" href="../source/q_revenue_month-2026-05_symbol-2412_table-monthly_revenues.html" data-src-link="1">1,000.09 億<span class="tip" role="tooltip">來源：monthly_revenues<br>資料日期：2026-05<br>來源表：monthly_revenues<br>主鍵：symbol=2412, revenue_month=2026-05<br>單位：新台幣元<br>原值：100,009,462,000<br>點擊開啟來源列 →</span></a></td>
+      <td class="r"><span class="chg up"><span class="arr" aria-hidden="true">▲</span><span class="sr">上漲</span><a class="v vlink" href="../source/q_revenue_month-2026-05_symbol-2412_table-monthly_revenues.html" data-src-link="1">+7.09%<span class="tip" role="tooltip">來源：monthly_revenues<br>資料日期：2026-05<br>來源表：monthly_revenues<br>主鍵：symbol=2412, revenue_month=2026-05<br>單位：%<br>註：來源值（monthly_revenues.cumulative_yoy_pct）<br>點擊開啟來源列 →</span></a></span></td>
+      <td data-testid="high-2412"><span class="muted" title="">—<span class="sr">（未創新高：）</span></span></td>
+      <td class="rev-remark">—</td>
+    </tr>
+    
+    <tr id="row-2454" data-high="false">
+      <td class="stock-cell rev-code"><a href="../stock/2454/#revenue" title="2454 聯發科"><span class="cd">2454</span></a></td>
+      <td class="rev-name">聯發科</td>
+      <td>上市</td>
+      <td class="r"><a class="v vlink" href="../source/q_revenue_month-2026-05_symbol-2454_table-monthly_revenues.html" data-src-link="1">474.34 億<span class="tip" role="tooltip">來源：monthly_revenues<br>資料日期：2026-05<br>來源表：monthly_revenues<br>主鍵：symbol=2454, revenue_month=2026-05<br>單位：新台幣元<br>原值：47,434,191,000<br>點擊開啟來源列 →</span></a></td>
+      <td class="r"><a class="v vlink" href="../source/q_revenue_month-2026-05_symbol-2454_table-monthly_revenues.html" data-src-link="1">451.81 億<span class="tip" role="tooltip">來源：monthly_revenues<br>資料日期：2026-05<br>來源表：monthly_revenues<br>主鍵：symbol=2454, revenue_month=2026-05<br>單位：新台幣元<br>原值：45,180,526,000<br>點擊開啟來源列 →</span></a></td>
+      <td class="r"><span class="chg up"><span class="arr" aria-hidden="true">▲</span><span class="sr">上漲</span><a class="v vlink" href="../source/q_revenue_month-2026-05_symbol-2454_table-monthly_revenues.html" data-src-link="1">+1.49%<span class="tip" role="tooltip">來源：monthly_revenues<br>資料日期：2026-05<br>來源表：monthly_revenues<br>主鍵：symbol=2454, revenue_month=2026-05<br>單位：%<br>註：來源值（monthly_revenues.mom_pct）<br>點擊開啟來源列 →</span></a></span></td>
+      <td class="r" data-yoy="ok"><span class="chg up"><span class="arr" aria-hidden="true">▲</span><span class="sr">上漲</span><a class="v vlink" href="../source/q_revenue_month-2026-05_symbol-2454_table-monthly_revenues.html" data-src-link="1">+4.99%<span class="tip" role="tooltip">來源：monthly_revenues<br>資料日期：2026-05<br>來源表：monthly_revenues<br>主鍵：symbol=2454, revenue_month=2026-05<br>單位：%<br>註：analysis rev_yoy-v1；來源值 4.98<br>點擊開啟來源列 →</span></a></span></td>
+      <td class="r"><a class="v vlink" href="../source/q_revenue_month-2026-05_symbol-2454_table-monthly_revenues.html" data-src-link="1">2,433.21 億<span class="tip" role="tooltip">來源：monthly_revenues<br>資料日期：2026-05<br>來源表：monthly_revenues<br>主鍵：symbol=2454, revenue_month=2026-05<br>單位：新台幣元<br>原值：243,321,365,000<br>點擊開啟來源列 →</span></a></td>
+      <td class="r"><span class="chg down"><span class="arr" aria-hidden="true">▼</span><span class="sr">下跌</span><a class="v vlink" href="../source/q_revenue_month-2026-05_symbol-2454_table-monthly_revenues.html" data-src-link="1">−1.58%<span class="tip" role="tooltip">來源：monthly_revenues<br>資料日期：2026-05<br>來源表：monthly_revenues<br>主鍵：symbol=2454, revenue_month=2026-05<br>單位：%<br>註：來源值（monthly_revenues.cumulative_yoy_pct）<br>點擊開啟來源列 →</span></a></span></td>
+      <td data-testid="high-2454"><span class="muted" title="">—<span class="sr">（未創新高：）</span></span></td>
+      <td class="rev-remark"><details><summary>展開</summary>海外子公司之營收係以當月平均匯率換算之</details></td>
+    </tr>
+    
+    <tr id="row-2603" data-high="true">
+      <td class="stock-cell rev-code"><a href="../stock/2603/#revenue" title="2603 長榮"><span class="cd">2603</span></a></td>
+      <td class="rev-name">長榮</td>
+      <td>上市</td>
+      <td class="r"><a class="v vlink" href="../source/q_revenue_month-2026-05_symbol-2603_table-monthly_revenues.html" data-src-link="1">346.56 億<span class="tip" role="tooltip">來源：monthly_revenues<br>資料日期：2026-05<br>來源表：monthly_revenues<br>主鍵：symbol=2603, revenue_month=2026-05<br>單位：新台幣元<br>原值：34,656,227,000<br>點擊開啟來源列 →</span></a></td>
+      <td class="r"><a class="v vlink" href="../source/q_revenue_month-2026-05_symbol-2603_table-monthly_revenues.html" data-src-link="1">263.72 億<span class="tip" role="tooltip">來源：monthly_revenues<br>資料日期：2026-05<br>來源表：monthly_revenues<br>主鍵：symbol=2603, revenue_month=2026-05<br>單位：新台幣元<br>原值：26,372,182,000<br>點擊開啟來源列 →</span></a></td>
+      <td class="r"><span class="chg up"><span class="arr" aria-hidden="true">▲</span><span class="sr">上漲</span><a class="v vlink" href="../source/q_revenue_month-2026-05_symbol-2603_table-monthly_revenues.html" data-src-link="1">+10.51%<span class="tip" role="tooltip">來源：monthly_revenues<br>資料日期：2026-05<br>來源表：monthly_revenues<br>主鍵：symbol=2603, revenue_month=2026-05<br>單位：%<br>註：來源值（monthly_revenues.mom_pct）<br>點擊開啟來源列 →</span></a></span></td>
+      <td class="r" data-yoy="ok"><span class="chg up"><span class="arr" aria-hidden="true">▲</span><span class="sr">上漲</span><a class="v vlink" href="../source/q_revenue_month-2026-05_symbol-2603_table-monthly_revenues.html" data-src-link="1">+31.41%<span class="tip" role="tooltip">來源：monthly_revenues<br>資料日期：2026-05<br>來源表：monthly_revenues<br>主鍵：symbol=2603, revenue_month=2026-05<br>單位：%<br>註：analysis rev_yoy-v1；來源值 31.41<br>點擊開啟來源列 →</span></a></span></td>
+      <td class="r"><a class="v vlink" href="../source/q_revenue_month-2026-05_symbol-2603_table-monthly_revenues.html" data-src-link="1">1,525.27 億<span class="tip" role="tooltip">來源：monthly_revenues<br>資料日期：2026-05<br>來源表：monthly_revenues<br>主鍵：symbol=2603, revenue_month=2026-05<br>單位：新台幣元<br>原值：152,526,951,000<br>點擊開啟來源列 →</span></a></td>
+      <td class="r"><span class="chg down"><span class="arr" aria-hidden="true">▼</span><span class="sr">下跌</span><a class="v vlink" href="../source/q_revenue_month-2026-05_symbol-2603_table-monthly_revenues.html" data-src-link="1">−8.30%<span class="tip" role="tooltip">來源：monthly_revenues<br>資料日期：2026-05<br>來源表：monthly_revenues<br>主鍵：symbol=2603, revenue_month=2026-05<br>單位：%<br>註：來源值（monthly_revenues.cumulative_yoy_pct）<br>點擊開啟來源列 →</span></a></span></td>
+      <td data-testid="high-2603"><span class="badge st-high" tabindex="0"><span aria-hidden="true">★</span> 近 12 個月新高<span class="tip" role="tooltip">高於前 12 個月（2025-05～2026-04）最高值 33,605,171,000 元</span></span></td>
+      <td class="rev-remark">—</td>
+    </tr>
+    
+    <tr id="row-2801" data-high="false">
+      <td class="stock-cell rev-code"><a href="../stock/2801/#revenue" title="2801 彰銀"><span class="cd">2801</span></a></td>
+      <td class="rev-name">彰銀<a class="fn" href="#fin-note" title="金融業註記">※</a></td>
+      <td>上市</td>
+      <td class="r"><a class="v vlink" href="../source/q_revenue_month-2026-05_symbol-2801_table-monthly_revenues.html" data-src-link="1">44.30 億<span class="tip" role="tooltip">來源：monthly_revenues<br>資料日期：2026-05<br>來源表：monthly_revenues<br>主鍵：symbol=2801, revenue_month=2026-05<br>單位：新台幣元<br>原值：4,429,838,000<br>點擊開啟來源列 →</span></a></td>
+      <td class="r"><a class="v vlink" href="../source/q_revenue_month-2026-05_symbol-2801_table-monthly_revenues.html" data-src-link="1">35.55 億<span class="tip" role="tooltip">來源：monthly_revenues<br>資料日期：2026-05<br>來源表：monthly_revenues<br>主鍵：symbol=2801, revenue_month=2026-05<br>單位：新台幣元<br>原值：3,555,455,000<br>點擊開啟來源列 →</span></a></td>
+      <td class="r"><span class="chg up"><span class="arr" aria-hidden="true">▲</span><span class="sr">上漲</span><a class="v vlink" href="../source/q_revenue_month-2026-05_symbol-2801_table-monthly_revenues.html" data-src-link="1">+6.02%<span class="tip" role="tooltip">來源：monthly_revenues<br>資料日期：2026-05<br>來源表：monthly_revenues<br>主鍵：symbol=2801, revenue_month=2026-05<br>單位：%<br>註：來源值（monthly_revenues.mom_pct）<br>點擊開啟來源列 →</span></a></span></td>
+      <td class="r" data-yoy="ok"><span class="chg up"><span class="arr" aria-hidden="true">▲</span><span class="sr">上漲</span><a class="v vlink" href="../source/q_revenue_month-2026-05_symbol-2801_table-monthly_revenues.html" data-src-link="1">+24.59%<span class="tip" role="tooltip">來源：monthly_revenues<br>資料日期：2026-05<br>來源表：monthly_revenues<br>主鍵：symbol=2801, revenue_month=2026-05<br>單位：%<br>註：analysis rev_yoy-v1；來源值 24.59<br>點擊開啟來源列 →</span></a></span></td>
+      <td class="r"><a class="v vlink" href="../source/q_revenue_month-2026-05_symbol-2801_table-monthly_revenues.html" data-src-link="1">210.13 億<span class="tip" role="tooltip">來源：monthly_revenues<br>資料日期：2026-05<br>來源表：monthly_revenues<br>主鍵：symbol=2801, revenue_month=2026-05<br>單位：新台幣元<br>原值：21,013,433,000<br>點擊開啟來源列 →</span></a></td>
+      <td class="r"><span class="chg up"><span class="arr" aria-hidden="true">▲</span><span class="sr">上漲</span><a class="v vlink" href="../source/q_revenue_month-2026-05_symbol-2801_table-monthly_revenues.html" data-src-link="1">+15.86%<span class="tip" role="tooltip">來源：monthly_revenues<br>資料日期：2026-05<br>來源表：monthly_revenues<br>主鍵：symbol=2801, revenue_month=2026-05<br>單位：%<br>註：來源值（monthly_revenues.cumulative_yoy_pct）<br>點擊開啟來源列 →</span></a></span></td>
+      <td data-testid="high-2801"><span class="muted" title="">—<span class="sr">（未創新高：）</span></span></td>
+      <td class="rev-remark">—</td>
+    </tr>
+    
+    <tr id="row-2881" data-high="false">
+      <td class="stock-cell rev-code"><a href="../stock/2881/#revenue" title="2881 富邦金"><span class="cd">2881</span></a></td>
+      <td class="rev-name">富邦金<a class="fn" href="#fin-note" title="金融業註記">※</a></td>
+      <td>上市</td>
+      <td class="r"><a class="v vlink" href="../source/q_revenue_month-2026-05_symbol-2881_table-monthly_revenues.html" data-src-link="1">304.08 億<span class="tip" role="tooltip">來源：monthly_revenues<br>資料日期：2026-05<br>來源表：monthly_revenues<br>主鍵：symbol=2881, revenue_month=2026-05<br>單位：新台幣元<br>原值：30,407,516,000<br>點擊開啟來源列 →</span></a></td>
+      <td class="r"><a class="v vlink" href="../source/q_revenue_month-2026-05_symbol-2881_table-monthly_revenues.html" data-src-link="1">−552.60 億<span class="tip" role="tooltip">來源：monthly_revenues<br>資料日期：2026-05<br>來源表：monthly_revenues<br>主鍵：symbol=2881, revenue_month=2026-05<br>單位：新台幣元<br>原值：-55,259,606,000<br>點擊開啟來源列 →</span></a></td>
+      <td class="r"><span class="chg down"><span class="arr" aria-hidden="true">▼</span><span class="sr">下跌</span><a class="v vlink" href="../source/q_revenue_month-2026-05_symbol-2881_table-monthly_revenues.html" data-src-link="1">−43.01%<span class="tip" role="tooltip">來源：monthly_revenues<br>資料日期：2026-05<br>來源表：monthly_revenues<br>主鍵：symbol=2881, revenue_month=2026-05<br>單位：%<br>註：來源值（monthly_revenues.mom_pct）<br>點擊開啟來源列 →</span></a></span></td>
+      <td class="r" data-yoy="not_applicable"><span class="badge st-not_applicable" tabindex="0">不適用<span class="tip" role="tooltip">REV_YOY_PREV_YEAR_NEGATIVE：去年同月營收為負值，比率無意義，不適用<br></span></span><small class="na-why">（去年同月為負值）</small></td>
+      <td class="r"><a class="v vlink" href="../source/q_revenue_month-2026-05_symbol-2881_table-monthly_revenues.html" data-src-link="1">1,502.56 億<span class="tip" role="tooltip">來源：monthly_revenues<br>資料日期：2026-05<br>來源表：monthly_revenues<br>主鍵：symbol=2881, revenue_month=2026-05<br>單位：新台幣元<br>原值：150,255,906,000<br>點擊開啟來源列 →</span></a></td>
+      <td class="r"><span class="badge st-not_applicable" tabindex="0">不適用<span class="tip" role="tooltip">不適用（去年累計為負值）｜REV_YOY_PREV_YEAR_NEGATIVE：去年同月營收為負值，比率無意義，不適用<br></span></span></td>
+      <td data-testid="high-2881"><span class="muted" title="">—<span class="sr">（未創新高：）</span></span></td>
+      <td class="rev-remark"><details><summary>展開</summary>本月及本年累計營業收入較去年本月及去年累計營業收入增加，主係投資相關淨收益增加所致。</details></td>
+    </tr>
+    
+    <tr id="row-2882" data-high="false">
+      <td class="stock-cell rev-code"><a href="../stock/2882/#revenue" title="2882 國泰金"><span class="cd">2882</span></a></td>
+      <td class="rev-name">國泰金<a class="fn" href="#fin-note" title="金融業註記">※</a></td>
+      <td>上市</td>
+      <td class="r"><a class="v vlink" href="../source/q_revenue_month-2026-05_symbol-2882_table-monthly_revenues.html" data-src-link="1">250.59 億<span class="tip" role="tooltip">來源：monthly_revenues<br>資料日期：2026-05<br>來源表：monthly_revenues<br>主鍵：symbol=2882, revenue_month=2026-05<br>單位：新台幣元<br>原值：25,059,074,000<br>點擊開啟來源列 →</span></a></td>
+      <td class="r"><a class="v vlink" href="../source/q_revenue_month-2026-05_symbol-2882_table-monthly_revenues.html" data-src-link="1">−817.91 億<span class="tip" role="tooltip">來源：monthly_revenues<br>資料日期：2026-05<br>來源表：monthly_revenues<br>主鍵：symbol=2882, revenue_month=2026-05<br>單位：新台幣元<br>原值：-81,790,556,000<br>點擊開啟來源列 →</span></a></td>
+      <td class="r"><span class="chg down"><span class="arr" aria-hidden="true">▼</span><span class="sr">下跌</span><a class="v vlink" href="../source/q_revenue_month-2026-05_symbol-2882_table-monthly_revenues.html" data-src-link="1">−17.88%<span class="tip" role="tooltip">來源：monthly_revenues<br>資料日期：2026-05<br>來源表：monthly_revenues<br>主鍵：symbol=2882, revenue_month=2026-05<br>單位：%<br>註：來源值（monthly_revenues.mom_pct）<br>點擊開啟來源列 →</span></a></span></td>
+      <td class="r" data-yoy="not_applicable"><span class="badge st-not_applicable" tabindex="0">不適用<span class="tip" role="tooltip">REV_YOY_PREV_YEAR_NEGATIVE：去年同月營收為負值，比率無意義，不適用<br></span></span><small class="na-why">（去年同月為負值）</small></td>
+      <td class="r"><a class="v vlink" href="../source/q_revenue_month-2026-05_symbol-2882_table-monthly_revenues.html" data-src-link="1">1,275.98 億<span class="tip" role="tooltip">來源：monthly_revenues<br>資料日期：2026-05<br>來源表：monthly_revenues<br>主鍵：symbol=2882, revenue_month=2026-05<br>單位：新台幣元<br>原值：127,597,978,000<br>點擊開啟來源列 →</span></a></td>
+      <td class="r"><span class="badge st-not_applicable" tabindex="0">不適用<span class="tip" role="tooltip">不適用（去年累計為負值）｜REV_YOY_PREV_YEAR_NEGATIVE：去年同月營收為負值，比率無意義，不適用<br></span></span></td>
+      <td data-testid="high-2882"><span class="muted" title="">—<span class="sr">（未創新高：）</span></span></td>
+      <td class="rev-remark"><details><summary>展開</summary>本月及本年營業收入淨額較去年同期增加，主係投資收益增加所致。</details></td>
+    </tr>
+    
+    <tr id="row-2912" data-high="true">
+      <td class="stock-cell rev-code"><a href="../stock/2912/#revenue" title="2912 統一超"><span class="cd">2912</span></a></td>
+      <td class="rev-name">統一超</td>
+      <td>上市</td>
+      <td class="r"><a class="v vlink" href="../source/q_revenue_month-2026-05_symbol-2912_table-monthly_revenues.html" data-src-link="1">316.43 億<span class="tip" role="tooltip">來源：monthly_revenues<br>資料日期：2026-05<br>來源表：monthly_revenues<br>主鍵：symbol=2912, revenue_month=2026-05<br>單位：新台幣元<br>原值：31,643,252,000<br>點擊開啟來源列 →</span></a></td>
+      <td class="r"><a class="v vlink" href="../source/q_revenue_month-2026-05_symbol-2912_table-monthly_revenues.html" data-src-link="1">300.58 億<span class="tip" role="tooltip">來源：monthly_revenues<br>資料日期：2026-05<br>來源表：monthly_revenues<br>主鍵：symbol=2912, revenue_month=2026-05<br>單位：新台幣元<br>原值：30,058,109,000<br>點擊開啟來源列 →</span></a></td>
+      <td class="r"><span class="chg up"><span class="arr" aria-hidden="true">▲</span><span class="sr">上漲</span><a class="v vlink" href="../source/q_revenue_month-2026-05_symbol-2912_table-monthly_revenues.html" data-src-link="1">+5.78%<span class="tip" role="tooltip">來源：monthly_revenues<br>資料日期：2026-05<br>來源表：monthly_revenues<br>主鍵：symbol=2912, revenue_month=2026-05<br>單位：%<br>註：來源值（monthly_revenues.mom_pct）<br>點擊開啟來源列 →</span></a></span></td>
+      <td class="r" data-yoy="ok"><span class="chg up"><span class="arr" aria-hidden="true">▲</span><span class="sr">上漲</span><a class="v vlink" href="../source/q_revenue_month-2026-05_symbol-2912_table-monthly_revenues.html" data-src-link="1">+5.27%<span class="tip" role="tooltip">來源：monthly_revenues<br>資料日期：2026-05<br>來源表：monthly_revenues<br>主鍵：symbol=2912, revenue_month=2026-05<br>單位：%<br>註：analysis rev_yoy-v1；來源值 5.27<br>點擊開啟來源列 →</span></a></span></td>
+      <td class="r"><a class="v vlink" href="../source/q_revenue_month-2026-05_symbol-2912_table-monthly_revenues.html" data-src-link="1">1,500.84 億<span class="tip" role="tooltip">來源：monthly_revenues<br>資料日期：2026-05<br>來源表：monthly_revenues<br>主鍵：symbol=2912, revenue_month=2026-05<br>單位：新台幣元<br>原值：150,084,491,000<br>點擊開啟來源列 →</span></a></td>
+      <td class="r"><span class="chg up"><span class="arr" aria-hidden="true">▲</span><span class="sr">上漲</span><a class="v vlink" href="../source/q_revenue_month-2026-05_symbol-2912_table-monthly_revenues.html" data-src-link="1">+4.79%<span class="tip" role="tooltip">來源：monthly_revenues<br>資料日期：2026-05<br>來源表：monthly_revenues<br>主鍵：symbol=2912, revenue_month=2026-05<br>單位：%<br>註：來源值（monthly_revenues.cumulative_yoy_pct）<br>點擊開啟來源列 →</span></a></span></td>
+      <td data-testid="high-2912"><span class="badge st-high" tabindex="0"><span aria-hidden="true">★</span> 近 12 個月新高<span class="tip" role="tooltip">高於前 12 個月（2025-05～2026-04）最高值 30,727,739,000 元</span></span></td>
+      <td class="rev-remark">—</td>
+    </tr>
+    
+    <tr id="row-3008" data-high="false">
+      <td class="stock-cell rev-code"><a href="../stock/3008/#revenue" title="3008 大立光"><span class="cd">3008</span></a></td>
+      <td class="rev-name">大立光</td>
+      <td>上市</td>
+      <td class="r"><a class="v vlink" href="../source/q_revenue_month-2026-05_symbol-3008_table-monthly_revenues.html" data-src-link="1">45.93 億<span class="tip" role="tooltip">來源：monthly_revenues<br>資料日期：2026-05<br>來源表：monthly_revenues<br>主鍵：symbol=3008, revenue_month=2026-05<br>單位：新台幣元<br>原值：4,592,691,000<br>點擊開啟來源列 →</span></a></td>
+      <td class="r"><a class="v vlink" href="../source/q_revenue_month-2026-05_symbol-3008_table-monthly_revenues.html" data-src-link="1">32.19 億<span class="tip" role="tooltip">來源：monthly_revenues<br>資料日期：2026-05<br>來源表：monthly_revenues<br>主鍵：symbol=3008, revenue_month=2026-05<br>單位：新台幣元<br>原值：3,219,003,000<br>點擊開啟來源列 →</span></a></td>
+      <td class="r"><span class="chg down"><span class="arr" aria-hidden="true">▼</span><span class="sr">下跌</span><a class="v vlink" href="../source/q_revenue_month-2026-05_symbol-3008_table-monthly_revenues.html" data-src-link="1">−14.35%<span class="tip" role="tooltip">來源：monthly_revenues<br>資料日期：2026-05<br>來源表：monthly_revenues<br>主鍵：symbol=3008, revenue_month=2026-05<br>單位：%<br>註：來源值（monthly_revenues.mom_pct）<br>點擊開啟來源列 →</span></a></span></td>
+      <td class="r" data-yoy="ok"><span class="chg up"><span class="arr" aria-hidden="true">▲</span><span class="sr">上漲</span><a class="v vlink" href="../source/q_revenue_month-2026-05_symbol-3008_table-monthly_revenues.html" data-src-link="1">+42.67%<span class="tip" role="tooltip">來源：monthly_revenues<br>資料日期：2026-05<br>來源表：monthly_revenues<br>主鍵：symbol=3008, revenue_month=2026-05<br>單位：%<br>註：analysis rev_yoy-v1；來源值 42.67<br>點擊開啟來源列 →</span></a></span></td>
+      <td class="r"><a class="v vlink" href="../source/q_revenue_month-2026-05_symbol-3008_table-monthly_revenues.html" data-src-link="1">254.95 億<span class="tip" role="tooltip">來源：monthly_revenues<br>資料日期：2026-05<br>來源表：monthly_revenues<br>主鍵：symbol=3008, revenue_month=2026-05<br>單位：新台幣元<br>原值：25,495,089,000<br>點擊開啟來源列 →</span></a></td>
+      <td class="r"><span class="chg up"><span class="arr" aria-hidden="true">▲</span><span class="sr">上漲</span><a class="v vlink" href="../source/q_revenue_month-2026-05_symbol-3008_table-monthly_revenues.html" data-src-link="1">+15.33%<span class="tip" role="tooltip">來源：monthly_revenues<br>資料日期：2026-05<br>來源表：monthly_revenues<br>主鍵：symbol=3008, revenue_month=2026-05<br>單位：%<br>註：來源值（monthly_revenues.cumulative_yoy_pct）<br>點擊開啟來源列 →</span></a></span></td>
+      <td data-testid="high-3008"><span class="muted" title="">—<span class="sr">（未創新高：）</span></span></td>
+      <td class="rev-remark">—</td>
+    </tr>
+    
+    <tr id="row-3711" data-high="true">
+      <td class="stock-cell rev-code"><a href="../stock/3711/#revenue" title="3711 日月光投控"><span class="cd">3711</span></a></td>
+      <td class="rev-name">日月光投控</td>
+      <td>上市</td>
+      <td class="r"><a class="v vlink" href="../source/q_revenue_month-2026-05_symbol-3711_table-monthly_revenues.html" data-src-link="1">630.33 億<span class="tip" role="tooltip">來源：monthly_revenues<br>資料日期：2026-05<br>來源表：monthly_revenues<br>主鍵：symbol=3711, revenue_month=2026-05<br>單位：新台幣元<br>原值：63,033,313,000<br>點擊開啟來源列 →</span></a></td>
+      <td class="r"><a class="v vlink" href="../source/q_revenue_month-2026-05_symbol-3711_table-monthly_revenues.html" data-src-link="1">490.27 億<span class="tip" role="tooltip">來源：monthly_revenues<br>資料日期：2026-05<br>來源表：monthly_revenues<br>主鍵：symbol=3711, revenue_month=2026-05<br>單位：新台幣元<br>原值：49,026,935,000<br>點擊開啟來源列 →</span></a></td>
+      <td class="r"><span class="chg up"><span class="arr" aria-hidden="true">▲</span><span class="sr">上漲</span><a class="v vlink" href="../source/q_revenue_month-2026-05_symbol-3711_table-monthly_revenues.html" data-src-link="1">+1.26%<span class="tip" role="tooltip">來源：monthly_revenues<br>資料日期：2026-05<br>來源表：monthly_revenues<br>主鍵：symbol=3711, revenue_month=2026-05<br>單位：%<br>註：來源值（monthly_revenues.mom_pct）<br>點擊開啟來源列 →</span></a></span></td>
+      <td class="r" data-yoy="ok"><span class="chg up"><span class="arr" aria-hidden="true">▲</span><span class="sr">上漲</span><a class="v vlink" href="../source/q_revenue_month-2026-05_symbol-3711_table-monthly_revenues.html" data-src-link="1">+28.57%<span class="tip" role="tooltip">來源：monthly_revenues<br>資料日期：2026-05<br>來源表：monthly_revenues<br>主鍵：symbol=3711, revenue_month=2026-05<br>單位：%<br>註：analysis rev_yoy-v1；來源值 28.56<br>點擊開啟來源列 →</span></a></span></td>
+      <td class="r"><a class="v vlink" href="../source/q_revenue_month-2026-05_symbol-3711_table-monthly_revenues.html" data-src-link="1">2,989.43 億<span class="tip" role="tooltip">來源：monthly_revenues<br>資料日期：2026-05<br>來源表：monthly_revenues<br>主鍵：symbol=3711, revenue_month=2026-05<br>單位：新台幣元<br>原值：298,942,572,000<br>點擊開啟來源列 →</span></a></td>
+      <td class="r"><span class="chg up"><span class="arr" aria-hidden="true">▲</span><span class="sr">上漲</span><a class="v vlink" href="../source/q_revenue_month-2026-05_symbol-3711_table-monthly_revenues.html" data-src-link="1">+19.86%<span class="tip" role="tooltip">來源：monthly_revenues<br>資料日期：2026-05<br>來源表：monthly_revenues<br>主鍵：symbol=3711, revenue_month=2026-05<br>單位：%<br>註：來源值（monthly_revenues.cumulative_yoy_pct）<br>點擊開啟來源列 →</span></a></span></td>
+      <td data-testid="high-3711"><span class="badge st-high" tabindex="0"><span aria-hidden="true">★</span> 近 12 個月新高<span class="tip" role="tooltip">高於前 12 個月（2025-05～2026-04）最高值 62,247,107,000 元</span></span></td>
+      <td class="rev-remark">—</td>
+    </tr>
+    
+    <tr id="row-6505" data-high="false">
+      <td class="stock-cell rev-code"><a href="../stock/6505/#revenue" title="6505 台塑化"><span class="cd">6505</span></a></td>
+      <td class="rev-name">台塑化</td>
+      <td>上市</td>
+      <td class="r"><a class="v vlink" href="../source/q_revenue_month-2026-05_symbol-6505_table-monthly_revenues.html" data-src-link="1">577.77 億<span class="tip" role="tooltip">來源：monthly_revenues<br>資料日期：2026-05<br>來源表：monthly_revenues<br>主鍵：symbol=6505, revenue_month=2026-05<br>單位：新台幣元<br>原值：57,777,216,000<br>點擊開啟來源列 →</span></a></td>
+      <td class="r"><a class="v vlink" href="../source/q_revenue_month-2026-05_symbol-6505_table-monthly_revenues.html" data-src-link="1">455.39 億<span class="tip" role="tooltip">來源：monthly_revenues<br>資料日期：2026-05<br>來源表：monthly_revenues<br>主鍵：symbol=6505, revenue_month=2026-05<br>單位：新台幣元<br>原值：45,539,031,000<br>點擊開啟來源列 →</span></a></td>
+      <td class="r"><span class="chg down"><span class="arr" aria-hidden="true">▼</span><span class="sr">下跌</span><a class="v vlink" href="../source/q_revenue_month-2026-05_symbol-6505_table-monthly_revenues.html" data-src-link="1">−6.08%<span class="tip" role="tooltip">來源：monthly_revenues<br>資料日期：2026-05<br>來源表：monthly_revenues<br>主鍵：symbol=6505, revenue_month=2026-05<br>單位：%<br>註：來源值（monthly_revenues.mom_pct）<br>點擊開啟來源列 →</span></a></span></td>
+      <td class="r" data-yoy="ok"><span class="chg up"><span class="arr" aria-hidden="true">▲</span><span class="sr">上漲</span><a class="v vlink" href="../source/q_revenue_month-2026-05_symbol-6505_table-monthly_revenues.html" data-src-link="1">+26.87%<span class="tip" role="tooltip">來源：monthly_revenues<br>資料日期：2026-05<br>來源表：monthly_revenues<br>主鍵：symbol=6505, revenue_month=2026-05<br>單位：%<br>註：analysis rev_yoy-v1；來源值 26.87<br>點擊開啟來源列 →</span></a></span></td>
+      <td class="r"><a class="v vlink" href="../source/q_revenue_month-2026-05_symbol-6505_table-monthly_revenues.html" data-src-link="1">2,812.89 億<span class="tip" role="tooltip">來源：monthly_revenues<br>資料日期：2026-05<br>來源表：monthly_revenues<br>主鍵：symbol=6505, revenue_month=2026-05<br>單位：新台幣元<br>原值：281,289,027,000<br>點擊開啟來源列 →</span></a></td>
+      <td class="r"><span class="chg up"><span class="arr" aria-hidden="true">▲</span><span class="sr">上漲</span><a class="v vlink" href="../source/q_revenue_month-2026-05_symbol-6505_table-monthly_revenues.html" data-src-link="1">+6.12%<span class="tip" role="tooltip">來源：monthly_revenues<br>資料日期：2026-05<br>來源表：monthly_revenues<br>主鍵：symbol=6505, revenue_month=2026-05<br>單位：%<br>註：來源值（monthly_revenues.cumulative_yoy_pct）<br>點擊開啟來源列 →</span></a></span></td>
+      <td data-testid="high-6505"><span class="muted" title="">—<span class="sr">（未創新高：）</span></span></td>
+      <td class="rev-remark">—</td>
+    </tr>
+    
+    <tr id="row-9910" data-high="false">
+      <td class="stock-cell rev-code"><a href="../stock/9910/#revenue" title="9910 豐泰"><span class="cd">9910</span></a></td>
+      <td class="rev-name">豐泰</td>
+      <td>上市</td>
+      <td class="r"><a class="v vlink" href="../source/q_revenue_month-2026-05_symbol-9910_table-monthly_revenues.html" data-src-link="1">67.20 億<span class="tip" role="tooltip">來源：monthly_revenues<br>資料日期：2026-05<br>來源表：monthly_revenues<br>主鍵：symbol=9910, revenue_month=2026-05<br>單位：新台幣元<br>原值：6,720,476,000<br>點擊開啟來源列 →</span></a></td>
+      <td class="r"><a class="v vlink" href="../source/q_revenue_month-2026-05_symbol-9910_table-monthly_revenues.html" data-src-link="1">60.14 億<span class="tip" role="tooltip">來源：monthly_revenues<br>資料日期：2026-05<br>來源表：monthly_revenues<br>主鍵：symbol=9910, revenue_month=2026-05<br>單位：新台幣元<br>原值：6,014,293,000<br>點擊開啟來源列 →</span></a></td>
+      <td class="r"><span class="chg down"><span class="arr" aria-hidden="true">▼</span><span class="sr">下跌</span><a class="v vlink" href="../source/q_revenue_month-2026-05_symbol-9910_table-monthly_revenues.html" data-src-link="1">−1.45%<span class="tip" role="tooltip">來源：monthly_revenues<br>資料日期：2026-05<br>來源表：monthly_revenues<br>主鍵：symbol=9910, revenue_month=2026-05<br>單位：%<br>註：來源值（monthly_revenues.mom_pct）<br>點擊開啟來源列 →</span></a></span></td>
+      <td class="r" data-yoy="ok"><span class="chg up"><span class="arr" aria-hidden="true">▲</span><span class="sr">上漲</span><a class="v vlink" href="../source/q_revenue_month-2026-05_symbol-9910_table-monthly_revenues.html" data-src-link="1">+11.74%<span class="tip" role="tooltip">來源：monthly_revenues<br>資料日期：2026-05<br>來源表：monthly_revenues<br>主鍵：symbol=9910, revenue_month=2026-05<br>單位：%<br>註：analysis rev_yoy-v1；來源值 11.74<br>點擊開啟來源列 →</span></a></span></td>
+      <td class="r"><a class="v vlink" href="../source/q_revenue_month-2026-05_symbol-9910_table-monthly_revenues.html" data-src-link="1">327.75 億<span class="tip" role="tooltip">來源：monthly_revenues<br>資料日期：2026-05<br>來源表：monthly_revenues<br>主鍵：symbol=9910, revenue_month=2026-05<br>單位：新台幣元<br>原值：32,775,317,000<br>點擊開啟來源列 →</span></a></td>
+      <td class="r"><span class="chg down"><span class="arr" aria-hidden="true">▼</span><span class="sr">下跌</span><a class="v vlink" href="../source/q_revenue_month-2026-05_symbol-9910_table-monthly_revenues.html" data-src-link="1">−3.61%<span class="tip" role="tooltip">來源：monthly_revenues<br>資料日期：2026-05<br>來源表：monthly_revenues<br>主鍵：symbol=9910, revenue_month=2026-05<br>單位：%<br>註：來源值（monthly_revenues.cumulative_yoy_pct）<br>點擊開啟來源列 →</span></a></span></td>
+      <td data-testid="high-9910"><span class="muted" title="">—<span class="sr">（未創新高：）</span></span></td>
+      <td class="rev-remark"><details><summary>展開</summary>合併營業收入為本公司自結數.</details></td>
+    </tr>
+    
+    </tbody>
+  </table></div>
+  <p class="scroll-hint" aria-hidden="true">← 左右滑動看更多欄 →</p>
+  
+  
+</section>
+
+
+
+
+<section class="card fine" id="explain" aria-labelledby="explain-h">
+  <h2 id="explain-h">說明</h2>
+  <p data-testid="revenue-fixed-note">近 12 個月新高＝當月營收高於前 12 個月（不含當月）的最高值；相等不算。只代表數字比較，不代表利多或買進訊號。年增率可能因去年同月基期低而偏高，請一併看去年同月金額。本頁不是投資建議。</p>
+  <p class="srcline">近 12 個月新高與年增率：analysis/revenue.py evaluate_revenue()（rev_12m_high-v1／rev_yoy-v1）；月增率、累計營收、累計年增率為來源值。金額單位：新台幣元。</p>
+  
+  <div id="fin-note" class="fin-note" data-testid="fin-note"><p>※ 金融業：申報口徑不同，不宜跨產業比較。</p>
+    <ul><li>「產業別：金融保險業（其中金控公司係控股公司，其申報之「營業收入」係認列所有子公司損益之合計數）」——公開資訊觀測站 上市公司月營收彙總表（t21sc03），<a href="https://mopsov.twse.com.tw/nas/t21/sii/t21sc03_115_9_0.html" rel="noopener" target="_blank">https://mopsov.twse.com.tw/nas/t21/sii/t21sc03_115_9_0.html</a>（查閱 2026-11-10）</li><li>「營業收入：為利各業別比較，本項目對應至各業別之會計項目名稱列示如下。一般行業：營業收入｜金融業：淨收益｜保險業：營業收入｜證券期貨業：收益｜金控：淨收益｜異業合併：收入」——公開資訊觀測站 財務比較E點通（mopsfin）使用說明及應注意事項，<a href="https://mopsfin.twse.com.tw/terms" rel="noopener" target="_blank">https://mopsfin.twse.com.tw/terms</a>（查閱 2026-11-10）</li></ul></div>
+  
+</section>
+<p class="srcline">來源：monthly_revenues｜資料日期：2026-05｜追蹤範圍：30 檔驗證樣本</p>
+
+</main>
+<footer class="site">
+  <div class="wrap foot-grid">
+    <div><h2>資料來源與更新</h2><p>行情：證交所、櫃買中心；月營收、財報、重大訊息：公開資訊觀測站。每交易日 18:00 盤後更新、22:00 補查公告與營收。時間皆為台北時間（UTC+8）。<a href="../status/">各來源狀態 →</a></p></div>
+    <div><h2>單位</h2><p>價格：新台幣元；金額：億元（新台幣）；成交量：股；指數：點；漲跌：▲ 上漲（紅）、▼ 下跌（綠）、■ 平盤，並加 +／− 號。</p></div>
+    <div><h2>聲明</h2><p>本站僅供研究參考，不構成投資建議；技術訊號不代表獲利保證；本站不提供下單功能。數值由程式計算，文字說明不推論未經證實的原因。</p>
+      <p class="muted">圖表：<a href="https://www.tradingview.com/" rel="noopener">TradingView Lightweight Charts™</a>（Apache-2.0，本地檔案）。</p></div>
+  </div>
+</footer>
+<script src="../static/js/site.js" defer></script>
+
+<script src="../static/js/static.js" defer></script>
+</body>
+</html>
