@@ -1,8 +1,9 @@
 # 由 web/tools/export_static.py 自動放入；把本分支的靜態檔部署到 GitHub Pages（不建置、不執行任何程式碼）。
-name: 部署 GitHub Pages
+# 【手動備援專用】只能 workflow_dispatch（由 web/tools/deploy_pages.sh 推完 main 後以 REST API 觸發）。
+# 嚴禁加回 push 觸發：正式更新與部署只由 update.yml（GitHub Actions）負責；
+# 若推 main 就自動部署，main 上留著的舊靜態檔會覆蓋 update.yml 剛部署的正確版本（2026-11-17 事件，見 docs/DECISIONS.md）。
+name: 部署 GitHub Pages（手動備援）
 on:
-  push:
-    branches: [main]
   workflow_dispatch:
 permissions:
   contents: read
