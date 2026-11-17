@@ -20,7 +20,7 @@ find "$W" -mindepth 1 -maxdepth 1 ! -name .git -exec rm -rf {} +
 EXC=(--exclude=__pycache__ --exclude='*.pyc' --exclude=.venv --exclude=.run --exclude=logs)
 mkdir -p "$W/web" "$W/tools" "$W/.github/workflows"
 # rsync 不一定有，用 tar 複製
-tar "${EXC[@]}" -cf - pipeline analysis tools/cloud | tar -xf - -C "$W"
+tar "${EXC[@]}" --exclude=analysis/tests -cf - pipeline analysis tools/cloud | tar -xf - -C "$W"
 tar "${EXC[@]}" -cf - -C web app tools | tar -xf - -C "$W/web" || true
 cp web/requirements.txt web/requirements-dev.txt "$W/web/"
 rm -f "$W/tools/cloud/seed_db.sh"   # 只在電腦上用
