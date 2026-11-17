@@ -15,7 +15,8 @@ from pipeline.deadline import should_stop
 from pipeline.fetchers.calendar import recent_trade_days
 from pipeline.fetchers.price_fields import is_official_halt, load_halt_coverage, parse_change, trade_flags
 from pipeline.fetchers.prices import CONTENT_KEYS, _upsert_price
-from pipeline.httputil import FetchError, tpex, twse
+from pipeline.httputil import FetchError, RateLimited, tpex, twse
+from pipeline.fetchers import tpex_block
 
 log = logging.getLogger("pipeline.market_prices")
 
@@ -28,6 +29,13 @@ VALUE_KEYS = [
     "volume_shares", "amount_twd", "transactions",
 ]
 CLASS_KEYS = ["change", "change_twd", "change_sign", "change_note", "is_halted", "is_no_trade"]
+SWITCH_NOTE = "來源從 tradingStock 換成 dailyQuotes（含鉅額）"
+
+
+def _add_switch_note(row: dict) -> None:
+    cur = (row.get("change_note") or "").strip()
+    if SWITCH_NOTE not in cur:
+        row["change_note"] = f"{cur}；{SWITCH_NOTE}" if cur else SWITCH_NOTE
 
 
 def _universe(conn: sqlite3.Connection) -> dict[str, str]:
@@ -69,11 +77,16 @@ def _upsert_preserving(conn: sqlite3.Connection, row: dict) -> str:
     if old is None:
         return _upsert_price(conn, row)
     src = old["source_table"] if "source_table" in old.keys() else None
+    if row.get("source_table") == "dailyQuotes":
+        # 2026-11-17：上櫃正式來源改為 dailyQuotes（含鉅額）。既有 tradingStock（不含鉅額）列以版本化覆寫（舊列 is_current=0），
+        # 新列 change_note 標明換源；之後重跑時沿用同一註記，才不會每次都升版（冪等）。
+        if src == "tradingStock" or (src == "dailyQuotes" and SWITCH_NOTE in (old["change_note"] or "")):
+            _add_switch_note(row)
+        return _upsert_price(conn, row)
     if src not in ("STOCK_DAY", "tradingStock"):
         return _upsert_price(conn, row)
     keys = VALUE_KEYS
     if src == "tradingStock":
-        # dailyQuotes 量／額／筆數因口徑（股／元 vs 張／仟元；是否含鉅額）可能略差；OHLC＋漲跌相同即保留既有列
         keys = ["open_twd", "high_twd", "low_twd", "close_twd", "change", "change_twd"]
     # 無比價時新列 change 為 NULL、舊列可能是 0：仍保留來源，只更新分類／漲跌欄
     class_updates = {k: row.get(k) for k in CLASS_KEYS}
@@ -144,6 +157,7 @@ def parse_mi_index(
                 "raw_amount": rec[idx["成交金額"]],
                 "source": url,
                 "source_table": "MI_INDEX",
+                "volume_basis": "incl_block",
                 "announced_at": None,
                 "announced_at_note": "來源無公告時間；MI_INDEX 與 STOCK_DAY 同口徑（股／元）；次日參考價：來源無此欄",
                 "fetched_at": now,
@@ -213,8 +227,9 @@ def parse_daily_quotes(
                 "raw_amount": rec[idx["成交金額(元)"]] if "成交金額(元)" in idx else None,
                 "source": url,
                 "source_table": "dailyQuotes",
+                "volume_basis": "incl_block",   # 實測含鉅額（2026-11-17：dailyQuotes＝tradingStock＋鉅額，殘差<500 股；與 highlight 全市場加總一致）
                 "announced_at": None,
-                "announced_at_note": "dailyQuotes 單位為股／元（較 tradingStock 張／仟元精確）；既有 tradingStock 列不覆寫",
+                "announced_at_note": "dailyQuotes 單位為股／元，成交量含鉅額（volume_basis=incl_block）；鉅額見 block_shares／block_amount_twd",
                 "fetched_at": now,
                 "unit": "volume=股;amount=新台幣元",
                 "source_unit": "股;元",
@@ -238,6 +253,65 @@ def _save_ckpt(path: Path, payload: dict) -> None:
     tmp = path.with_suffix(".tmp")
     tmp.write_text(json.dumps(payload, ensure_ascii=False, indent=2), encoding="utf-8")
     tmp.replace(path)
+
+
+def fetch_tpex_day(
+    conn: sqlite3.Connection,
+    iso: str,
+    universe: dict[str, str],
+    http_events: list,
+    *,
+    exact: set | None = None,
+    intervals: dict | None = None,
+    block_ctx: "tpex_block.BlockContext | None" = None,
+) -> dict:
+    """抓上櫃 dailyQuotes 單一交易日（1 個請求），寫入 universe 內的上櫃列（含鉅額欄位）。
+    限流（RateLimited）時不重試，回傳 rate_limited=True 讓呼叫端停止。"""
+    from datetime import date as date_cls
+
+    y, m, d = map(int, iso.split("-"))
+    dt = date_cls(y, m, d)
+    out = {"tpex": 0, "page_tpex": 0, "failed": [], "rate_limited": False}
+    if exact is None or intervals is None:
+        exact, intervals = load_halt_coverage(conn)
+    url2 = DAILY_QUOTES_URL.format(slash=ad_slash(dt))
+    try:
+        resp = tpex.request("GET", url2)
+        http_events.append({"src": "TPEx", "url": url2, "http": resp.status_code, "date": iso})
+        if resp.status_code != 200:
+            raise FetchError(f"http={resp.status_code}", status=resp.status_code)
+        data = resp.json()
+        stat = (data.get("stat") or "").lower()
+        if stat not in ("ok", ""):
+            touch_source(conn, f"tpex_daily_quotes_{iso}", url=url2, ok=False, http_status=resp.status_code, error=str(data.get("stat")))
+            out["failed"].append(f"TPEx:{iso}:{data.get('stat')}")
+        else:
+            rows = parse_daily_quotes(data, universe, iso, url2, exact, intervals)
+            out["page_tpex"] = len(rows)
+            ctx = block_ctx if block_ctx is not None else tpex_block.get_context(conn)
+            tpex_block.attach_block(rows, iso, ctx)
+            n = 0
+            for i, row in enumerate(rows, 1):
+                _upsert_preserving(conn, row)
+                n += 1
+                if i % 200 == 0:
+                    conn.commit()
+            conn.commit()
+            out["tpex"] = n
+            touch_source(conn, "tpex_daily_quotes", url=url2, ok=True, http_status=200, data_date=iso)
+            touch_source(conn, f"tpex_daily_quotes_{iso}", url=url2, ok=True, http_status=200, data_date=iso)
+    except RateLimited as e:
+        out["rate_limited"] = True
+        http_events.append({"src": "TPEx", "url": url2, "http": e.status, "date": iso, "error": str(e)})
+        touch_source(conn, f"tpex_daily_quotes_{iso}", url=url2, ok=False, http_status=e.status, error=str(e))
+        out["failed"].append(f"TPEx:{iso}:{e}")
+        log.error("dailyQuotes %s %s", iso, e)
+    except FetchError as e:
+        http_events.append({"src": "TPEx", "url": url2, "http": e.status, "date": iso, "error": str(e)})
+        touch_source(conn, f"tpex_daily_quotes_{iso}", url=url2, ok=False, http_status=e.status, error=str(e))
+        out["failed"].append(f"TPEx:{iso}:{e}")
+        log.error("dailyQuotes %s %s", iso, e)
+    return out
 
 
 def fetch_one_day(
@@ -282,36 +356,10 @@ def fetch_one_day(
         out["failed"].append(f"TWSE:{iso}:{e}")
         log.error("MI_INDEX %s %s", iso, e)
 
-    # TPEx
-    url2 = DAILY_QUOTES_URL.format(slash=ad_slash(dt))
-    try:
-        resp = tpex.request("GET", url2)
-        http_events.append({"src": "TPEx", "url": url2, "http": resp.status_code, "date": iso})
-        if resp.status_code != 200:
-            raise FetchError(f"http={resp.status_code}", status=resp.status_code)
-        data = resp.json()
-        stat = (data.get("stat") or "").lower()
-        if stat not in ("ok", ""):
-            touch_source(conn, f"tpex_daily_quotes_{iso}", url=url2, ok=False, http_status=resp.status_code, error=str(data.get("stat")))
-            out["failed"].append(f"TPEx:{iso}:{data.get('stat')}")
-        else:
-            rows = parse_daily_quotes(data, universe, iso, url2, exact, intervals)
-            out["page_tpex"] = len(rows)
-            n = 0
-            for i, row in enumerate(rows, 1):
-                _upsert_preserving(conn, row)
-                n += 1
-                if i % 200 == 0:
-                    conn.commit()
-            conn.commit()
-            out["tpex"] = n
-            touch_source(conn, "tpex_daily_quotes", url=url2, ok=True, http_status=200, data_date=iso)
-            touch_source(conn, f"tpex_daily_quotes_{iso}", url=url2, ok=True, http_status=200, data_date=iso)
-    except FetchError as e:
-        http_events.append({"src": "TPEx", "url": url2, "http": e.status, "date": iso, "error": str(e)})
-        touch_source(conn, f"tpex_daily_quotes_{iso}", url=url2, ok=False, http_status=e.status, error=str(e))
-        out["failed"].append(f"TPEx:{iso}:{e}")
-        log.error("dailyQuotes %s %s", iso, e)
+    tp = fetch_tpex_day(conn, iso, universe, http_events, exact=exact, intervals=intervals)
+    out["tpex"], out["page_tpex"] = tp["tpex"], tp["page_tpex"]
+    out["failed"].extend(tp["failed"])
+    out["rate_limited"] = tp.get("rate_limited", False)
     return out
 
 
@@ -352,6 +400,10 @@ def fetch_market_prices(
             continue
         st = fetch_one_day(conn, iso, universe, http_events)
         failed.extend(st["failed"])
+        if st.get("rate_limited"):
+            stopped = True
+            log.error("prices: 上櫃限流，停止後續日期（已熔斷主機；稍後重跑可續）")
+            break
         if st["twse"] or st["tpex"]:
             ok_dates.append(iso)
             done.add(iso)

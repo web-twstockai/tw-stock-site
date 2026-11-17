@@ -21,17 +21,22 @@
       {% if chk %}<div class="chk"><span class="badge chk-{{ chk.check }} st-{{ chk.state }}" data-state="change-check-{{ chk.check }}" tabindex="0">{{ chk.label }}<span class="tip" role="tooltip">{{ chk.note }}{% if chk.source_twd is not none %}<br>自算 {{ '%+.2f'|format(chk.calc_twd) if chk.calc_twd is not none else '—' }} 元／官方 {{ '%+.2f'|format(chk.source_twd) }} 元{% endif %}{% if chk.diff_twd is not none %}<br>差 {{ '%+.3f'|format(chk.diff_twd) }} 元（容許 {{ '%.3f'|format(chk.tol_twd) }}）{% endif %}<br>來源：analysis/series.py change_series() change_check</span></span></div>{% endif %}
     </div>
     <dl class="qh-sub">
-      <div><dt>成交量（股）</dt><dd>{{ val(quote.volume) }}</dd></div>
+      {% set vb = quote.vol_basis if quote.vol_basis is defined else none %}
+      {%- macro vb_badge() -%}{% if vb %} <span class="badge {{ vb.badge }}" data-testid="volume-basis-label" data-state="{{ vb.state }}" tabindex="0">{{ vb.label }}<span class="tip" role="tooltip">{{ vb.note }}</span></span>{% endif %}{%- endmacro -%}
+      <div><dt>成交量（股）{{ vb_badge() }}</dt><dd>{{ val(quote.volume) }}</dd></div>
+      {% if quote.amount is defined %}<div><dt>成交金額（元）{{ vb_badge() }}</dt><dd>{{ val(quote.amount, big=True) }}</dd></div>{% endif %}
       <div><dt>MA20（元）</dt><dd>{{ val(quote.ma20) }}</dd></div>
       <div><dt>MA60（元）</dt><dd>{{ val(quote.ma60) }}</dd></div>
     </dl>
+    {% if quote.block is defined %}{% set bk = quote.block %}<p class="basis-note" data-testid="block-info" data-state="{{ bk.state }}">鉅額：<span{% if bk.note %} class="v" tabindex="0"{% endif %}>{{ bk.label }}{% if bk.note %}<span class="tip" role="tooltip">{{ bk.note }}</span>{% endif %}</span>{% if bk.source %} <span class="badge {{ bk.source_badge }}" data-testid="block-source" tabindex="0">{{ bk.source }}<span class="tip" role="tooltip">{{ bk.source_note }}</span></span>{% endif %}</p>{% endif %}
   </div>
   {% endif %}
+  {%- macro seg_basis(g) -%}<span data-state="{{ g.state if g.state is defined else ('basis-unknown' if not g.known else 'basis-ok') }}"{% if g.raw_sources is defined and g.raw_sources %} title="{{ g.raw_sources|join(' ') }}"{% endif %}>{{ g.label }}：{{ g.basis }}</span>{%- endmacro -%}
   {% if basis_segs|length == 1 %}{% set g = basis_segs[0] %}
-  <p class="basis-note" data-testid="volume-basis" data-market="{{ s.market_code }}" data-sources="1">{{ basis_title }}：{{ g.label }}：{% if not g.known %}<span data-state="basis-unknown">{{ g.basis }}</span>{% else %}{{ g.basis }}{% endif %}。</p>
+  <p class="basis-note" data-testid="volume-basis" data-market="{{ s.market_code }}" data-sources="1">{{ basis_title }}：{{ seg_basis(g) }}。<br><small class="muted" data-testid="basis-policy">{{ volume_basis_policy(s.market_code) if volume_basis_policy is defined else volume_basis_note(s.market_code) }}</small></p>
   {% elif basis_segs %}
-  <div class="basis-note" data-testid="volume-basis" data-market="{{ s.market_code }}" data-sources="{{ basis_segs|length }}">{{ basis_title }}（觀察期間混有 {{ basis_segs|length }} 段來源）：
-    <ul>{% for g in basis_segs %}<li data-basis-seg>{{ g.start }}～{{ g.end }}（{{ g.days }} 日）｜{{ g.label }}：{% if not g.known %}<span data-state="basis-unknown">{{ g.basis }}</span>{% else %}{{ g.basis }}{% endif %}</li>{% endfor %}</ul></div>
+  <div class="basis-note" data-testid="volume-basis" data-market="{{ s.market_code }}" data-sources="{{ basis_segs|length }}">{{ basis_title }}（觀察期間分 {{ basis_segs|length }} 段，依來源與 volume_basis）：
+    <ul>{% for g in basis_segs %}<li data-basis-seg>{{ g.start }}～{{ g.end }}（{{ g.days }} 日）｜{{ seg_basis(g) }}</li>{% endfor %}</ul><small class="muted" data-testid="basis-policy">{{ volume_basis_policy(s.market_code) if volume_basis_policy is defined else volume_basis_note(s.market_code) }}</small></div>
   {% else %}
   <p class="basis-note" data-testid="volume-basis" data-market="{{ s.market_code }}">{{ volume_basis_note(s.market_code) }}</p>
   {% endif %}
@@ -40,8 +45,9 @@
     選股狀態（預設條件{% if screen_status.trade_date %}，{{ screen_status.trade_date }}{% endif %}）：<strong>{{ screen_status.label }}</strong>
     {% if screen_status.code %}｜<code>{{ screen_status.code }}</code> <span data-excl-label>{{ screen_status.code_label }}</span>
       <small class="muted">（說明來源：{{ screen_status.code_label_src }}）</small>
-      {% if screen_status.detail %}<br><small>analysis 原因：{{ screen_status.detail }}</small>{% endif %}
+      {% if screen_status.detail %}<br><small{% if screen_status.detail_title is defined and screen_status.detail_title %} title="{{ screen_status.detail_title }}"{% endif %}>分析原因：{{ screen_status.detail }}</small>{% endif %}
     {% elif screen_status.detail %}｜{{ screen_status.detail }}{% endif %}
+    {% if screen_status.extra is defined and screen_status.extra %}<br><small class="muted" data-testid="screen-extra">{% for e in screen_status.extra %}<span data-extra="{{ e.key }}" data-state="{{ e.state }}"{% if e.title %} title="{{ e.title }}"{% endif %}>{{ e.label }}：{{ e.text }}</span>{% if not loop.last %}；{% endif %}{% endfor %}</small>{% endif %}
     <a href="/screener#exclusion-stats">選股頁 →</a></p>
   {% endif %}
   {% if ph.change_mismatch %}

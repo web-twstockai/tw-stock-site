@@ -135,6 +135,7 @@ class ScreenRow:
     vol_ratio: Val
     conditions: list[Condition] = field(default_factory=list)
     change_check: str = ""   # analysis summary.change_check（ok／mismatch／…）；只標記，不改值
+    extra: list = field(default_factory=list)   # analysis-0.9.0 新欄（screen_extra_fields() 的輸出）
 
 
 @dataclass
@@ -143,6 +144,10 @@ class Excluded:
     name: str
     reason: str
     excl_code: str = ""
+    label: str = ""          # 排除碼中文
+    detail: str = ""         # analysis exclusion_reason（英文代碼已換中文）
+    extra: list = field(default_factory=list)
+    raw: str = ""            # analysis exclusion_reason 原文（放 title）
 
 
 @dataclass
@@ -160,45 +165,47 @@ class ScreenResult:  # noqa: E302
     non_common: list[dict] = field(default_factory=list)  # securities_excluded（非普通股排除名單）
 
 
-# ---- 量與金額口徑（集中於此；選股頁、個股頁、CSV 註記行共用）----
-# 已確認（第十四批）：docs/DECISIONS.md 2026-11-10「更正：…暫用官方總量口徑（含零股、盤後定價、鉅額）」與
-# 03:45 負責人決定 2.「兩個市場維持各自的官方總量口徑，並逐市場標示（上櫃不含鉅額）。這列為已知限制」。
+# ---- 量與金額口徑（集中於此；選股頁、個股頁、首頁、CSV、匯出共用）----
+# 2026-11-17 負責人指示（取代 2026-11-10 03:45「上櫃不含鉅額，已知限制」）：口徑一律依 daily_prices.volume_basis
+# （逐日實際值）顯示，不用市場或來源網址推斷；缺欄或空值＝「口徑不明」。
 VOLUME_BASIS_TITLE = "量與金額口徑"
-VOLUME_BASIS_PENDING = ""          # 已確認，不再附「待確認」（舊名保留相容）
-VOLUME_BASIS_DECISION = "docs/DECISIONS.md 2026-11-10 03:45"
-VOLUME_BASIS = {
-    "TWSE": "上市：STOCK_DAY 官方總量口徑（含零股、盤後定價、鉅額）",
-    "TPEx": "上櫃：tradingStock 官方總量口徑（上櫃不含鉅額，已知限制）",
+VOLUME_BASIS_PENDING = ""          # 舊名保留相容
+VOLUME_BASIS_DECISION = "負責人 2026-11-17 指示；docs/indicators.md §9"
+VOLUME_BASIS_STATEMENT = ("上櫃以櫃買中心 dailyQuotes 總量（含鉅額）為主；取不到時暫用 tradingStock，標「不含鉅額」。"
+                          "上市以證交所 STOCK_DAY 總量（含鉅額）。上櫃是否含盤後定價、零股待查證。")
+VOLUME_BASIS = {   # 個股頁只列該市場的一句（內容與 VOLUME_BASIS_STATEMENT 相同，不另加假設）
+    "TWSE": "上市以證交所 STOCK_DAY 總量（含鉅額）",
+    "TPEx": "上櫃以櫃買中心 dailyQuotes 總量（含鉅額）為主；取不到時暫用 tradingStock，標「不含鉅額」；是否含盤後定價、零股待查證",
 }
+VOLUME_BASIS_UNKNOWN = "口徑不明"
 
 
 def volume_basis_note(market: str | None = None) -> str:
-    """market=None → 兩市場（選股頁、CSV）；TWSE／TPEx → 只該市場（個股頁）；其他市場 → 口徑未知。"""
-    if market is None:
-        parts = list(VOLUME_BASIS.values())
-    elif market in VOLUME_BASIS:
-        parts = [VOLUME_BASIS[market]]
-    else:
-        parts = [VOLUME_BASIS_UNKNOWN]
-    return f"{VOLUME_BASIS_TITLE}：" + "；".join(parts) + "。"
+    """market=None → 完整說明（選股頁、CSV）；TWSE／TPEx → 只該市場那一句（個股頁）；其他 → 完整說明。
+    這只是「來源政策」說明；每一列實際是哪種口徑看 volume_basis（basis_counts_text／basis_segments）。"""
+    if market in VOLUME_BASIS:
+        return f"{VOLUME_BASIS_TITLE}：{VOLUME_BASIS[market]}。"
+    return f"{VOLUME_BASIS_TITLE}：{VOLUME_BASIS_STATEMENT}"
 
 
-# ---- 來源 → 口徑對照（依 daily_prices.source 實際值）----
-# (比對子字串, 端點名稱, 口徑)；daily_prices.source 實際為完整 URL（含 stockNo／code、date 參數）
-# 已確認口徑只有 STOCK_DAY（上市）與 tradingStock（上櫃）；MI_INDEX、dailyQuotes 不在決定範圍，維持來源註記原文。
+# ---- 來源端點名稱（只用來「顯示來源名稱」，不再推斷口徑）----
+# 2026-11-17 起移除「依來源網址推斷口徑」：volume_basis 缺欄或空值一律「口徑不明」，避免與上面的說明矛盾。
 VOLUME_BASIS_BY_SOURCE = [
-    ("twse.com.tw/exchangeReport/STOCK_DAY?", "TWSE STOCK_DAY", "官方總量口徑（含零股、盤後定價、鉅額）"),
-    ("twse.com.tw/exchangeReport/MI_INDEX", "TWSE MI_INDEX",
-     "來源註記：含一般、零股、盤後定價、鉅額交易，不含拍賣、標購（本站主來源為 STOCK_DAY）"),
-    ("tpex.org.tw/www/zh-tw/afterTrading/tradingStock", "TPEx tradingStock", "官方總量口徑（上櫃不含鉅額，已知限制）"),
-    ("tpex.org.tw/www/zh-tw/afterTrading/dailyQuotes", "TPEx dailyQuotes",
-     "回應註記未載明一般／零股／盤後定價／鉅額組成（口徑未聲明）"),
+    ("twse.com.tw/exchangeReport/STOCK_DAY?", "TWSE STOCK_DAY"),
+    ("twse.com.tw/exchangeReport/MI_INDEX", "TWSE MI_INDEX"),
+    ("tpex.org.tw/www/zh-tw/afterTrading/tradingStock", "TPEx tradingStock"),
+    ("tpex.org.tw/www/zh-tw/afterTrading/dailyQuotes", "TPEx dailyQuotes"),
 ]
-VOLUME_BASIS_UNKNOWN = "口徑未知"
+SOURCE_OTHER_LABEL = "其他來源"
 VOLUME_BASIS_NOTE = volume_basis_note()
 
-# 首頁「成交金額合計」口徑（design-r2 §4-7）：範圍＝追蹤範圍內普通股；上櫃不含鉅額
-TURNOVER_TOTAL_NOTE = "只含追蹤範圍內的上市櫃普通股（不含 ETF、權證、特別股、TDR）；上市含鉅額、上櫃不含鉅額（已知限制）"
+
+def volume_basis_policy(market: str | None = None) -> str:
+    """個股頁逐日口徑下方的小字：只寫來源政策，不重複「量與金額口徑：」標題。"""
+    return "來源政策：" + (VOLUME_BASIS[market] + "。" if market in VOLUME_BASIS else VOLUME_BASIS_STATEMENT)
+
+# 首頁「成交金額合計」（design-r2 §4-7）：範圍＝追蹤範圍內普通股；口徑看當日各列 volume_basis（basis_counts_text 附在後面）
+TURNOVER_TOTAL_NOTE = "只含追蹤範圍內的上市櫃普通股（不含 ETF、權證、特別股、TDR）"
 
 # 官方「X 無比價」（design-r2 §4-3；review-r1 建議 pipeline 存 change_sign='X'）：不算平盤，首頁另列一類
 NO_COMPARE_SIGN = "X"
@@ -210,26 +217,68 @@ NO_COMPARE_NOT_STORED_NOTE = ("資料庫尚未保存官方「X 無比價」符�
 FLAT_MAYBE_NOCOMPARE_NOTE = "可能含無比價（官方 X 符號尚未入庫）"
 
 
-def source_basis(source: str | None) -> tuple[str, str, bool]:
-    """daily_prices.source → (端點名稱, 口徑, 是否已知)。未知來源 → (原字串, 口徑未知, False)。"""
+def source_label(source: str | None) -> tuple[str, bool]:
+    """daily_prices.source → (端點名稱, 是否已知端點)。未知 → (「其他來源」, False)；原值由呼叫端放 title。"""
     s = source or ""
-    for pat, label, basis in VOLUME_BASIS_BY_SOURCE:
+    for pat, label in VOLUME_BASIS_BY_SOURCE:
         if pat in s:
-            return label, basis, True
-    return (s or "（無來源）"), VOLUME_BASIS_UNKNOWN, False
+            return label, True
+    return SOURCE_OTHER_LABEL, False
 
 
-def source_basis_segments(dated_sources: list[tuple[str, str]]) -> list[dict]:
-    """[(日期, source)]（依日期排序）→ 依端點連續分段：[{label, basis, known, start, end, days}]。"""
+def source_basis(source: str | None) -> tuple[str, str, bool]:
+    """舊介面相容：(端點名稱, 口徑, 是否已知)。口徑不再由來源推斷，一律「口徑不明」（要看 volume_basis）。"""
+    label, known = source_label(source)
+    return label, VOLUME_BASIS_UNKNOWN, False
+
+
+def basis_segments(rows: list[tuple], has_column: bool) -> list[dict]:
+    """[(日期, source, volume_basis)]（依日期排序）→ 依（端點, 口徑）連續分段：
+    [{label, basis, known, state, start, end, days, raw_sources}]。口徑只看 volume_basis（缺欄／空值＝口徑不明）。"""
     segs: list[dict] = []
-    for d, src in sorted(dated_sources):
-        label, basis, known = source_basis(src)
-        if segs and segs[-1]["label"] == label:
+    for d, src, vb in sorted(rows, key=lambda x: x[0]):
+        label, _ = source_label(src)
+        b = volume_basis_label(vb, has_column)
+        key = (label, b["label"])
+        if segs and (segs[-1]["label"], segs[-1]["basis"]) == key:
             segs[-1]["end"] = d
             segs[-1]["days"] += 1
+            if src and src not in segs[-1]["raw_sources"] and len(segs[-1]["raw_sources"]) < 3:
+                segs[-1]["raw_sources"].append(src)
         else:
-            segs.append({"label": label, "basis": basis, "known": known, "start": d, "end": d, "days": 1})
+            segs.append({"label": label, "basis": b["label"], "known": b["state"] != "basis-unknown", "state": b["state"],
+                         "note": b["note"], "start": d, "end": d, "days": 1, "raw_sources": [src] if src else []})
     return segs
+
+
+def source_basis_segments(dated_sources: list[tuple]) -> list[dict]:
+    """舊介面相容：[(日期, source)] 或 [(日期, source, volume_basis)]。只有兩欄時視為缺 volume_basis（口徑不明）。"""
+    rows = [(x[0], x[1], x[2] if len(x) > 2 else None) for x in dated_sources]
+    has = any(len(x) > 2 for x in dated_sources)
+    return basis_segments(rows, has)
+
+
+def basis_counts(rows: list[dict]) -> dict:
+    """當日各列（已限追蹤範圍、有收盤價）→ {has_column, incl, excl, unknown, n}。"""
+    has = bool(rows) and "volume_basis" in rows[0]
+    out = {"has_column": has, "incl": 0, "excl": 0, "unknown": 0, "n": len(rows)}
+    for r in rows:
+        v = r.get("volume_basis") if has else None
+        v = v.strip() if isinstance(v, str) else v
+        out["incl" if v == "incl_block" else "excl" if v == "excl_block" else "unknown"] += 1
+    return out
+
+
+def basis_counts_text(c: dict | None, date: str = "") -> str:
+    """實際口徑分布一句（依 volume_basis）；缺欄 →「口徑不明（資料庫尚無量額口徑欄位）」。"""
+    head = f"{date} 實際口徑（依各列逐日標記）" if date else "實際口徑（依各列逐日標記）"
+    if not c or not c.get("n"):
+        return ""
+    if not c["has_column"]:
+        return f"{head}：{c['n']} 檔皆為{VOLUME_BASIS_UNKNOWN}（資料庫尚無量額口徑欄位）"
+    parts = [f"{VOLUME_BASIS_LABELS['incl_block']} {c['incl']} 檔", f"{VOLUME_BASIS_LABELS['excl_block']} {c['excl']} 檔",
+             f"{VOLUME_BASIS_UNKNOWN} {c['unknown']} 檔"]
+    return f"{head}：" + "、".join(parts)
 
 # ---- change_series／screener 的 change_check（語意依 analysis/USAGE.md、docs/indicators.md 1.1）----
 # 自算 change_pct 為正式值；來源（官方）漲跌只做交叉檢查，不一致只標記、不覆蓋
@@ -239,6 +288,7 @@ CHANGE_CHECK_LABELS = {
     "no_source": "官方未提供漲跌",
     "source_not_comparable": "官方漲跌不比較（符號 X）",
     "source_sign_conflict": "官方漲跌正負號矛盾",
+    "after_no_trade": "前一日無成交，改用官方參考價比對",        # analysis-0.9.0（DECISIONS 2026-11-10 12:05 ②）
 }
 CHANGE_CHECK_NOTES = {
     "ok": "自算漲跌與官方帶號漲跌差異在容許誤差內。",
@@ -246,15 +296,184 @@ CHANGE_CHECK_NOTES = {
     "no_source": "來源沒有漲跌欄位值，無法交叉檢查。",
     "source_not_comparable": "來源漲跌符號為 X（不比價等），不做比較。",
     "source_sign_conflict": "來源 change_sign 與數值正負矛盾，不做比較。",
+    "after_no_trade": ("前一交易日整股無成交：官方漲跌以參考價計，自算漲跌以前一有效收盤為基準；有官方參考價時依參考價比對，"
+                       "沒有參考價或官方標無比價時不比對。不算不一致；網站顯示的漲跌幅仍為自算正式值。"),
 }
 CHANGE_CHECK_STATE = {"ok": "ok", "mismatch": "mismatch", "no_source": "insufficient",
-                      "source_not_comparable": "na", "source_sign_conflict": "mismatch"}
+                      "source_not_comparable": "na", "source_sign_conflict": "mismatch", "after_no_trade": "na"}
 
 # ---- 排除代碼的網站端備援說明（analysis.EXCLUSION_CODES 有提供時一律以 analysis 為準）----
 # EXCL_SUSPENDED（確認停牌）目前 analysis 尚未提供說明；EXCL_NO_ROW_SUSPENDED_OR_MISSING 用 analysis 原文
 EXCLUSION_FALLBACK = {
     "EXCL_SUSPENDED": "確認停牌（有官方停牌資料確認評估日停止買賣）",
     "EXCL_NO_ROW_SUSPENDED_OR_MISSING": "停牌或資料缺漏，待確認（評估日本股無資料列，尚無官方停牌資料可確認）",
+    # analysis-0.9.0 新碼；analysis 仍是舊版時不會出現，但 CSV／統計遇到時仍顯示中文（docs/indicators.md §9.3）
+    "EXCL_VOLUME_BASIS": "量額口徑非總量（不含鉅額或口徑不明）",
+}
+
+# ---- 量額口徑與鉅額（daily_prices.volume_basis／block_*；docs/indicators.md §9.4、docs/schema.md §3.4）----
+# 舊庫沒有這四欄、或欄位為 NULL → 一律「口徑不明」／「未知」，不得顯示 0。
+VOLUME_BASIS_LABELS = {"incl_block": "總量（含鉅額）", "excl_block": "不含鉅額"}
+VOLUME_BASIS_UNKNOWN_LABEL = "口徑不明"
+VOLUME_BASIS_DETAILS = {
+    "incl_block": "官方總量，已含鉅額交易（上市、上櫃組成不完全相同，見下方量與金額口徑說明）",
+    "excl_block": "來源 TPEx tradingStock（取不到 dailyQuotes 時暫用），不含鉅額交易",
+}
+VOLUME_BASIS_NO_COLUMN_NOTE = "資料庫尚無量額口徑欄位（資料工程遷移中），無法確認是否含鉅額"
+VOLUME_BASIS_NULL_NOTE = "這一列的量額口徑欄位為空值，無法確認是否含鉅額"
+VOLUME_BASIS_STATE = {"incl_block": "basis-total", "excl_block": "basis-excl"}
+VOLUME_BASIS_BADGE = {"basis-total": "st-ok", "basis-excl": "st-derived", "basis-unknown": "st-insufficient badge-nodata"}
+BLOCK_SOURCE_BADGE = {"tpex_block_day": "st-basis", "name_match": "st-derived"}
+
+BLOCK_SOURCE_LABELS = {"tpex_block_day": "鉅額逐筆", "name_match": "名稱比對"}
+BLOCK_SOURCE_NOTES = {
+    "tpex_block_day": "來源 TPEx 鉅額逐筆，有證券代號",
+    "name_match": "依櫃買中心歷史彙總以證券名稱比對，非代號對應，可能有誤",
+}
+BLOCK_UNKNOWN_LABEL = "未知"
+BLOCK_NONE_LABEL = "當日無鉅額"
+BLOCK_NO_COLUMN_NOTE = "資料庫尚無鉅額欄位（資料工程遷移中）"
+BLOCK_NULL_NOTE = "這一列的鉅額欄位為空值（未取得），不代表當日沒有鉅額"
+BLOCK_COLUMNS = ("block_shares", "block_amount_twd", "block_source", "volume_basis")
+
+
+def volume_basis_label(raw, has_column: bool = True) -> dict:
+    """daily_prices.volume_basis 原值 → {label, state, note, raw}。只認 incl_block／excl_block；其他值、NULL、缺欄＝口徑不明。"""
+    v = raw.strip() if isinstance(raw, str) else raw
+    if v in VOLUME_BASIS_LABELS:
+        st = VOLUME_BASIS_STATE[v]
+        return {"label": VOLUME_BASIS_LABELS[v], "state": st, "badge": VOLUME_BASIS_BADGE[st], "note": VOLUME_BASIS_DETAILS[v], "raw": v}
+    if not has_column:
+        note = VOLUME_BASIS_NO_COLUMN_NOTE
+    elif v is None or v == "":
+        note = VOLUME_BASIS_NULL_NOTE
+    else:
+        note = "量額口徑欄位為非預期值，視為口徑不明：" + UNKNOWN_CODE_LABEL.format(raw=v)
+    return {"label": VOLUME_BASIS_UNKNOWN_LABEL, "state": "basis-unknown", "badge": VOLUME_BASIS_BADGE["basis-unknown"],
+            "note": note, "raw": v}
+
+
+def block_source_label(raw) -> str:
+    v = raw.strip() if isinstance(raw, str) else raw
+    if v is None or v == "":
+        return ""
+    return BLOCK_SOURCE_LABELS.get(v, UNKNOWN_CODE_LABEL.format(raw=v))
+
+
+def block_info(shares, amount, source, has_column: bool = True) -> dict:
+    """鉅額欄 → 顯示用 dict。NULL／缺欄＝「未知」（不顯示 0）；0＝「當日無鉅額」；>0＝股數（＋金額、來源標示）。"""
+    def num(x):
+        try:
+            return None if x is None or x == "" else float(x)
+        except (TypeError, ValueError):
+            return None
+    sh, am = num(shares), num(amount)
+    src = block_source_label(source)
+    src_badge = BLOCK_SOURCE_BADGE.get(source.strip() if isinstance(source, str) else source, "st-na")
+    src_note = BLOCK_SOURCE_NOTES.get(source.strip() if isinstance(source, str) else source, "")
+    if src and not src_note:
+        src_note = "來源標示不在已知清單，照原始值顯示"
+    if not has_column:
+        return {"state": "block-unknown", "label": BLOCK_UNKNOWN_LABEL, "shares": None, "amount": None,
+                "source": "", "source_badge": "", "source_note": "", "note": BLOCK_NO_COLUMN_NOTE}
+    if sh is None:
+        return {"state": "block-unknown", "label": BLOCK_UNKNOWN_LABEL, "shares": None, "amount": am,
+                "source": src, "source_badge": src_badge, "source_note": src_note, "note": BLOCK_NULL_NOTE}
+    if sh == 0:
+        return {"state": "block-none", "label": BLOCK_NONE_LABEL, "shares": 0, "amount": am,
+                "source": src, "source_badge": src_badge, "source_note": src_note, "note": ""}
+    return {"state": "block-some", "label": f"其中鉅額 {sh:,.0f} 股", "shares": sh, "amount": am,
+            "source": src, "source_badge": src_badge, "source_note": src_note,
+            "note": "鉅額已含在成交量內（不扣除）" + ("；名稱比對的鉅額不得單獨作為研究結論依據" if source == "name_match" else "")}
+
+
+# ---- analysis 說明文字裡的英文代碼 → 中文（只在顯示層替換；原值仍在 analysis 輸出、來源頁與 title）----
+ANALYSIS_TEXT_CODES = [
+    ("excl_block（不含鉅額，tradingStock）", "不含鉅額（tradingStock）"),
+    ("NULL（口徑不明）", "口徑不明（欄位為空值）"),
+    ("（volume_basis 為 NULL）", "（量額口徑欄位為空值）"),
+    ("excl_block／NULL", "不含鉅額或口徑不明"),
+    ("excl_block", "不含鉅額"),
+    ("incl_block", "總量（含鉅額）"),
+    ("is_no_trade 交叉檢查", "「整股無成交」旗標交叉檢查"),
+    ("is_no_trade＝1", "「整股無成交」旗標為是"),
+    ("is_no_trade＝0", "「整股無成交」旗標為否"),
+    ("官方漲跌標 X", "官方漲跌標無比價"),
+    ("trading_halts 或 daily_prices.is_halted", "停牌表或行情表停牌旗標"),
+    ("daily_prices.is_halted＝1", "行情表停牌旗標為是"),
+    ("trading_halts 有停牌紀錄", "停牌表有停牌紀錄"),
+    ("不在普通股清單（securities）中", "不在普通股清單中"),
+    ("不在 securities", "不在普通股清單"),
+    ("corporate_actions", "除權息／減資事件表"),
+]
+# 可留在可見文字的英文：官方端點名稱、市場代碼、均線名稱、官方「X」符號、證券類別縮寫
+LATIN_ALLOWED = {"dailyQuotes", "tradingStock", "STOCK_DAY", "MI_INDEX", "TWSE", "TPEx", "TPEX", "X", "ETF", "ETN", "TDR",
+                 "CSV", "CFI"}
+_LATIN_RE = __import__("re").compile(r"[A-Za-z][A-Za-z0-9_.]*")
+_OTHER_RE = __import__("re").compile(r"其他資料說明（代碼：[^）]*）")
+_VB_ODD_RE = __import__("re").compile(r"(\S+)（非允許值，視為口徑不明）")
+_COV_RE = __import__("re").compile(r"\b(?:coverage_[a-z_]+|window_before_coverage_start)(?::[A-Za-z0-9_\-]+)*")
+
+
+def latin_residue(text: str) -> list[str]:
+    """可見文字中不在允許清單的英文詞（忽略「其他資料說明（代碼：…）」裡的代碼與 MA20 之類均線名）。"""
+    t = _OTHER_RE.sub("", text or "")
+    return [w for w in _LATIN_RE.findall(t) if w not in LATIN_ALLOWED and not __import__("re").fullmatch(r"MA\d*", w)]
+
+
+def analysis_text_zh(text) -> str:
+    """把 analysis 說明（exclusion_reason、data_note、排除碼說明）中的已知英文代碼換成中文；其餘文字原樣保留。
+    要保證畫面不出英文，請用 zh_text()（換不完時改成備援格式）。"""
+    if not isinstance(text, str) or not text:
+        return ""
+    text = _VB_ODD_RE.sub(lambda m: UNKNOWN_CODE_LABEL.format(raw=m.group(1)) + "（視為口徑不明）", text)
+    for a, b in ANALYSIS_TEXT_CODES:
+        text = text.replace(a, b)
+    text = _COV_RE.sub(lambda m: _coverage_detail(m.group(0)), text)
+    kind_re = __import__("re").compile(r"\b(" + "|".join(sorted(ADJ_KIND_LABELS, key=len, reverse=True)) + r")\b")
+    text = kind_re.sub(lambda m: ADJ_KIND_LABELS[m.group(1)], text)
+    return text
+
+
+UNKNOWN_TEXT_LABEL = "其他資料說明（原文見提示）"   # 整句英文、沒有代碼時的固定字樣（原文放 title）
+_CODE_FORMAT_RE = __import__("re").compile(r"^[A-Z0-9_]+$")
+
+
+def is_code_format(v) -> bool:
+    """原文整體是不是「代碼格式」（大寫英數與底線）。"""
+    return isinstance(v, str) and bool(_CODE_FORMAT_RE.match(v.strip()))
+
+
+def zh_text(text, code: str = "") -> dict:
+    """顯示用：{text, title, known}，用於 data_note、排除原因、選股狀態說明等自由文字。
+    替換後仍有英文詞時，整段改成備援文字，原文放 title：
+    - 呼叫端給的代碼（如排除碼）或原文整體符合 ^[A-Z0-9_]+$ →「其他資料說明（代碼：X）」
+    - 其他（整句英文、混雜文字）→ 固定「其他資料說明（原文見提示）」，不再取第一個英文詞當代碼"""
+    raw = text if isinstance(text, str) else ""
+    t = analysis_text_zh(raw)
+    if not latin_residue(t):
+        return {"text": t, "title": "", "known": True}
+    c = code if is_code_format(code) else (raw.strip() if is_code_format(raw) else "")
+    return {"text": UNKNOWN_CODE_LABEL.format(raw=c) if c else UNKNOWN_TEXT_LABEL, "title": raw, "known": False}
+
+
+def change_check_label(code) -> str:
+    if not code:
+        return "—"
+    return CHANGE_CHECK_LABELS.get(code) or UNKNOWN_CODE_LABEL.format(raw=code)
+
+
+# screen_results／summary 新欄（analysis-0.9.0）中文欄名；值為 NULL 時顯示的文字（不出英文代碼）
+SCREEN_EXTRA_FIELDS = {
+    "data_note": "資料說明",
+    "volume_basis": "評估日量額口徑",
+    "window_volume_basis_days": "均量窗口非總量日數",
+    "window_bad_data_days": "觀察窗資料異常日數",
+}
+SCREEN_EXTRA_OLD_ANALYSIS = "目前分析版本未提供"   # analysis 舊版、輸出沒有該欄
+SCREEN_EXTRA_NOT_COMPUTED = "未算到"                 # 有該欄但為 NULL（例如提早排除、沒算到窗口）
+VOLUME_BASIS_STATUS_LABELS = {
+    "volume_basis_column_missing": "資料庫尚無量額口徑欄位：本次選股未檢查量額口徑（研究模式照算，正式寫入會被拒絕）",
 }
 
 
@@ -279,7 +498,7 @@ SOURCE_NOTE_PARAMS = {
     "date": "資料期間 {v}",                                  # corporate_actions.py（tpex_exright／revivt／pvChgRslt）
     "rows": "{v} 列",                                        # corporate_actions.py
 }
-SOURCE_NOTE_UNKNOWN = "其他（{raw}）"
+SOURCE_NOTE_UNKNOWN = "其他資料說明（代碼：{raw}）"   # 與 UNKNOWN_CODE_LABEL 同格式
 
 
 def _has_cjk(s: str) -> bool:
@@ -291,7 +510,7 @@ def source_note_label(raw) -> dict:
     - 「code」或「code: 英文說明」：code 查 SOURCE_NOTE_CODES（說明保留在 detail，只放 tooltip）
     - 「k=v;k=v」：逐項查 SOURCE_NOTE_PARAMS（date 的 ~ 改成「～」）
     - 已是中文的來源頁標題（corporate_actions.py 以頁面標題寫入）：原樣顯示
-    - 其他 → 「其他（原始代碼）」"""
+    - 其他 → 「其他資料說明（代碼：原始代碼）」"""
     if raw is None or (isinstance(raw, str) and not raw.strip()):
         return {"code": "", "label": "", "detail": "", "raw": "", "known": True}
     s = str(raw).strip()
@@ -342,7 +561,7 @@ MA_NOTE_LABELS = {   # series.ma_series 的 ma_N_note
     "ADJ_UNAVAILABLE": "還原價不可用，不計算均線",
     "NO_TRADE": "當日無成交或無資料列",
 }
-UNKNOWN_CODE_LABEL = "其他（{raw}）"
+UNKNOWN_CODE_LABEL = "其他資料說明（代碼：{raw}）"   # 全站未知代碼備援格式（2026-11-17 統一）
 
 
 def _coverage_detail(part: str) -> str:
@@ -372,7 +591,7 @@ def _event_detail(detail: str) -> str:
 
 def unavailable_label(code, reason="") -> dict:
     """analysis 的 unavailable_code＋unavailable_reason → {"label", "code", "raw", "known"}。
-    label 為中文；raw＝「代碼：原始說明」（放 title／API raw 欄位）；未知代碼 →「其他（原始代碼）」。"""
+    label 為中文；raw＝「代碼：原始說明」（放 title／API raw 欄位）；未知代碼 →「其他資料說明（代碼：原始代碼）」。"""
     code = (code or "").strip() if isinstance(code, str) else ""
     reason = (reason or "").strip() if isinstance(reason, str) else ""
     raw = f"{code}：{reason}" if code and reason else (code or reason)
@@ -384,7 +603,7 @@ def unavailable_label(code, reason="") -> dict:
     known = True
     if code == "EXCL_ADJ_COVERAGE_GAP" or (not code and reason.split(":")[0] in COVERAGE_DETAIL_LABELS):
         parts = [_coverage_detail(p.strip()) for p in reason.split(";") if p.strip()]
-        known = not any(p.startswith("其他（") for p in parts)
+        known = not any(p.startswith("其他資料說明（") for p in parts)
         detail = "；".join(parts)
     else:
         detail = _event_detail(reason)
@@ -401,3 +620,48 @@ def ma_note_label(note) -> dict:
     if n.isupper() and " " not in n:
         return {"label": UNKNOWN_CODE_LABEL.format(raw=n), "code": n, "raw": n, "known": False}
     return {"label": n, "code": "", "raw": n, "known": True}   # 已是中文說明
+
+
+def screen_extra_fields(rec: dict, columns, vb_status: str = "ok") -> list[dict]:
+    """analysis summary 一列 → 新欄顯示清單 [{key, label, text, state}]（中文、不出英文代碼）。
+    舊版 analysis（輸出沒有該欄）→「目前分析版本未提供」；欄值 NULL →「未算到」（data_note 為 NULL 時不列）。"""
+    import math as _m
+
+    def na(v):
+        return v is None or (isinstance(v, float) and _m.isnan(v)) or v == ""
+    out = []
+    for key, label in SCREEN_EXTRA_FIELDS.items():
+        if key not in columns:
+            out.append({"key": key, "label": label, "text": SCREEN_EXTRA_OLD_ANALYSIS, "state": "old-analysis"})
+            continue
+        v = rec.get(key)
+        if key == "data_note":
+            if not na(v):
+                z = zh_text(str(v))
+                out.append({"key": key, "label": label, "text": z["text"], "title": z["title"], "state": "note"})
+            continue
+        if key == "volume_basis":
+            if na(v) and vb_status == "volume_basis_column_missing":
+                out.append({"key": key, "label": label, "text": VOLUME_BASIS_UNKNOWN_LABEL + "（資料庫尚無量額口徑欄位）",
+                            "state": "basis-unknown"})
+            elif na(v):
+                out.append({"key": key, "label": label, "text": VOLUME_BASIS_UNKNOWN_LABEL + "（欄位為空值或未算到評估日）",
+                            "state": "basis-unknown"})
+            else:
+                b = volume_basis_label(v)
+                out.append({"key": key, "label": label, "text": b["label"], "state": b["state"]})
+            continue
+        if na(v):
+            out.append({"key": key, "label": label, "text": SCREEN_EXTRA_NOT_COMPUTED, "state": "na"})
+        else:
+            try:
+                out.append({"key": key, "label": label, "text": f"{int(float(v))} 日", "state": "ok" if int(float(v)) == 0 else "warn"})
+            except (TypeError, ValueError):
+                out.append({"key": key, "label": label, "text": UNKNOWN_CODE_LABEL.format(raw=v), "title": str(v), "state": "na"})
+    for e in out:
+        e.setdefault("title", "")
+    return out
+
+
+def screen_extra_text(extra: list) -> str:
+    return "；".join(f"{e['label']}：{e['text']}" for e in extra)

@@ -7,13 +7,19 @@ from __future__ import annotations
 
 import importlib.util
 import math
+import os
 import sys
+from pathlib import Path
 from typing import Any, Optional
 
 from .data_source import PROJECT_ROOT, DataSource, DataUnavailable, source_href
-from .models import TEST_LABEL, Condition, Excluded, ScreenParams, ScreenResult, ScreenRow, Val
+from .models import (TEST_LABEL, VOLUME_BASIS_STATUS_LABELS, Condition, Excluded, ScreenParams, ScreenResult, ScreenRow, Val,
+                     UNKNOWN_CODE_LABEL, analysis_text_zh, screen_extra_fields, zh_text)
 
-ANALYSIS_SCREENER = PROJECT_ROOT / "analysis" / "screener.py"
+# 研究分析模組所在目錄；預設 PROJECT_ROOT/analysis。TWSITE_ANALYSIS_DIR 只供測試或驗收切換（例如套用 pending patch 的暫存副本），
+# 網站不改 analysis/ 本身。
+ANALYSIS_DIR = Path(os.environ.get("TWSITE_ANALYSIS_DIR") or (PROJECT_ROOT / "analysis"))
+ANALYSIS_SCREENER = ANALYSIS_DIR / "screener.py"
 
 SORT_KEYS = {
     "code": ("代號", lambda r: r.code),
@@ -49,6 +55,26 @@ def analysis_module(name: str):
     return mod
 
 
+def use_analysis_dir(path) -> Path:
+    """切換研究分析模組目錄（測試／驗收用）：移除舊目錄的 sys.path 與已載入模組、清掉網站端所有快取。回傳舊目錄。"""
+    global ANALYSIS_DIR, ANALYSIS_SCREENER, _MOD
+    old = ANALYSIS_DIR
+    new = Path(path)
+    for d in {str(old), str(new)}:
+        while d in sys.path:
+            sys.path.remove(d)
+    for name, m in list(sys.modules.items()):
+        f = getattr(m, "__file__", None) or ""
+        if f.startswith(str(old) + os.sep) or f.startswith(str(new) + os.sep) or name in ("analysis_io_sqlite", "analysis_screener"):
+            sys.modules.pop(name, None)
+    ANALYSIS_DIR, ANALYSIS_SCREENER, _MOD = new, new / "screener.py", None
+    clear_cache()
+    from . import analysis_hooks, revenue_page
+    analysis_hooks.clear_cache()
+    getattr(revenue_page, "_CORE_CACHE", {}).clear()
+    return old
+
+
 def _mod():
     global _MOD
     if _MOD is None:
@@ -67,6 +93,7 @@ def clear_cache() -> None:
 COVERAGE_CODES = {
     "EXCL_ADJ_COVERAGE_GAP", "EXCL_NO_DATA", "EXCL_INSUFFICIENT_HISTORY", "EXCL_NO_ROW_SUSPENDED_OR_MISSING",
     "EXCL_NO_TRADE", "EXCL_WINDOW_GAPS", "EXCL_ADJ_FACTOR_MISSING",
+    "EXCL_VOLUME_BASIS",   # analysis-0.9.0：量額口徑非總量＝資料口徑問題（資料工程補 dailyQuotes 後恢復）
 }
 _PARAM_RE = None
 
@@ -100,11 +127,14 @@ def exclusion_labels() -> dict:
         out[c] = lab
     for c, lab in EXCLUSION_FALLBACK.items():
         out.setdefault(c, lab)
-    return out
+    # analysis 說明裡的表名／欄名換中文；換不完 → 未知代碼備援格式
+    return {c: zh_text(lab, c)["text"] for c, lab in out.items()}
 
 
 def exclusion_label(code: str) -> str:
-    return exclusion_labels().get(code, code)
+    if not code:
+        return ""
+    return exclusion_labels().get(code) or UNKNOWN_CODE_LABEL.format(raw=code)
 
 
 def exclusion_label_source(code: str) -> str:
@@ -219,20 +249,40 @@ def _compute(source: DataSource, p: ScreenParams) -> ScreenResult:
     counts = out.exclusion_counts()
     labels = exclusion_labels()
     res.extra["exclusion_counts"] = counts
+    res.extra["exclusion_labels"] = {c: labels.get(c) or UNKNOWN_CODE_LABEL.format(raw=c) for c in counts}
     res.extra["exclusion_stats"] = sorted(
-        [{"code": c, "label": labels.get(c, c), "count": int(n), "coverage": c in COVERAGE_CODES}
+        [{"code": c, "label": labels.get(c) or UNKNOWN_CODE_LABEL.format(raw=c), "count": int(n), "coverage": c in COVERAGE_CODES}
          for c, n in counts.items()], key=lambda x: -x["count"])
     res.extra["params"] = dict(out.params)
     n_cov = sum(n for c, n in counts.items() if c in COVERAGE_CODES)
     res.extra["coverage_excluded"] = int(n_cov)
+    vb_status = getattr(out, "volume_basis_status", None)   # analysis-0.9.0 起才有；舊版為 None
+    res.extra["volume_basis_status"] = vb_status
+    res.extra["volume_basis_status_text"] = VOLUME_BASIS_STATUS_LABELS.get(vb_status or "", "")
+    cols = set(summ.columns)
+    try:
+        from .models import basis_counts_text
+        res.extra["basis_counts_text"] = basis_counts_text(source.volume_basis_counts(td), td)
+    except Exception:   # 口徑分布只是說明，讀不到不影響選股結果
+        res.extra["basis_counts_text"] = ""
     src_label = TEST_LABEL if source.is_test else "daily_prices（經 analysis/screener.py 計算）"
     conds_by = {sid: g for sid, g in out.conditions.groupby("symbol")} if len(out.conditions) else {}
     for r in summ.to_dict("records"):
         sid = str(r["symbol"])
         name = r.get("name") if isinstance(r.get("name"), str) else sid
+        ext = screen_extra_fields(r, cols, vb_status or "ok")
         if r["status"] == "EXCLUDED":
-            res.excluded.append(Excluded(sid, name, f"{r['exclusion_code']}｜{r['exclusion_reason']}",
-                                         str(r["exclusion_code"])))
+            ec = str(r["exclusion_code"])
+            lab = labels.get(ec) or UNKNOWN_CODE_LABEL.format(raw=ec)
+            raw_reason = r["exclusion_reason"] if isinstance(r.get("exclusion_reason"), str) else ""
+            z = zh_text(raw_reason, ec)
+            det = z["text"]
+            for pre in (lab + "：", lab + ":", lab):   # analysis 原因常以同一句說明開頭 → 不重複顯示
+                if det.startswith(pre):
+                    det = det[len(pre):].lstrip()
+                    break
+            res.excluded.append(Excluded(sid, name, f"{lab}｜{det}" if det else lab, ec, lab, det, ext,
+                                         raw_reason if not z["known"] else ""))
             continue
         if r["status"] != "PASS":
             continue
@@ -259,12 +309,13 @@ def _compute(source: DataSource, p: ScreenParams) -> ScreenResult:
             turnover=V(r["amount_twd"], "新台幣元", 0), ma_short=V(r["ma_short"], "新台幣元", 2, scr_href, scr_ref),
             ma_long=V(r["ma_long"], "新台幣元", 2, scr_href, scr_ref),
             vol_ratio=V(r["volume_ratio"], "倍", 2, scr_href, scr_ref), conditions=conds,
-            change_check=r.get("change_check") if isinstance(r.get("change_check"), str) else ""))
+            change_check=r.get("change_check") if isinstance(r.get("change_check"), str) else "", extra=ext))
     res.extra["status_by_symbol"] = {
         str(r["symbol"]): {"status": r["status"],
                            "code": r["exclusion_code"] if isinstance(r.get("exclusion_code"), str) else "",
                            "reason": r["exclusion_reason"] if isinstance(r.get("exclusion_reason"), str) else "",
-                           "change_check": r.get("change_check") if isinstance(r.get("change_check"), str) else ""}
+                           "change_check": r.get("change_check") if isinstance(r.get("change_check"), str) else "",
+                           "extra": screen_extra_fields(r, cols, vb_status or "ok")}
         for r in summ.to_dict("records")}
     if not res.rows:
         # 沒有任何一檔完成條件評估（全部被排除，且有覆蓋不足）→ coverage；

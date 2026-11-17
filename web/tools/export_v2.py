@@ -320,6 +320,16 @@ def _derive(base, ap, A):
                           computed_at=base.computed_at)
 
 
+def _derivable(base, p) -> bool:
+    """由「四項全開」結果推導是否等於實跑：analysis-0.9.0 的 EXCL_VOLUME_BASIS 只在 C3（窗口與評估日）或 C4（評估日）
+    啟用時檢查，關掉 C3 後排除名單可能不同 → 有這個碼時，關 C3 的組合改為實跑 analysis（不推導）。"""
+    try:
+        has_vb = bool((base.summary["exclusion_code"] == "EXCL_VOLUME_BASIS").any())
+    except Exception:
+        return False
+    return not has_vb or bool(p.enable_volume)
+
+
 def build_screener(client, log) -> dict:
     """回傳 {"masks": {m: {...}}, "default": m, ...}（片段尚未改寫連結）。"""
     from app import screening, main as M
@@ -335,7 +345,8 @@ def build_screener(client, log) -> dict:
     def screen(params=None, **kw):
         p = params if params is not None else base_params
         same = all(getattr(p, f) == getattr(base_params, f) for f in others)
-        if same and not all(getattr(p, f) for f in flags) and cache.get("base") is not None:
+        if same and not all(getattr(p, f) for f in flags) and cache.get("base") is not None \
+                and _derivable(cache["base"], p):
             return _derive(cache["base"], p, A)
         return orig(params=params, **kw)
     A.screen = screen

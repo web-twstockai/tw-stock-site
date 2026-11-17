@@ -8,9 +8,15 @@ from pathlib import Path
 
 log = logging.getLogger("pipeline.analysis")
 
+from pipeline import config
+
 ROOT = Path(__file__).resolve().parents[1]
 ANALYSIS = ROOT / "analysis"
-DB = ROOT / "data" / "twstock.db"
+
+
+def db_path() -> Path:
+    """分析 writer 使用的 DB：與管線同一個路徑（config.DB_PATH；測試／副本可用環境變數 PIPELINE_DB_PATH 覆寫），不再寫死正式庫。"""
+    return Path(config.DB_PATH)
 
 
 def run_screen_and_write(conn: sqlite3.Connection, run_id: int, symbols: list[str] | None = None) -> dict:
@@ -33,7 +39,8 @@ def run_screen_and_write(conn: sqlite3.Connection, run_id: int, symbols: list[st
         return out
 
     try:
-        inputs = load_screen_inputs(str(DB), as_of=None, symbols=symbols)
+        dbp = db_path()
+        inputs = load_screen_inputs(str(dbp), as_of=None, symbols=symbols)
         as_of = str(inputs.as_of)[:10]
         row = conn.execute(
             "SELECT is_trade_day FROM trading_calendar WHERE calendar_date=?", (as_of,)
@@ -44,7 +51,8 @@ def run_screen_and_write(conn: sqlite3.Connection, run_id: int, symbols: list[st
             return out
 
         result = screen(**inputs.screen_kwargs(), params=ScreenParams())
-        wcon = W.connect_writable(str(DB), allow_production=True)
+        # 只有真正的正式庫才允許 production 寫入；其他路徑（測試／副本）一律不給 allow_production
+        wcon = W.connect_writable(str(dbp), allow_production=dbp.resolve() == config.PRODUCTION_DB_PATH.resolve())
         try:
             r1 = W.write_screen_results(
                 wcon, result, inputs.input_max_fetched_at, screen_run_id=run_id

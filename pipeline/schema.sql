@@ -99,6 +99,10 @@ CREATE TABLE IF NOT EXISTS daily_prices (
   version INTEGER NOT NULL DEFAULT 1,
   is_current INTEGER NOT NULL DEFAULT 1,
   checksum TEXT,
+  block_shares INTEGER,        -- 當日鉅額成交股數（股；含在 volume_shares 內，不扣除）；NULL＝未知
+  block_amount_twd INTEGER,    -- 當日鉅額成交金額（元；含在 amount_twd 內）；NULL＝未知
+  block_source TEXT,           -- tpex_block_day（逐筆端點，有代號）｜name_match（鉅額歷史彙總，以名稱比對）｜NULL
+  volume_basis TEXT CHECK (volume_basis IN ('incl_block','excl_block')),  -- volume_shares／amount_twd 口徑；舊列見 docs/schema.md
   PRIMARY KEY(symbol, price_date, version)
 );
 CREATE UNIQUE INDEX IF NOT EXISTS ux_daily_prices_current

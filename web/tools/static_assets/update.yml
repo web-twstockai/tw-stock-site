@@ -7,9 +7,9 @@ on:
   workflow_dispatch:
     inputs:
       job:
-        description: "pipeline 工作：daily（盤後主更新）或 evening（晚間補抓）"
+        description: "pipeline 工作：daily／evening／tpex_volume_fix（白名單；其餘為預留，尚未實作會拒絕）"
         type: choice
-        options: [daily, evening]
+        options: [daily, evening, tpex_volume_fix, screen_results_migrate, next_ref_fix, halt_fix, market_backfill, corp_backfill, revenue_backfill, financials_backfill]
         default: daily
       deploy:
         description: "成功後是否部署到 GitHub Pages（試跑請選 false）"
@@ -40,7 +40,7 @@ concurrency:
 jobs:
   update:
     runs-on: ubuntu-latest
-    timeout-minutes: 240
+    timeout-minutes: 240   # 各 job 實際預算由 run_pipeline.sh 控制（tpex_volume_fix 60 分鐘）
     env:
       GH_TOKEN: ${{ github.token }}
       TZ: Asia/Taipei
@@ -67,7 +67,7 @@ jobs:
         run: bash tools/cloud/db_fetch.sh
       - name: 執行 pipeline（最多 3 次）
         id: pipe
-        timeout-minutes: 185
+        timeout-minutes: ${{ (inputs.job == 'tpex_volume_fix') && 65 || 185 }}
         run: bash tools/cloud/run_pipeline.sh "$TWSITE_CLOUD_JOB"
       - name: 匯出靜態站＋自檢＋範圍關卡
         id: build

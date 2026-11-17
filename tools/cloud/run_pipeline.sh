@@ -1,9 +1,16 @@
 #!/usr/bin/env bash
-# 【Actions 用】執行 pipeline，最多 3 次嘗試，整體時間預算內。用法：run_pipeline.sh daily|evening
+# 【Actions 用】執行 pipeline，最多 3 次嘗試，整體時間預算內。用法：run_pipeline.sh daily|evening|tpex_volume_fix
 # 結束碼 0＝success 或 partial（與 pipeline.run 一致）；非 0＝失敗。結果寫入 $GITHUB_OUTPUT：attempts、rc、status。
 set -uo pipefail
 JOB="${1:?daily|evening}"
-case "$JOB" in daily) BUDGET_MIN=${BUDGET_MIN:-60};; evening) BUDGET_MIN=${BUDGET_MIN:-170};; *) echo "job 只能是 daily 或 evening" >&2; exit 2;; esac
+case "$JOB" in
+  daily) BUDGET_MIN=${BUDGET_MIN:-60}; EXTRA=(--symbols sample30);;
+  evening) BUDGET_MIN=${BUDGET_MIN:-170}; EXTRA=(--symbols sample30);;
+  tpex_volume_fix) BUDGET_MIN=${BUDGET_MIN:-60}; EXTRA=();;
+  screen_results_migrate|next_ref_fix|halt_fix|market_backfill|corp_backfill|revenue_backfill|financials_backfill)
+    echo "job=$JOB 已預留但尚未實作，拒絕執行" >&2; exit 2;;
+  *) echo "job 不在白名單：$JOB" >&2; exit 2;;
+esac
 export TWSITE_UNIVERSE=sample30 PYTHONUNBUFFERED=1
 START=$(date +%s); DEADLINE=$((START + BUDGET_MIN*60)); rc=1; attempts=0
 for i in 1 2 3; do
@@ -12,7 +19,7 @@ for i in 1 2 3; do
   attempts=$i
   echo "=== pipeline 第 $i/3 次嘗試（job=$JOB，剩餘預算 $((left/60)) 分）$(date -u +%FT%TZ) ==="
   # 超時先送 SIGINT（pipeline 會把 job 標 interrupted 再結束），60 秒後強制結束
-  timeout -s INT -k 60 "${left}s" python -m pipeline.run --job "$JOB" --symbols sample30
+  timeout -s INT -k 60 "${left}s" python -m pipeline.run --job "$JOB" "${EXTRA[@]}"
   rc=$?
   echo "=== 第 $i 次結束 rc=$rc ==="
   [ $rc -eq 0 ] && break

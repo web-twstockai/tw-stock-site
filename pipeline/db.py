@@ -49,6 +49,18 @@ def migrate(conn: sqlite3.Connection) -> None:
     _add_col(conn, "daily_prices", "change_note", "TEXT")
     _add_col(conn, "daily_prices", "next_ref_price_twd", "REAL")
     _add_col(conn, "daily_prices", "source_table", "TEXT")
+    # 2026-11-17：上櫃成交量口徑（含鉅額）與鉅額欄位
+    _add_col(conn, "daily_prices", "block_shares", "INTEGER")
+    _add_col(conn, "daily_prices", "block_amount_twd", "INTEGER")
+    _add_col(conn, "daily_prices", "block_source", "TEXT")
+    _add_col(conn, "daily_prices", "volume_basis", "TEXT CHECK (volume_basis IN ('incl_block','excl_block'))")
+    # 以 source_table 決定性回填舊列口徑（只填 NULL、可重跑；不動內容欄位、fetched_at、checksum）
+    conn.execute(
+        """UPDATE daily_prices SET volume_basis = CASE
+               WHEN source_table IN ('STOCK_DAY','MI_INDEX','dailyQuotes') THEN 'incl_block'
+               WHEN source_table = 'tradingStock' THEN 'excl_block' END
+           WHERE volume_basis IS NULL AND source_table IN ('STOCK_DAY','MI_INDEX','dailyQuotes','tradingStock')"""
+    )
     _add_col(conn, "index_daily", "change_pct_derived", "INTEGER")
     # corporate_actions extras
     _add_col(conn, "corporate_actions", "cash_subscription_ratio", "REAL")
@@ -120,6 +132,8 @@ def touch_source(
     notes: str | None = None,
 ) -> None:
     now = now_iso()
+    if not ok and error and str(error).startswith("rate_limited"):
+        notes = "rate_limited: 限流（對方限流或本機主機熔斷；已暫停請求，稍後重試）"
     conn.execute(
         """INSERT INTO source_status(source_id,source_url,last_success_at,last_attempt_at,last_http_status,
               last_data_date,last_error,ok,notes,updated_at)
@@ -148,6 +162,8 @@ def touch_source(
             now,
         ),
     )
+    if ok:   # 成功後清掉先前的「限流」註記
+        conn.execute("UPDATE source_status SET notes=NULL WHERE source_id=? AND notes LIKE 'rate_limited%'", (source_id,))
     conn.commit()
 
 

@@ -266,8 +266,11 @@ def run_job(job: str, symbols_mode: str, *, stop_before_s: str | None = None) ->
 
 def main(argv: list[str] | None = None) -> int:
     p = argparse.ArgumentParser(description="台股官方資料管線")
-    p.add_argument("--job", choices=["daily", "evening"], required=False)
+    p.add_argument("--job", choices=["daily", "evening", "tpex_volume_fix"], required=False)
     p.add_argument("--symbols", choices=["sample30", "all"], required=False)
+    p.add_argument("--fix-from", default=None, help="tpex_volume_fix：起始日 YYYY-MM-DD（抽樣驗證用）")
+    p.add_argument("--fix-to", default=None, help="tpex_volume_fix：結束日 YYYY-MM-DD")
+    p.add_argument("--max-dates", type=int, default=None, help="tpex_volume_fix：本次最多處理幾個交易日（每日 1 個請求）")
     p.add_argument("--init-db-only", action="store_true", help="僅建立 schema")
     p.add_argument(
         "--stop-before",
@@ -281,6 +284,10 @@ def main(argv: list[str] | None = None) -> int:
         conn.close()
         print(f"initialized {config.DB_PATH}")
         return 0
+    if args.job == "tpex_volume_fix":
+        from pipeline import tpex_volume_fix
+        setup_logging()
+        return tpex_volume_fix.main_job(date_from=args.fix_from, date_to=args.fix_to, max_dates=args.max_dates)
     if not args.job or not args.symbols:
         p.error("--job 與 --symbols 為必要參數（除非使用 --init-db-only）")
     return run_job(args.job, args.symbols, stop_before_s=args.stop_before)

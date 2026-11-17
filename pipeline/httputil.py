@@ -9,6 +9,7 @@ import signal
 import threading
 import time
 from typing import Any
+from urllib.parse import urljoin, urlparse
 
 import requests
 
@@ -69,11 +70,70 @@ class FetchError(Exception):
         self.status = status
 
 
+class RateLimited(FetchError):
+    """對方限流（302 轉到 /errors、HTTP 429）或本機主機熔斷中。不重試、不追轉址；呼叫端應停止該來源並記為「限流」。
+    訊息以 `rate_limited` 開頭，`db.touch_source` 會據此把 source_status.notes 寫成「限流」。"""
+
+    def __init__(self, msg: str, *, host: str = "", retry_after_s: float = 0.0, circuit_open: bool = False, status: int | None = None):
+        super().__init__(msg, blocked=True, status=status)
+        self.host = host
+        self.retry_after_s = retry_after_s
+        self.circuit_open = circuit_open
+
+
+# 限流後的主機層級熔斷：同一主機在退避期間不再送出任何請求（所有 RateClient 共用）。
+# 退避秒數預設 900（15 分鐘），連續再限流時加倍，上限 RATE_LIMIT_BACKOFF_MAX（預設 3600）。環境變數可調。
+def _env_float(name: str, default: float) -> float:
+    try:
+        return float(os.environ.get(name, default))
+    except ValueError:
+        return default
+
+
+_breakers: dict[str, dict[str, float]] = {}
+
+
+def reset_breakers() -> None:
+    _breakers.clear()
+
+
+def breaker_left(host: str) -> float:
+    b = _breakers.get(host)
+    return max(0.0, b["until"] - time.monotonic()) if b else 0.0
+
+
+def _trip_breaker(host: str) -> float:
+    base = _env_float("PIPELINE_RATE_LIMIT_BACKOFF", 900.0)
+    cap = max(base, _env_float("PIPELINE_RATE_LIMIT_BACKOFF_MAX", 3600.0))
+    prev = _breakers.get(host)
+    n = (int(prev["count"]) + 1) if prev else 1
+    wait = min(base * (2 ** (n - 1)), cap)
+    _breakers[host] = {"until": time.monotonic() + wait, "count": n}
+    return wait
+
+
+def _is_errors_location(loc: str | None) -> bool:
+    if not loc:
+        return False
+    path = urlparse(loc).path.rstrip("/").lower()
+    return path.endswith("/errors") or path == "/errors"
+
+
+class _NoErrorsRedirectSession(requests.Session):
+    """遇到「轉到 /errors」的 3xx 不追轉址（直接回傳該 3xx 回應，由 RateClient 判為限流）。"""
+
+    def get_redirect_target(self, resp):  # type: ignore[override]
+        target = super().get_redirect_target(resp)
+        if target and _is_errors_location(urljoin(resp.url, target)):
+            return None
+        return target
+
+
 class RateClient:
     def __init__(self, interval: float):
         self.interval = interval
         self._last = 0.0
-        self.session = requests.Session()
+        self.session = _NoErrorsRedirectSession()
         self.session.max_redirects = MAX_REDIRECTS
         self.session.headers.update({"User-Agent": config.USER_AGENT})
 
@@ -94,15 +154,30 @@ class RateClient:
         kwargs.setdefault("timeout", (20, 60))
         deadline = float(kwargs.pop("deadline", HTTP_DEADLINE))
         last_err: Exception | None = None
+        host = urlparse(url).hostname or ""
         for attempt in range(1, retries + 1):
+            left = breaker_left(host)
+            if left > 0:   # 主機熔斷中：不送請求
+                raise RateLimited(
+                    f"rate_limited(限流): 主機 {host} 熔斷中，剩餘 {left:.0f} 秒；未送出請求 url={url}",
+                    host=host, retry_after_s=left, circuit_open=True,
+                )
             self._wait()
             try:
                 with _hard_deadline(deadline, f"{method} {url}"):
                     resp = self.session.request(method, url, **kwargs)
                 self._last = time.monotonic()
+                # 限流：3xx 轉到 /errors（櫃買中心／Cloudflare）或 429 → 不重試、熔斷整個主機
+                loc = resp.headers.get("Location")
+                if (resp.status_code in (301, 302, 303, 307, 308) and _is_errors_location(urljoin(url, loc) if loc else None)) or resp.status_code == 429:
+                    wait = _trip_breaker(host)
+                    log.error("rate limited http=%s loc=%s url=%s → 主機 %s 熔斷 %.0f 秒", resp.status_code, loc, url, host, wait)
+                    raise RateLimited(
+                        f"rate_limited(限流): http={resp.status_code} loc={loc} url={url}；主機 {host} 暫停 {wait:.0f} 秒",
+                        host=host, retry_after_s=wait, status=resp.status_code,
+                    )
                 # 307/302 without final body: treat as transient (WAF/session), not permanent block
                 if resp.status_code in (301, 302, 303, 307, 308):
-                    loc = resp.headers.get("Location")
                     raise FetchError(
                         f"redirect/http={resp.status_code} loc={loc} url={url}",
                         blocked=False,
@@ -123,7 +198,11 @@ class RateClient:
                     )
                 if resp.status_code >= 500:
                     raise FetchError(f"server {resp.status_code}", status=resp.status_code)
+                if host in _breakers and breaker_left(host) == 0:   # 熔斷期滿後首個成功請求：解除
+                    _breakers.pop(host, None)
                 return resp
+            except RateLimited:
+                raise
             except FetchError as e:
                 last_err = e
                 sleep = (config.BACKOFF_BASE ** attempt) + random.uniform(0, 1)

@@ -17,7 +17,9 @@ from .data_source import AGGREGATES, SOURCE_TABLES, DataUnavailable, get_source,
 from .models import (ADVANCED_BOOL_PARAMS, ADVANCED_NUM_PARAMS, ADVANCED_STR_PARAMS, BASIC_PARAMS, EVENT_CATEGORIES,
                      INT_PARAMS, PARAM_LABELS, STATUS_LABELS, TEST_LABEL, TOGGLE_PARAMS, ScreenParams, Val,
                      CHANGE_CHECK_LABELS, CHANGE_CHECK_NOTES, CHANGE_CHECK_STATE, VOLUME_BASIS_NOTE,
-                     volume_basis_note, source_basis_segments, VOLUME_BASIS_TITLE, VOLUME_BASIS_PENDING)
+                     volume_basis_note, volume_basis_policy, source_basis_segments, VOLUME_BASIS_TITLE, VOLUME_BASIS_PENDING,
+                     volume_basis_label, block_info, analysis_text_zh, zh_text, change_check_label, basis_segments,
+                     basis_counts_text)
 from .screening import (SORT_KEYS, analysis_defaults, exclusion_label, exclusion_label_source, exclusion_labels,
                         run_screen)
 
@@ -51,7 +53,7 @@ templates.env.filters["num"] = fmt_num
 templates.env.filters["big"] = fmt_big
 templates.env.globals.update(STATUS_LABELS=STATUS_LABELS, TEST_LABEL=TEST_LABEL, EVENT_CATEGORIES=EVENT_CATEGORIES,
                              VOLUME_BASIS_NOTE=VOLUME_BASIS_NOTE, CHANGE_CHECK_LABELS=CHANGE_CHECK_LABELS,
-                             volume_basis_note=volume_basis_note)
+                             volume_basis_note=volume_basis_note, volume_basis_policy=volume_basis_policy)
 
 
 def ctx(request: Request, **kw):
@@ -176,7 +178,8 @@ def screener_page(result, p, page) -> tuple:
 
 CSV_HEADER = ["代號", "名稱", "市場", "交易日期", "收盤(新台幣元)", "漲跌幅(%)", "成交金額(新台幣元)",
               "MA短", "MA長", "量比(倍)", "條件1_趨勢", "條件2_突破", "條件3_量能", "條件4_成交金額",
-              "符合原因", "漲跌交叉檢查", "資料來源", "資料標記"]
+              "符合原因", "漲跌交叉檢查", "評估日量額口徑", "均量窗口非總量日數", "觀察窗資料異常日數", "資料說明",
+              "資料來源", "資料標記"]
 
 
 def _csv_cell(c):
@@ -192,10 +195,14 @@ def screener_csv_parts(r) -> tuple[list, list, list]:
     ap = {k: v for k, v in ap.items()}
     head = [[f"# 參數：{', '.join(f'{k}={v}' for k, v in ap.items())}；交易日 {r.trade_date}；引擎：{r.engine}"],
             [f"# {VOLUME_BASIS_NOTE}"]]
+    if r.extra.get("basis_counts_text"):
+        head.append([f"# {r.extra['basis_counts_text']}"])
     if r.extra.get("universe_text"):
         head.append([f"# {r.extra['universe_text']}（清單來源 {r.extra.get('universe_source', '')}；範圍外不計入排除）"])
     for e in r.extra.get("exclusion_stats") or []:
         head.append([f"# 排除 {e['code']}：{e['count']} 檔｜{e['label']}"])
+    if r.extra.get("volume_basis_status_text"):
+        head.append([f"# {r.extra['volume_basis_status_text']}"])
     head.append(CSV_HEADER)
     rows = [screener_csv_row(row, r.is_test) for row in r.rows]
     tail = []
@@ -208,12 +215,22 @@ def screener_csv_parts(r) -> tuple[list, list, list]:
     return head, rows, tail
 
 
+def _extra_cell(extra: list, key: str) -> str:
+    for e in extra or []:
+        if e["key"] == key:
+            return e["text"]
+    return "" if key == "data_note" else "—"
+
+
 def screener_csv_row(row, is_test: bool) -> list:
     reasons = "；".join(f"{c.label}：{c.actual}" for c in row.conditions if c.enabled)
     return [row.code, row.name, row.market, row.trade_date, row.close.value, row.change_pct.value,
             int(row.turnover.value), row.ma_short.value, row.ma_long.value, row.vol_ratio.value,
             *[_csv_cell(c) for c in row.conditions], reasons,
-            CHANGE_CHECK_LABELS.get(row.change_check, row.change_check or "—"), row.close.source,
+            change_check_label(row.change_check),
+            *[_extra_cell(row.extra, k) for k in ("volume_basis", "window_volume_basis_days", "window_bad_data_days",
+                                                  "data_note")],
+            row.close.source,
             TEST_LABEL if is_test else "正式"]
 
 
@@ -316,7 +333,9 @@ def stock_screen_status(src, code: str):
         return {"status": "ERROR", "label": "無法篩選", "detail": sr.error, "code": ""}
     if st:
         lab = {"PASS": "入選", "FAIL": "未符合條件", "EXCLUDED": "排除"}.get(st["status"], st["status"])
-        return {"status": st["status"], "label": lab, "code": st["code"], "detail": st["reason"],
+        z = zh_text(st["reason"], st["code"])
+        return {"status": st["status"], "label": lab, "code": st["code"], "detail": z["text"], "detail_title": z["title"],
+                "extra": st.get("extra") or [],
                 "code_label": exclusion_label(st["code"]) if st["code"] else "",
                 "code_label_src": exclusion_label_source(st["code"]) if st["code"] else "",
                 "trade_date": sr.trade_date}
@@ -373,14 +392,21 @@ def stock_context(src, code: str, qs, parts=("quote", "fin", "events", "rev", "s
                  "change_pct": QV(ph["change_pct"][-1], "%", note=ph.get("change_pct_note", "")),
                  "ma20": QV(ph["ma20"][-1], "新台幣元", note=ma_note or ph.get("ma20_note", "")),
                  "ma60": QV(ph["ma60"][-1], "新台幣元", note=ma_note or ph.get("ma60_note", "") or "交易日數不足 60 日")}
+        lv = ph.get("last_vol") or {}
+        if lv:
+            quote["amount"] = QV(lv.get("amount"), "新台幣元", 0)
+            quote["vol_basis"] = volume_basis_label(lv.get("volume_basis"), bool(lv.get("has_basis_col")))
+            quote["block"] = block_info(lv.get("block_shares"), lv.get("block_amount_twd"), lv.get("block_source"),
+                                        bool(lv.get("has_block_col")))
     chk = None
     if quote and ph.get("change_check"):
         c = ph["change_check"][-1] or {}
         if c.get("check"):
-            chk = dict(c, label=CHANGE_CHECK_LABELS.get(c["check"], c["check"]),
+            chk = dict(c, label=change_check_label(c["check"]),
                        note=CHANGE_CHECK_NOTES.get(c["check"], ""), state=CHANGE_CHECK_STATE.get(c["check"], "na"))
     out = dict(s=s, ph=ph, chart=chart, chart_json=json.dumps(chart), quote=quote, chk=chk, kline=kl, price_mode=price_mode,
-               check_labels=CHANGE_CHECK_LABELS, basis_segs=source_basis_segments(ph.get("row_sources") or []),
+               check_labels=CHANGE_CHECK_LABELS, basis_segs=basis_segments([(x[0], x[1], x[2] if len(x) > 2 else None) for x in ph.get("row_sources") or []],
+                                         bool(ph.get("has_basis_col"))),
                basis_title=VOLUME_BASIS_TITLE, cat=cat, period=period, scope=scope, basis=basis)
     if "fin" in parts:
         out["basis"], out["fin"] = stock_fin(src, code, period, scope, basis, "basis" in qs)

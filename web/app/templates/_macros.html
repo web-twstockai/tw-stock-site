@@ -65,7 +65,7 @@
     {% if not compact %}<td class="reasons c-key"><details><summary>{{ r.conditions|selectattr('enabled')|list|length }} 條全部通過</summary>
       <ol>{% for c in r.conditions %}<li class="{{ 'pass' if c.passed else 'fail' }}{{ ' off' if not c.enabled }}">
         {% if not c.enabled %}⚪ 未啟用{% elif c.passed %}✅{% elif c.passed is none %}⚠️ 資料不足{% else %}❌{% endif %}
-        {{ c.label }}：<span class="actual">{{ c.actual }}</span></li>{% endfor %}</ol></details></td>{% endif %}
+        {{ c.label }}：<span class="actual">{{ c.actual }}</span></li>{% endfor %}</ol>{% set rx = (r.extra if r.extra is defined and r.extra else [])|rejectattr('state', 'equalto', 'old-analysis')|list %}{% if rx %}<small class="muted" data-testid="row-extra">{% for x in rx %}<span{% if x.title %} title="{{ x.title }}"{% endif %}>{{ x.label }}：{{ x.text }}</span>{% if not loop.last %}；{% endif %}{% endfor %}</small>{% endif %}</details></td>{% endif %}
   </tr>
   {% endfor %}
   </tbody>

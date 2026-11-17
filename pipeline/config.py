@@ -3,8 +3,12 @@ from __future__ import annotations
 
 from pathlib import Path
 
+import os
+
 ROOT = Path(__file__).resolve().parents[1]
-DB_PATH = ROOT / "data" / "twstock.db"
+# 正式庫路徑（唯讀／寫入都要經過這個常數；測試與副本可用環境變數 PIPELINE_DB_PATH 覆寫）
+PRODUCTION_DB_PATH = ROOT / "data" / "twstock.db"
+DB_PATH = Path(os.environ["PIPELINE_DB_PATH"]) if os.environ.get("PIPELINE_DB_PATH") else PRODUCTION_DB_PATH
 LOG_DIR = ROOT / "logs"
 SCHEMA_SQL = Path(__file__).resolve().parent / "schema.sql"
 
@@ -20,7 +24,7 @@ SAMPLE30 = SAMPLE30_TWSE + SAMPLE30_TPEX
 
 # 請求間隔（秒）
 TWSE_INTERVAL = 3.5
-TPEX_INTERVAL = 3.5
+TPEX_INTERVAL = 5.0   # 櫃買中心：每次請求間隔 ≥5 秒（2026-11-17 曾因連續請求被暫時限流約 15 分鐘）
 MOPS_INTERVAL = 5.5
 MAX_RETRIES = 3
 BACKOFF_BASE = 2.0

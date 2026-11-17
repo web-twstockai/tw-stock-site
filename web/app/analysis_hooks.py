@@ -29,9 +29,10 @@ _FRAME_CACHE: dict[int, tuple[Any, dict, Any]] = {}
 def _load(name: str):
     if name in _LOADED:
         return _LOADED[name]
+    from . import screening
     from .screening import analysis_module
     mod = None
-    if (PROJECT_ROOT / "analysis" / f"{name}.py").exists():
+    if (screening.ANALYSIS_DIR / f"{name}.py").exists():
         try:
             mod = analysis_module(name)   # 頂層名稱，與 screener／narrative 共用同一份模組
         except Exception:

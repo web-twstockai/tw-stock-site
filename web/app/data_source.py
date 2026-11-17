@@ -232,6 +232,17 @@ class DataSource(abc.ABC):
         rows = self.list_stocks()
         return rows if uni is None else [s for s in rows if s["code"] in uni]
 
+    def volume_basis_counts(self, date: str) -> Optional[dict]:
+        """當日追蹤範圍內有收盤價的列，依 daily_prices.volume_basis 分類（models.basis_counts）；讀不到回 None。"""
+        from .models import basis_counts
+        try:
+            rows = self.get_source_rows("daily_prices", {"price_date": date}, limit=1_000_000)
+        except (DataUnavailable, KeyError):
+            return None
+        uni = self.universe_symbols()
+        rows = [r for r in rows if r.get("close_twd") is not None and (uni is None or r.get("symbol") in uni)]
+        return basis_counts(rows) if rows else None
+
     def in_universe(self, code: str) -> bool:
         uni = self.universe_symbols()
         return uni is None or code in uni
@@ -724,7 +735,11 @@ class FakeSource(DataSource):
             chg[-1] = round(chg[-1] + _SRC_MISMATCH[code], 2)
         mk = next((x["market_code"] for x in self._stocks if x["code"] == code), "TWSE")
         srcs = [(r["date"], _fake_px_source(code, mk, i)) for i, r in enumerate(rows)][sl]
-        return {"rows": rows[sl], "row_sources": srcs, "ma20": ma20[sl], "ma60": ma60[sl], "change": chg[sl], "change_pct": chg_pct[sl],
+        lr = rows[-1]
+        last_vol = {"date": lr["date"], "amount": round(lr["close"] * lr["volume"]),   # 與假表 amount_twd 同式
+                    "has_basis_col": False, "has_block_col": False,   # 測試資料表沒有 volume_basis／block_* 欄（＝舊庫）
+                    "volume_basis": None, "block_shares": None, "block_amount_twd": None, "block_source": None}
+        return {"rows": rows[sl], "row_sources": srcs, "last_vol": last_vol, "ma20": ma20[sl], "ma60": ma60[sl], "change": chg[sl], "change_pct": chg_pct[sl],
                 "change_note": "", "change_pct_note": "", "source": self.SRC,
                 "as_of": rows[-1]["date"], "is_test": True, "volume_unit": "股", "price_unit": "新台幣元",
                 "adjustment": "未調整（價格調整方式見 docs/indicators.md）", "notes": notes,
@@ -1031,13 +1046,22 @@ class SqliteSource(DataSource):
         if not out:
             notes.append("資料不足：daily_prices 沒有此股的現行行情列。")
         src = rows[-1]["source"] if rows else "daily_prices"
+        # 量額口徑與鉅額（schema §3.4 新欄；舊庫沒有這些欄 → has_* False，畫面顯示「口徑不明」／「未知」）
+        last_vol = None
+        if traded:
+            lr = traded[-1]
+            last_vol = {"date": lr["price_date"], "amount": lr.get("amount_twd"),
+                        "has_basis_col": self._has("daily_prices", "volume_basis"),
+                        "has_block_col": self._has("daily_prices", "block_shares"),
+                        **{k: lr.get(k) for k in ("volume_basis", "block_shares", "block_amount_twd", "block_source")}}
         # 均線與漲跌幅由 main.py 透過 analysis_hooks 疊上；這裡不計算
         return {"rows": out, "ma20": [None] * len(out), "ma60": [None] * len(out),
                 "change": [signed(r) for r in traded] if (has_change or has_twd) else [None] * len(out),
                 "change_pct": [None] * len(out),
                 "ma_note": "", "change_pct_note": "",
                 "change_note": "" if (has_change or has_twd) else "daily_prices.change／change_twd 欄位尚未建立",
-                "row_sources": [(r["price_date"], r.get("source")) for r in traded],
+                "row_sources": [(r["price_date"], r.get("source"), r.get("volume_basis")) for r in traded],
+                "has_basis_col": self._has("daily_prices", "volume_basis"), "last_vol": last_vol,
                 "source": src, "as_of": out[-1]["date"] if out else "—", "is_test": False, "volume_unit": "股",
                 "price_unit": "新台幣元", "adjustment": "K 線為未調整原始價；均線為 analysis 還原價計算",
                 "notes": notes}
@@ -1291,7 +1315,8 @@ class SqliteSource(DataSource):
         import sys
         if not self.db_path.exists():
             raise DataUnavailable("db_missing", str(self.db_path))
-        path = PROJECT_ROOT / "analysis" / "io_sqlite.py"
+        from . import screening
+        path = screening.ANALYSIS_DIR / "io_sqlite.py"
         if str(path.parent) not in sys.path:
             sys.path.append(str(path.parent))
         if "analysis_io_sqlite" not in sys.modules:

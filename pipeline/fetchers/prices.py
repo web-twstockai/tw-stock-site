@@ -19,6 +19,7 @@ CONTENT_KEYS = [
     "open_twd", "high_twd", "low_twd", "close_twd", "change", "change_twd",
     "change_sign", "change_note", "is_halted", "is_no_trade", "next_ref_price_twd",
     "volume_shares", "amount_twd", "transactions", "source_table",
+    "volume_basis", "block_shares", "block_amount_twd", "block_source",
 ]
 
 
@@ -86,6 +87,7 @@ def fetch_twse_stock_day(conn: sqlite3.Connection, symbol: str, month_day: date)
             "raw_amount": rec[2],
             "source": url,
             "source_table": "STOCK_DAY",
+            "volume_basis": "incl_block",
             "announced_at": None,
             "announced_at_note": "來源無公告時間；次日參考價：來源無此欄",
             "fetched_at": now_iso(),
@@ -128,6 +130,11 @@ def fetch_tpex_trading_stock(conn: sqlite3.Connection, symbol: str, month_day: d
         close = parse_number(rec[6])
         chg, sign, note = parse_change(rec[7])
         no_trade, halted = trade_flags(close, symbol, pd, exact, intervals)
+        cur_src = conn.execute(
+            "SELECT source_table FROM daily_prices WHERE symbol=? AND price_date=? AND is_current=1", (symbol, pd)
+        ).fetchone()
+        if cur_src and cur_src[0] == "dailyQuotes":
+            continue   # 已有含鉅額的正式來源列：tradingStock 不得降級覆寫（僅留作對照）
         row = {
             "symbol": symbol,
             "market": "TPEx",
@@ -152,6 +159,7 @@ def fetch_tpex_trading_stock(conn: sqlite3.Connection, symbol: str, month_day: d
             "raw_amount": rec[2],
             "source": url,
             "source_table": "tradingStock",
+            "volume_basis": "excl_block",   # 官方 notes：以上資料不含上櫃股票鉅額交易；只在取不到 dailyQuotes 時作為退而求其次的來源
             "announced_at": None,
             "announced_at_note": "來源無公告時間；次日參考價：來源無此欄（tradingStock 無此欄，見 dailyQuotes）",
             "fetched_at": now_iso(),
@@ -187,21 +195,33 @@ def fetch_sample_prices(conn: sqlite3.Connection, symbols: list[str], *, trade_d
         from datetime import date as _date
         months = [_date(y, m, 1)] + months
     want = set(days)
-    result = {"months": len(months), "ok": [], "failed": []}
+    result = {"months": len(months), "ok": [], "failed": [], "tpex_days": 0, "tpex_fallback": []}
     market_map = {r["symbol"]: r["market"] for r in conn.execute("SELECT symbol, market FROM securities")}
+
+    def _mkt(sym: str) -> str:
+        return market_map.get(sym) or ("TWSE" if sym in config.SAMPLE30_TWSE else "TPEx")
+
+    # 上櫃：2026-11-17 起正式來源為 dailyQuotes（含鉅額；整日一個請求、取多檔），tradingStock 只作取不到時的退而求其次
+    tpex_syms = [s for s in symbols if _mkt(s) == "TPEx"]
+    tpex_failed: dict[str, str] = {}
+    if tpex_syms:
+        tp = fetch_tpex_quotes_days(conn, tpex_syms, days)
+        result["tpex_days"] = tp["fetched_days"]
+        result["tpex_fallback"] = tp["fallback_symbols"]
+        for msg in tp["failed"]:
+            result["failed"].append(msg)
+        for sym in tp["fallback_symbols"]:
+            tpex_failed[sym] = "dailyQuotes 取不到，已退回 tradingStock（volume_basis=excl_block）"
     for sym in symbols:
-        mkt = market_map.get(sym)
-        if not mkt:
-            # fallback from sample lists
-            mkt = "TWSE" if sym in config.SAMPLE30_TWSE else "TPEx"
+        mkt = _mkt(sym)
         try:
             total = 0
-            for md in months:
-                if mkt == "TWSE":
+            if mkt == "TWSE":
+                for md in months:
                     total += fetch_twse_stock_day(conn, sym, md)
-                else:
+            elif sym in tpex_failed:
+                for md in months:
                     total += fetch_tpex_trading_stock(conn, sym, md)
-            # trim count in window
             have = conn.execute(
                 "SELECT COUNT(*) FROM daily_prices WHERE symbol=? AND is_current=1 AND price_date>=? AND price_date<=?",
                 (sym, days[0], days[-1]),
@@ -212,3 +232,54 @@ def fetch_sample_prices(conn: sqlite3.Connection, symbols: list[str], *, trade_d
             result["failed"].append(f"{sym}:{e}")
             log.error("prices fail %s %s", sym, e)
     return result
+
+
+def tpex_day_done(conn: sqlite3.Connection, symbols: list[str], iso: str) -> bool:
+    """該日對這些上櫃代號已完成：至少有一列，且現有列全是含鉅額口徑（dailyQuotes／incl_block）。冪等：已完成就不再請求。"""
+    ph = ",".join("?" for _ in symbols)
+    rows = conn.execute(
+        f"""SELECT source_table, volume_basis FROM daily_prices
+            WHERE is_current=1 AND price_date=? AND symbol IN ({ph})""",
+        [iso, *symbols],
+    ).fetchall()
+    return bool(rows) and all(r[0] == "dailyQuotes" and r[1] == "incl_block" for r in rows)
+
+
+def fetch_tpex_quotes_days(conn: sqlite3.Connection, symbols: list[str], days: list[str], *, max_days: int | None = None) -> dict:
+    """上櫃指定代號、指定交易日：以 dailyQuotes（每日 1 個請求）寫入含鉅額列；已完成的日期略過。
+    遇限流（RateLimited／熔斷）立即停止；其他失敗的日期，若原本沒有列就以 tradingStock 退而求其次（excl_block）。"""
+    from pipeline.fetchers import market_prices as mp
+    from pipeline.fetchers import tpex_block
+    from pipeline.httputil import RateLimited  # noqa: F401
+
+    out = {"fetched_days": 0, "skipped_days": 0, "failed": [], "failed_days": [], "fallback_symbols": [], "rate_limited": False}
+    universe = {s: "TPEx" for s in symbols}
+    http_events: list = []
+    todo = [d for d in days if not tpex_day_done(conn, symbols, d)]
+    out["skipped_days"] = len(days) - len(todo)
+    if max_days is not None:
+        todo = todo[:max_days]
+    if not todo:
+        return out
+    ctx = tpex_block.get_context(conn)
+    exact, intervals = load_halt_coverage(conn)
+    for iso in todo:
+        st = mp.fetch_tpex_day(conn, iso, universe, http_events, exact=exact, intervals=intervals, block_ctx=ctx)
+        if st["failed"]:
+            out["failed"].extend(st["failed"])
+            out["failed_days"].append(iso)
+        else:
+            out["fetched_days"] += 1
+        if st.get("rate_limited"):
+            out["rate_limited"] = True
+            log.error("tpex quotes: 限流，停止（已熔斷主機）")
+            break
+    if out["failed_days"] and not out["rate_limited"]:
+        for sym in symbols:
+            for fd in out["failed_days"]:
+                if not conn.execute(
+                    "SELECT 1 FROM daily_prices WHERE symbol=? AND is_current=1 AND price_date=? LIMIT 1", (sym, fd)
+                ).fetchone():
+                    out["fallback_symbols"].append(sym)
+                    break
+    return out

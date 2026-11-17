@@ -3,7 +3,7 @@
 {% block title %}選股｜台股盤後研究{% endblock %}
 {% block content %}
 <h1>技術條件選股 <small>趨勢＋突破＋量能</small></h1>
-<p class="basis-note" data-testid="volume-basis">{{ VOLUME_BASIS_NOTE }}</p>
+<p class="basis-note" data-testid="volume-basis">{{ VOLUME_BASIS_NOTE }}{% if result is defined and result.extra.basis_counts_text is defined and result.extra.basis_counts_text %}<br><span data-testid="basis-counts">{{ result.extra.basis_counts_text }}。</span>{% endif %}</p>
 
 {% set ep = result.extra.error_param|default('') %}
 {% macro numfield(name, aria, unit='') -%}
@@ -86,13 +86,14 @@
 
 {% if result.extra.exclusion_stats is defined %}
 <section class="card exclusion-stats" id="exclusion-stats" data-testid="exclusion-stats">
+  {% if result.extra.volume_basis_status_text is defined and result.extra.volume_basis_status_text %}<p class="note" data-testid="volume-basis-status">{{ result.extra.volume_basis_status_text }}</p>{% endif %}
   <h2>排除原因統計 <small>檢查 {{ result.universe_count }} 檔｜排除 {{ result.excluded|length }} 檔{% if result.extra.coverage_excluded %}（其中資料覆蓋不足 {{ result.extra.coverage_excluded }} 檔）{% endif %}</small></h2>
   {% if result.extra.exclusion_stats %}
   <div class="table-wrap stack-wrap"><table class="data stack">
     <thead><tr><th>代碼</th><th>說明</th><th class="r">檔數</th><th>類型</th></tr></thead>
     <tbody>{% for e in result.extra.exclusion_stats %}<tr class="{{ 'cov' if e.coverage }}">
       <td class="stack-h"><code>{{ e.code }}</code></td><td class="wrap">{{ e.label }}</td><td class="r">{{ e.count }}</td>
-      <td>{% if e.coverage %}<a href="/status#coverage">資料覆蓋不足</a>{% elif e.code == 'EXCL_SUSPENDED' %}<span data-type="suspended">確認停牌</span>{% else %}資料品質／其他{% endif %}</td>
+      <td>{% if e.code == 'EXCL_VOLUME_BASIS' %}<a href="/status#coverage">資料覆蓋不足</a><span data-type="volume-basis">（量額口徑）</span>{% elif e.coverage %}<a href="/status#coverage">資料覆蓋不足</a>{% elif e.code == 'EXCL_SUSPENDED' %}<span data-type="suspended">確認停牌</span>{% else %}資料品質／其他{% endif %}</td>
     </tr>{% endfor %}</tbody>
   </table></div>
   {% else %}<p class="muted">無排除。</p>{% endif %}
@@ -115,9 +116,9 @@
 <section class="card" id="excluded">
   <h2>排除名單 <small>篩選時排除 {{ result.excluded|length }} 檔</small></h2>
   {% if result.excluded %}
-  {% if result.extra.exclusion_counts %}<p>{% for code, n in result.extra.exclusion_counts.items() %}<span class="badge st-insufficient">{{ code }} {{ n }}</span> {% endfor %}</p>{% endif %}
+  {% if result.extra.exclusion_counts %}<p>{% set xl = result.extra.exclusion_labels if result.extra.exclusion_labels is defined else {} %}{% for code, n in result.extra.exclusion_counts.items() %}<span class="badge st-insufficient" title="{{ code }}" data-code="{{ code }}">{{ xl.get(code, code) }} {{ n }}</span> {% endfor %}</p>{% endif %}
   <details {{ 'open' if result.excluded|length <= 20 }}><summary>明細 {{ result.excluded|length }} 檔{% if result.excluded|length > 200 %}（顯示前 200）{% endif %}</summary>
-  <ul class="excluded">{% for e in result.excluded[:200] %}<li><a href="/stock/{{ e.code }}">{{ e.code }} {{ e.name }}</a>：{{ e.reason }}</li>{% endfor %}</ul></details>
+  <ul class="excluded">{% for e in result.excluded[:200] %}<li{% if e.raw is defined and e.raw %} title="{{ e.raw }}"{% endif %}><a href="/stock/{{ e.code }}">{{ e.code }} {{ e.name }}</a>：{{ e.reason }}{% set ex = (e.extra if e.extra is defined else [])|rejectattr('state', 'equalto', 'old-analysis')|rejectattr('state', 'equalto', 'na')|list %}{% if ex %} <small class="muted" data-testid="excl-extra">（{% for x in ex %}<span{% if x.title %} title="{{ x.title }}"{% endif %}>{{ x.label }}：{{ x.text }}</span>{% if not loop.last %}；{% endif %}{% endfor %}）</small>{% endif %}</li>{% endfor %}</ul></details>
   {% else %}<p class="muted">無。</p>{% endif %}
   <h3>非普通股（不列入範圍）<small>securities_excluded {{ result.non_common|length }} 檔</small></h3>
   {% if result.non_common %}

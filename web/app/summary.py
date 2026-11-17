@@ -15,7 +15,8 @@ from typing import Optional
 from .data_source import DataSource, DataUnavailable, price_class, price_direction, source_href
 from .models import (FLAT_MAYBE_NOCOMPARE_NOTE, INDEX_CHANGE_PCT_MISSING_NOTE, NO_COMPARE_ALL_NULL_NOTE, NO_COMPARE_LABEL,
                      NO_COMPARE_NO_COLUMN_NOTE, NO_COMPARE_NOT_STORED_NOTE, NO_COMPARE_SIGN, STATUS_ERROR,
-                     STATUS_INSUFFICIENT, STATUS_SOURCE_DOWN, TEST_LABEL, TURNOVER_TOTAL_NOTE, ScreenParams, Val)
+                     STATUS_INSUFFICIENT, STATUS_SOURCE_DOWN, TEST_LABEL, TURNOVER_TOTAL_NOTE, ScreenParams, Val,
+                     basis_counts, basis_counts_text)
 
 
 def _fact(label: str, v: Val, sub: str = "", links: Optional[list] = None, unit_label: str = "") -> dict:
@@ -88,7 +89,7 @@ def build_daily_summary(src: DataSource) -> dict:
             _fact(f"{NO_COMPARE_LABEL}家數", nc_val, sub=nc_note, unit_label="檔"),
             _fact("成交金額合計", V(sum(r.get("amount_twd") or 0 for r in rows), "新台幣元", dd,
                                  source_href("daily_prices", agg="sum:amount_twd", price_date=dd, **ux),
-                                 "daily_prices", k), sub=TURNOVER_TOTAL_NOTE),
+                                 "daily_prices", k), sub=TURNOVER_TOTAL_NOTE + "；" + basis_counts_text(basis_counts(traded))),
         ]
     else:
         facts.append(_fact("行情檔數", missing("檔", "daily_prices 沒有此日期的現行列")))

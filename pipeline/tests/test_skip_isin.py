@@ -57,30 +57,48 @@ def test_m1_enough_can_skip_and_noncurrent_or_noncommon_not_counted():
     assert securities.should_skip_isin(conn2)[0] is False
 
 
-def test_m1_run_job_does_not_succeed_silently_with_zero_stocks(monkeypatch, tmp_path):
-    """整合：空 DB＋PIPELINE_SKIP_ISIN=1 → run_job 必須呼叫 isin 抓取（這裡用假的抓取記錄呼叫），不可略過。"""
-    from pipeline import run as prun, config
-    monkeypatch.setattr(config, "DB_PATH", tmp_path / "t.db")
-    monkeypatch.setattr(config, "LOG_DIR", tmp_path)
+def _run_job_with_fake_isin(monkeypatch, mode, prefill=None):
+    """跑 run_job（tmp 庫由 conftest 提供）；isin 抓取換成假的並記錄呼叫。其他步驟一律不連網。"""
+    from pipeline import run as prun, db as pdb2
     monkeypatch.setenv("PIPELINE_SKIP_ISIN", "1")
     called = []
 
     def fake_fetch(conn):
         called.append(1)
-        raise RuntimeError("stop here (test)")
+        raise RuntimeError("stop (test)")
     monkeypatch.setattr(prun.securities, "fetch_and_store", fake_fetch)
-    for m in ("fetch_and_store",):
-        monkeypatch.setattr(prun.calendar, m, lambda conn: None)
+    monkeypatch.setattr(prun.calendar, "fetch_and_store", lambda conn: None)
     monkeypatch.setattr(prun, "assert_no_other_pipeline", lambda: None)
     monkeypatch.setattr(prun, "setup_logging", lambda: None)
-    # 讓後面的步驟不要真的連網：securities 失敗後各步驟會各自嘗試，這裡只關心「有沒有呼叫 isin 抓取」
-    for mod in ("prices", "corporate_actions", "halts", "indices", "revenue", "financials", "material"):
-        monkeypatch.setattr(prun, mod, type("X", (), {"__getattr__": lambda self, k: (lambda *a, **kw: (_ for _ in ()).throw(RuntimeError("no net")))})())
+    bomb = type("X", (), {"__getattr__": lambda self, k: (lambda *a, **kw: (_ for _ in ()).throw(RuntimeError("no net")))})()
+    for mod in ("prices", "corporate_actions", "halts", "indices", "revenue", "financials", "material", "market_prices", "material_batch"):
+        monkeypatch.setattr(prun, mod, bomb)
+    monkeypatch.setattr(prun.analysis_bridge, "run_screen_and_write", lambda *a, **k: {"ok": True})
+    if prefill:
+        conn = pdb2.connect()
+        pdb2.init_db(conn)
+        prefill(conn)
+        conn.close()
     try:
-        prun.run_job("daily", "sample30")
+        prun.run_job("daily", mode)
     except Exception:
         pass
-    assert called, "空清單下仍略過了 isin（M1 失敗）"
+    return called
+
+
+def test_m1_all_mode_empty_db_must_fetch_isin(monkeypatch):
+    """all 模式＋空庫＋SKIP=1：必須呼叫 isin 抓取（守門有效）；變異驗證：守門改成永遠可略過時此測試會失敗。"""
+    assert _run_job_with_fake_isin(monkeypatch, "all"), "M1 守門失效：空清單下仍略過 isin"
+
+
+def test_m1_sample30_partial_db_must_fetch_isin(monkeypatch):
+    """sample30＋非空但低於門檻的 DB（不走『securities 空→先抓』舊路徑）：也必須照抓。"""
+    assert _run_job_with_fake_isin(monkeypatch, "sample30", prefill=lambda c: _add(c, 5, 5)), "M1 守門失效：殘缺清單下仍略過 isin"
+
+
+def test_m1_enough_securities_skips_isin(monkeypatch):
+    """清單達門檻時確實略過（不呼叫抓取）。"""
+    assert not _run_job_with_fake_isin(monkeypatch, "all", prefill=lambda c: _add(c, 900, 700))
 
 
 def test_m2_note_skipped_keeps_ok_and_last_success():
