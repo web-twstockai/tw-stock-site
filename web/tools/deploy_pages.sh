@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+# 【手動備援專用】正式更新與部署由 GitHub Actions（update.yml）負責；本腳本只在 Actions 不可用時手動使用。
 # 公開靜態版部署：匯出（正式 SQLite 快照）→ commit → push 到 GitHub Pages（web-twstockai/tw-stock-site main 分支根目錄）。
 # 用法：bash /workspace/tw-stock-site/web/tools/deploy_pages.sh [--no-verify]
 #   - 冪等：內容沒變就不 commit、不 push（記錄「無變更」並以 0 結束）。
@@ -103,6 +104,11 @@ elif ! grep -q '"build_type": *"workflow"' /tmp/.pages_info.json; then
   log "GitHub Pages 改為 workflow 部署：HTTP $code"
 fi
 rm -f /tmp/.pages_info.json
+
+# 5b) pages.yml 已無 push 觸發（避免推 main 時意外以舊靜態檔覆蓋 update.yml 的部署），改用 workflow_dispatch 手動觸發
+code=$(API -o /dev/null -w "%{http_code}" -X POST "https://api.github.com/repos/$OWNER/$REPO/actions/workflows/pages.yml/dispatches" -d "{\"ref\":\"$BRANCH\"}")
+log "觸發 pages.yml（workflow_dispatch）：HTTP $code"
+[ "$code" = "204" ] || fail "觸發 pages.yml 失敗（HTTP $code）；已 push 但尚未部署"
 
 # 6) 驗證公開網址已換成這一版（最多等 25 分鐘）
 if [ $VERIFY -eq 1 ]; then
