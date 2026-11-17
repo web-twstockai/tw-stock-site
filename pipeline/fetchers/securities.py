@@ -83,7 +83,8 @@ def _parse_isin_html(raw: bytes, market_label: str) -> tuple[str | None, list[di
 def fetch_and_store(conn: sqlite3.Connection) -> dict:
     stats = {"twse_common": 0, "tpex_common": 0, "excluded": 0}
     for url, market in ((ISIN_TWSE, "TWSE"), (ISIN_TPEX, "TPEx")):
-        resp = twse.request("GET", url)
+        # ISIN 檔很大（上市約 10 MB），慢速連線可能要 10 分鐘以上：總時間上限放寬到 900 秒（其他請求維持預設 150 秒）
+        resp = twse.request("GET", url, deadline=900, timeout=(20, 120))
         data_date, rows = _parse_isin_html(resp.content, market)
         touch_source(conn, f"isin_{market.lower()}", url=url, ok=True, http_status=resp.status_code, data_date=data_date)
         for row in rows:

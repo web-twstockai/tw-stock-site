@@ -3,6 +3,10 @@
 set -euo pipefail
 REPO="${GITHUB_REPOSITORY:-web-twstockai/tw-stock-site}"
 CACHE="${RUNNER_TEMP:-/tmp}/dbcache"; NEW="${RUNNER_TEMP:-/tmp}/dbnew"; mkdir -p "$NEW"
+NOW_ID=$(gh api "repos/$REPO/releases/tags/db-latest" -q '.assets[]|select(.name=="twstock.db.gz")|"\(.id) \(.updated_at)"')
+if [ "$NOW_ID" != "$(cat "$CACHE/asset_id.txt")" ]; then
+  echo "db-latest 在本次執行期間被別人改過（開始 $(cat "$CACHE/asset_id.txt")；現在 $NOW_ID）；為避免分叉，不上傳" >&2; exit 1
+fi
 python - "$NEW/twstock.db" <<'PY'
 import sqlite3, sys
 src = sqlite3.connect("data/twstock.db"); dst = sqlite3.connect(sys.argv[1]); src.backup(dst); dst.close(); src.close()

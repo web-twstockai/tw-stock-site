@@ -19,6 +19,10 @@ on:
         description: "成功後是否把資料庫寫回 Release db-latest"
         type: boolean
         default: true
+      fetch_isin:
+        description: "是否抓 isin.twse.com.tw 證券清單（雲端很慢，約 12 分鐘以上；預設略過）"
+        type: boolean
+        default: false
       code_ref:
         description: "程式碼分支"
         type: string
@@ -40,6 +44,7 @@ jobs:
     env:
       GH_TOKEN: ${{ github.token }}
       TZ: Asia/Taipei
+      PIPELINE_SKIP_ISIN: ${{ inputs.fetch_isin && '0' || '1' }}
       TWSITE_CLOUD_JOB: ${{ inputs.job || (github.event.schedule == '0 10 * * 1-5' && 'daily' || 'evening') }}
     outputs:
       ok: ${{ steps.final.outputs.ok }}

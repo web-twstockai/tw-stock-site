@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import argparse
 import logging
+import os
 import sys
 from pathlib import Path
 
@@ -71,7 +72,12 @@ def run_job(job: str, symbols_mode: str, *, stop_before_s: str | None = None) ->
 
         if job in ("daily", "evening"):
             try:
-                st = securities.fetch_and_store(conn)
+                if os.environ.get("PIPELINE_SKIP_ISIN") == "1":
+                    # 雲端（GitHub Actions）isin.twse.com.tw 約 13 KB/s、10 MB 要 12 分鐘以上：預設略過，沿用 DB 內的清單
+                    st = "skipped(PIPELINE_SKIP_ISIN=1，沿用 DB 內證券清單)"
+                    log.info("securities: %s", st)
+                else:
+                    st = securities.fetch_and_store(conn)
                 success.append(f"securities:{st}")
                 try:
                     ust = rebuild_universes(conn)

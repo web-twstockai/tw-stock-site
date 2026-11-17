@@ -3,6 +3,9 @@
 set -euo pipefail
 REPO="${GITHUB_REPOSITORY:-web-twstockai/tw-stock-site}"
 OUT="${RUNNER_TEMP:-/tmp}/dbcache"; mkdir -p "$OUT" data
+# 記下目前 db-latest 資產的 id／更新時間；上傳前再比對，不同就中止（防分叉：單一寫入者）
+gh api "repos/$REPO/releases/tags/db-latest" -q '.assets[]|select(.name=="twstock.db.gz")|"\(.id) \(.updated_at)"' > "$OUT/asset_id.txt"
+echo "db-latest 資產：$(cat "$OUT/asset_id.txt")"
 gh release download db-latest -R "$REPO" -p twstock.db.gz -D "$OUT" --clobber
 ls -l "$OUT/twstock.db.gz"
 gunzip -c "$OUT/twstock.db.gz" > data/twstock.db
