@@ -7,9 +7,9 @@ on:
   workflow_dispatch:
     inputs:
       job:
-        description: "pipeline 工作：daily／evening／tpex_volume_fix（白名單；其餘為預留，尚未實作會拒絕）"
+        description: "pipeline 工作（白名單，名稱＝pipeline/run.py --job；回補類只跑 1 次不重試）"
         type: choice
-        options: [daily, evening, tpex_volume_fix, screen_results_migrate, next_ref_fix, halt_fix, market_backfill, corp_backfill, revenue_backfill, financials_backfill]
+        options: [daily, evening, tpex_volume_fix, screen_results_migrate, next_ref_fix, halt_fix, market_backfill, corp_backfill, revenue_backfill, financials_backfill, halts_backfill, delist_backfill, calendar_backfill]
         default: daily
       deploy:
         description: "成功後是否部署到 GitHub Pages（試跑請選 false）"
@@ -27,6 +27,51 @@ on:
         description: "程式碼分支"
         type: string
         default: src
+      # 以下為回補／修正參數（空白＝不傳，用 pipeline 預設；job 用不到的參數 run_pipeline.sh 會拒絕）
+      symbols:
+        description: "daily／evening 的 --symbols（sample30｜all；空白＝sample30）；market_backfill 一律全市場，只能填 all 或空白"
+        type: string
+        default: ""
+      universe:
+        description: "TWSITE_UNIVERSE（sample30｜all；預設 sample30）"
+        type: string
+        default: sample30
+      max_dates:
+        description: "--max-dates：本次最多處理幾個交易日（market_backfill／tpex_volume_fix／halt_fix／next_ref_fix）"
+        type: string
+        default: ""
+      budget_min:
+        description: "--budget-min：pipeline 時間預算（分鐘，≤160；外層另加 15 分收尾）"
+        type: string
+        default: ""
+      fix_from:
+        description: "--fix-from：起始日 YYYY-MM-DD"
+        type: string
+        default: ""
+      fix_to:
+        description: "--fix-to：結束日 YYYY-MM-DD"
+        type: string
+        default: ""
+      max_pages:
+        description: "--max-pages：revenue_backfill／financials_backfill 本次最多幾頁"
+        type: string
+        default: ""
+      max_enrich:
+        description: "--max-enrich：corp_backfill 的 MOPS 配股補強代號數（0＝只跑區間查詢）"
+        type: string
+        default: ""
+      months:
+        description: "--months：revenue_backfill 回補月數（空白＝24）"
+        type: string
+        default: ""
+      quarters:
+        description: "--quarters：financials_backfill 回補季數（空白＝8）"
+        type: string
+        default: ""
+      no_fetch:
+        description: "--no-fetch：halts_backfill 不打上市 TWTAWU／halt_fix 不抓官方快照"
+        type: boolean
+        default: false
   # 排程（2026-11-17 13:30 核可切換後啟用；台北 18:00 週一至五、22:00 每日；GitHub 排程可能延遲數分鐘到數十分鐘）：
   schedule:
     - cron: "0 10 * * 1-5"   # 18:00 台北，週一至五 → daily（部署）
@@ -68,6 +113,18 @@ jobs:
       - name: 執行 pipeline（最多 3 次）
         id: pipe
         timeout-minutes: ${{ (inputs.job == 'tpex_volume_fix') && 65 || 185 }}
+        env:
+          IN_SYMBOLS: ${{ inputs.symbols }}
+          IN_UNIVERSE: ${{ inputs.universe || 'sample30' }}
+          IN_MAX_DATES: ${{ inputs.max_dates }}
+          IN_BUDGET_MIN: ${{ inputs.budget_min }}
+          IN_FIX_FROM: ${{ inputs.fix_from }}
+          IN_FIX_TO: ${{ inputs.fix_to }}
+          IN_MAX_PAGES: ${{ inputs.max_pages }}
+          IN_MAX_ENRICH: ${{ inputs.max_enrich }}
+          IN_MONTHS: ${{ inputs.months }}
+          IN_QUARTERS: ${{ inputs.quarters }}
+          IN_NO_FETCH: ${{ inputs.no_fetch && 'true' || 'false' }}
         run: bash tools/cloud/run_pipeline.sh "$TWSITE_CLOUD_JOB"
       - name: 匯出靜態站＋自檢＋範圍關卡
         id: build
