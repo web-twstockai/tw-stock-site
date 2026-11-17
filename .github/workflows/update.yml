@@ -27,10 +27,10 @@ on:
         description: "程式碼分支"
         type: string
         default: src
-  # 【排程預設停用】切換正式前才取消註解（台北 18:00 週一至五、22:00 每日）：
-  # schedule:
-  #   - cron: "0 10 * * 1-5"   # 18:00 台北，週一至五 → daily
-  #   - cron: "0 14 * * *"     # 22:00 台北，每日 → evening
+  # 排程（2026-11-17 13:30 核可切換後啟用；台北 18:00 週一至五、22:00 每日；GitHub 排程可能延遲數分鐘到數十分鐘）：
+  schedule:
+    - cron: "0 10 * * 1-5"   # 18:00 台北，週一至五 → daily（部署）
+    - cron: "0 14 * * *"     # 22:00 台北，每日 → evening（部署）
 permissions:
   contents: write   # 更新 Release（db-latest/db-prev）
   actions: write    # 結尾重新啟用本 workflow（避免 60 天無活動被停用排程）
