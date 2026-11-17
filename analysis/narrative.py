@@ -19,11 +19,29 @@ import pandas as pd
 
 from screener import EXCLUSION_CODES, ScreenResult
 
-__all__ = ["Fact", "Narrative", "NEWS_CATEGORIES", "summary_narrative", "untraceable_numbers", "DISCLAIMER"]
+__all__ = ["Fact", "Narrative", "NEWS_CATEGORIES", "EXCLUSION_GROUPS", "summary_narrative", "untraceable_numbers",
+           "DISCLAIMER", "LAGGING_NOTE", "RESEARCH_NOTE"]
 
 NEWS_CATEGORIES = ("官方已公告事實", "媒體報導", "社群未證實訊息", "AI分析推論")
 DISCLAIMER = ("說明：以上僅陳述程式計算的數值與已發布資訊的標題，不說明漲跌原因；"
               "技術條件為篩選結果，非投資建議，亦不代表未來表現。")
+# 排除原因分類（摘要用中文名稱；每個排除碼恰屬一類，順序即顯示順序）。只是文字分組，不改結果碼。
+EXCLUSION_GROUPS = (
+    ("評估日無資料列（停牌或資料缺漏，待確認）", ("EXCL_NO_ROW_SUSPENDED_OR_MISSING",)),
+    ("確認停牌", ("EXCL_SUSPENDED",)),
+    ("評估日無成交", ("EXCL_NO_TRADE",)),
+    ("評估日市場無行情資料", ("EXCL_NO_DATA",)),
+    ("有效交易日歷史不足", ("EXCL_INSUFFICIENT_HISTORY",)),
+    ("新上市櫃未滿最低交易日數", ("EXCL_NEW_LISTING",)),
+    ("計算期間缺口過多", ("EXCL_WINDOW_GAPS",)),
+    ("量額口徑非總量", ("EXCL_VOLUME_BASIS",)),
+    ("除權息／減資資料或調整因子問題", ("EXCL_ADJ_COVERAGE_GAP", "EXCL_ADJ_FACTOR_MISSING", "EXCL_ADJ_FACTOR_INCONSISTENT")),
+    ("無法解釋的價格跳動", ("EXCL_UNEXPLAINED_GAP",)),
+    ("資料異常", ("EXCL_BAD_DATA",)),
+    ("不在普通股清單", ("EXCL_NOT_COMMON_STOCK",)),
+)
+LAGGING_NOTE = "最新行情列早於評估日，不能據此判斷當日是否交易"
+RESEARCH_NOTE = "輸入行情缺量額口徑欄（volume_basis），本摘要為研究試算，未檢查量額口徑，不作為正式結果。"
 _NUM = re.compile(r"(?<![A-Za-z_\d.,])[+\-]?\d[\d,]*(?:\.\d+)?%?")
 _QUOTED = re.compile(r"〔[^〕]*〕")
 
@@ -69,11 +87,14 @@ def _d(x: Any) -> str:
 
 
 def summary_narrative(result: ScreenResult, extra_facts: Sequence[Fact] = (),
-                      news_events: Sequence[dict] = (), max_listed: int = 50) -> Narrative:
+                      news_events: Sequence[dict] = (), max_listed: int = 50, scope_label: str = "全市場") -> Narrative:
     """result：screener.screen() 的結果（正式摘要須為 coverage_policy=strict）。
     extra_facts：其他數字（例如 index_daily 加權指數），每筆需含來源表／欄位／主鍵。
     news_events：news_events 表的列（dict：event_id, version, category, title, first_published_at, symbols），只列標題與分類。
-    symbols＝同版本 news_event_symbols 的 symbol 清單（related_symbols_json 已移除，傳入舊鍵 related_symbols 會拋錯）。"""
+    symbols＝同版本 news_event_symbols 的 symbol 清單（related_symbols_json 已移除，傳入舊鍵 related_symbols 會拋錯）。
+    scope_label：評估範圍名稱（預設「全市場」；只評估追蹤清單時請傳「追蹤範圍」等，避免誤稱全市場）。
+    analysis-0.9.1 全市場寫法：「{範圍} N 檔／實際完成條件評估 M 檔／符合 K 檔／未納入評估 X 檔」，排除原因依 EXCLUSION_GROUPS
+    以中文分類列檔數；result.lagging_symbols 非空時加註 LAGGING_NOTE；volume_basis 缺欄時加註 RESEARCH_NOTE。"""
     if not isinstance(result, ScreenResult):
         raise TypeError("result 必須是 ScreenResult")
     as_of = _d(result.as_of)
@@ -115,13 +136,17 @@ def summary_narrative(result: ScreenResult, extra_facts: Sequence[Fact] = (),
     passed = s[s["status"] == "PASS"].sort_values(["amount_twd", "symbol"], ascending=[False, True])
     n_pass, n_fail = len(passed), int((s["status"] == "FAIL").sum())
     n_ex = int((s["status"] == "EXCLUDED").sum())
-    lines.append(f"評估 {F('評估檔數', n_all, str(n_all), '檔', 'count(*)')} 檔："
-                 f"符合 {F('符合檔數', n_pass, str(n_pass), '檔', 'count(status=PASS)')} 檔、"
-                 f"未符合 {F('未符合檔數', n_fail, str(n_fail), '檔', 'count(status=FAIL)')} 檔、"
-                 f"排除 {F('排除檔數', n_ex, str(n_ex), '檔', 'count(status=EXCLUDED)')} 檔。")
+    n_eval = n_pass + n_fail
+    lines.append(f"{scope_label} {F('範圍檔數', n_all, str(n_all), '檔', 'count(*)')} 檔／"
+                 f"實際完成條件評估 {F('完成評估檔數', n_eval, str(n_eval), '檔', 'count(status IN (PASS,FAIL))')} 檔／"
+                 f"符合 {F('符合檔數', n_pass, str(n_pass), '檔', 'count(status=PASS)')} 檔／"
+                 f"未納入評估 {F('未納入評估檔數', n_ex, str(n_ex), '檔', 'count(status=EXCLUDED)')} 檔"
+                 f"（完成評估但未符合 {F('未符合檔數', n_fail, str(n_fail), '檔', 'count(status=FAIL)')} 檔）。")
+    if result.volume_basis_status != "ok":
+        lines.append(RESEARCH_NOTE)
 
     if n_pass == 0:
-        lines.append(f"今日 {F('符合檔數', 0, '0', '檔', 'count(status=PASS)')} 檔符合全部已啟用條件。")
+        lines.append(f"今日 {F('符合檔數', 0, '0', '檔', 'count(status=PASS)')} 檔符合全部已啟用條件；不放寬條件找替代股。")
     else:
         lines.append("符合條件（依成交金額由大到小）：")
         for r in passed.head(max_listed).itertuples(index=False):
@@ -142,12 +167,20 @@ def summary_narrative(result: ScreenResult, extra_facts: Sequence[Fact] = (),
 
     counts = result.exclusion_counts()
     if counts:
-        lines.append("排除原因：")
-        for code, cnt in counts.items():
-            lines.append(f"- {code}：{F('排除檔數－' + code, cnt, str(cnt), '檔', 'count(exclusion_code)', dict(key0, exclusion_code=code))} 檔"
-                         f"（{EXCLUSION_CODES.get(code, '')}）")
+        lines.append("未納入評估的原因：")
+        for gname, codes in EXCLUSION_GROUPS:
+            cnt = sum(counts.get(c, 0) for c in codes)
+            if cnt:
+                key = dict(key0, exclusion_code=",".join(c for c in codes if counts.get(c)))
+                lines.append(f"- {gname}：{F('排除檔數－' + gname, cnt, str(cnt), '檔', 'count(exclusion_code)', key)} 檔")
+        unknown = {c: v for c, v in counts.items() if not any(c in cs for _, cs in EXCLUSION_GROUPS)}
+        for code, cnt in unknown.items():   # 防呆：新排除碼未歸類時照代碼列出，不漏算
+            lines.append(f"- {EXCLUSION_CODES.get(code, code)}：{F('排除檔數－' + code, cnt, str(cnt), '檔', 'count(exclusion_code)', dict(key0, exclusion_code=code))} 檔")
         if counts.get("EXCL_ADJ_COVERAGE_GAP"):
             lines.append("除權息／減資資料回補完成前，上述因覆蓋不足而排除的股票不評估；結果如實顯示，不改用寬鬆政策。")
+    n_lag = len(getattr(result, "lagging_symbols", ()) or ())
+    if n_lag:
+        lines.append(f"另有 {F('最新行情落後檔數', n_lag, str(n_lag), '檔', 'ScreenResult.lagging_symbols')} 檔{LAGGING_NOTE}（已依上列原因處理）。")
 
     for f in extra_facts:
         if not isinstance(f, Fact):

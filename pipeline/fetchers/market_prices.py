@@ -38,12 +38,21 @@ def _add_switch_note(row: dict) -> None:
         row["change_note"] = f"{cur}；{SWITCH_NOTE}" if cur else SWITCH_NOTE
 
 
-def _universe(conn: sqlite3.Connection) -> dict[str, str]:
+def _universe(conn: sqlite3.Connection, include_delisted: str | None = None) -> dict[str, str]:
+    """現行普通股（symbol→market）。include_delisted＝'YYYY-MM-DD'：另加 delistings 內「終止日 ≥ 該日」的 4 位數字代號（歷史回補用，
+    降低倖存者偏差；只收回補窗口內下市者，避免把更早下市的股票算進分母）；現行清單優先，代號重用時以現行為準。"""
     rows = conn.execute(
         """SELECT symbol, market FROM securities
            WHERE is_current=1 AND COALESCE(is_common,1)=1"""
     ).fetchall()
-    return {r[0]: r[1] for r in rows}
+    uni = {r[0]: r[1] for r in rows}
+    if include_delisted:
+        try:
+            for sym, mkt in conn.execute("SELECT symbol, market FROM delistings WHERE delist_date>=? AND symbol GLOB '[1-9][0-9][0-9][0-9]'", (include_delisted,)):
+                uni.setdefault(sym, mkt)
+        except sqlite3.OperationalError:    # 舊庫尚無 delistings
+            pass
+    return uni
 
 
 def _nums_equal(a, b, *, tol: float = 1e-6) -> bool:
@@ -314,20 +323,23 @@ def fetch_tpex_day(
     return out
 
 
-def fetch_one_day(
+def fetch_twse_day(
     conn: sqlite3.Connection,
     iso: str,
     universe: dict[str, str],
     http_events: list,
+    *,
+    exact: set | None = None,
+    intervals: dict | None = None,
 ) -> dict:
-    """抓單一交易日兩市場。回傳 {twse: n, tpex: n, failed: []}。"""
+    """抓上市 MI_INDEX 單一交易日（1 個請求），寫入 universe 內的上市列。回傳 {twse, page_twse, failed, blocked}。"""
     from datetime import date as date_cls
 
     y, m, d = map(int, iso.split("-"))
     dt = date_cls(y, m, d)
-    out = {"twse": 0, "tpex": 0, "failed": [], "page_twse": 0, "page_tpex": 0}
-    exact, intervals = load_halt_coverage(conn)
-    # TWSE
+    out = {"twse": 0, "page_twse": 0, "failed": [], "blocked": False}
+    if exact is None or intervals is None:
+        exact, intervals = load_halt_coverage(conn)
     url = MI_INDEX_URL.format(yyyymmdd=ad_yyyymmdd(dt))
     try:
         resp = twse.request("GET", url)
@@ -337,6 +349,7 @@ def fetch_one_day(
             msg = str(data.get("stat"))
             touch_source(conn, f"twse_mi_index_{iso}", url=url, ok=False, http_status=resp.status_code, error=msg)
             out["failed"].append(f"TWSE:{iso}:{msg}")
+            out["no_data"] = True
         else:
             rows = parse_mi_index(data, universe, iso, url, exact, intervals)
             out["page_twse"] = len(rows)
@@ -354,13 +367,57 @@ def fetch_one_day(
         http_events.append({"src": "TWSE", "url": url, "http": e.status, "date": iso, "error": str(e)})
         touch_source(conn, f"twse_mi_index_{iso}", url=url, ok=False, http_status=e.status, error=str(e))
         out["failed"].append(f"TWSE:{iso}:{e}")
+        out["blocked"] = bool(e.blocked)
+        out["rate_limited"] = isinstance(e, RateLimited)
         log.error("MI_INDEX %s %s", iso, e)
+    return out
+
+
+def fetch_one_day(
+    conn: sqlite3.Connection,
+    iso: str,
+    universe: dict[str, str],
+    http_events: list,
+) -> dict:
+    """抓單一交易日兩市場。回傳 {twse: n, tpex: n, failed: []}。"""
+    out = {"twse": 0, "tpex": 0, "failed": [], "page_twse": 0, "page_tpex": 0}
+    exact, intervals = load_halt_coverage(conn)
+    tw = fetch_twse_day(conn, iso, universe, http_events, exact=exact, intervals=intervals)
+    out["twse"], out["page_twse"] = tw["twse"], tw["page_twse"]
+    out["failed"].extend(tw["failed"])
 
     tp = fetch_tpex_day(conn, iso, universe, http_events, exact=exact, intervals=intervals)
     out["tpex"], out["page_tpex"] = tp["tpex"], tp["page_tpex"]
     out["failed"].extend(tp["failed"])
     out["rate_limited"] = tp.get("rate_limited", False)
     return out
+
+
+def market_day_rows(conn: sqlite3.Connection, iso: str, universe: dict[str, str] | None = None) -> dict[str, int]:
+    """該日各市場現行普通股列數（用來判斷該日該市場是否已是「全市場」）。
+    給 universe（含視窗內下市股）時，改數「universe 內」的列，使分子分母同一口徑（下市股當日有成交就算進去）。"""
+    if universe is not None:
+        out: dict[str, int] = {}
+        for (sym,) in conn.execute("SELECT symbol FROM daily_prices WHERE is_current=1 AND price_date=?", (iso,)):
+            m = universe.get(sym)
+            if m:
+                out[m] = out.get(m, 0) + 1
+        return out
+    return {m: n for m, n in conn.execute(
+        """SELECT s.market, COUNT(*) FROM daily_prices p
+           JOIN securities s ON s.symbol=p.symbol AND s.is_current=1 AND COALESCE(s.is_common,1)=1
+           WHERE p.is_current=1 AND p.price_date=? GROUP BY s.market""", (iso,))}
+
+
+def markets_needed(conn: sqlite3.Connection, iso: str, universe: dict[str, str]) -> list[str]:
+    """該日還缺哪些市場（現行列數 < FULL_DAY_RATIO × 該市場現行普通股數）。檢查點在 DB（列數），不靠 logs/ 檔案。"""
+    have = market_day_rows(conn, iso, universe)
+    need = []
+    for m in ("TWSE", "TPEx"):
+        total = sum(1 for v in universe.values() if v == m)
+        if have.get(m, 0) < config.FULL_DAY_RATIO * total:
+            need.append(m)
+    return need
 
 
 def fetch_market_prices(
@@ -371,8 +428,11 @@ def fetch_market_prices(
     checkpoint_path: Path | None = None,
     run_id: int | None = None,
     resume: bool = True,
+    use_db_state: bool = False,
 ) -> dict:
-    """依交易日整批回補／增量。支援檢查點與時限中止。"""
+    """依交易日整批回補／增量。支援檢查點與時限中止。
+    use_db_state=True（雲端 all 模式）：不用 logs/ 檢查點檔，改以 DB 內「該日該市場現行列數」判斷是否已完成，
+    只抓還缺的市場（TWSE／TPEx 各 1 個請求），Actions 臨時機器也能續跑、冪等。"""
     end = today() - timedelta(days=1)
     days = recent_trade_days(conn, trade_days + 5, end=end)
     days = days[-trade_days:] if len(days) >= trade_days else days
@@ -380,7 +440,7 @@ def fetch_market_prices(
     twse_n = sum(1 for m in universe.values() if m == "TWSE")
     tpex_n = sum(1 for m in universe.values() if m == "TPEx")
     ck_path = checkpoint_path or config.CHECKPOINT_ALL
-    ck = _load_ckpt(ck_path) if resume else {}
+    ck = _load_ckpt(ck_path) if (resume and not use_db_state) else {}
     prices_ck = ck.setdefault("prices", {})
     done = set(prices_ck.get("done_dates") or [])
     http_events: list = []
@@ -395,10 +455,27 @@ def fetch_market_prices(
             stopped = True
             log.warning("stop-before reached before %s rss=%.1fMB", iso, max_rss_mb())
             break
-        if iso in done:
+        if use_db_state:
+            need = markets_needed(conn, iso, universe)
+            if not need:
+                skipped_done += 1
+                continue
+            st = {"twse": 0, "tpex": 0, "failed": [], "rate_limited": False}
+            exact, intervals = load_halt_coverage(conn)
+            if "TWSE" in need:
+                tw = fetch_twse_day(conn, iso, universe, http_events, exact=exact, intervals=intervals)
+                st["twse"] = tw["twse"]
+                st["failed"].extend(tw["failed"])
+            if "TPEx" in need:
+                tp = fetch_tpex_day(conn, iso, universe, http_events, exact=exact, intervals=intervals)
+                st["tpex"] = tp["tpex"]
+                st["failed"].extend(tp["failed"])
+                st["rate_limited"] = tp.get("rate_limited", False)
+        elif iso in done:
             skipped_done += 1
             continue
-        st = fetch_one_day(conn, iso, universe, http_events)
+        else:
+            st = fetch_one_day(conn, iso, universe, http_events)
         failed.extend(st["failed"])
         if st.get("rate_limited"):
             stopped = True
@@ -406,11 +483,12 @@ def fetch_market_prices(
             break
         if st["twse"] or st["tpex"]:
             ok_dates.append(iso)
-            done.add(iso)
-            prices_ck["done_dates"] = sorted(done)
-            prices_ck["last_date"] = iso
-            prices_ck["updated_at"] = now_iso()
-            _save_ckpt(ck_path, ck)
+            if not use_db_state:
+                done.add(iso)
+                prices_ck["done_dates"] = sorted(done)
+                prices_ck["last_date"] = iso
+                prices_ck["updated_at"] = now_iso()
+                _save_ckpt(ck_path, ck)
         peak_rss = max(peak_rss, max_rss_mb())
         log.info(
             "prices day %s twse=%s tpex=%s failed=%s rss=%.1fMB",

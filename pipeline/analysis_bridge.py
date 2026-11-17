@@ -40,7 +40,11 @@ def run_screen_and_write(conn: sqlite3.Connection, run_id: int, symbols: list[st
 
     try:
         dbp = db_path()
-        inputs = load_screen_inputs(str(dbp), as_of=None, symbols=symbols)
+        # 3b 遷移後覆蓋表只有 sample30 列：追蹤清單（傳代號）必須用 coverage_scope="tracked"，
+        # 否則會全部變 EXCL_ADJ_COVERAGE_GAP（analysis-0.9.1 USAGE／indicators.md 10.5）；全市場（None）維持 "all"。
+        tracked = symbols is not None
+        inputs = load_screen_inputs(str(dbp), as_of=None, symbols=symbols,
+                                    coverage_scope="tracked" if tracked else "all")
         as_of = str(inputs.as_of)[:10]
         row = conn.execute(
             "SELECT is_trade_day FROM trading_calendar WHERE calendar_date=?", (as_of,)
@@ -68,7 +72,7 @@ def run_screen_and_write(conn: sqlite3.Connection, run_id: int, symbols: list[st
             }
             if r1.dropped_columns:
                 out["interface_notes"].append(f"dropped_columns:{list(r1.dropped_columns)}")
-            n = summary_narrative(result)
+            n = summary_narrative(result, scope_label="追蹤範圍" if tracked else "全市場")
             r2 = W.write_daily_summary(
                 wcon,
                 n,

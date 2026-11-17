@@ -47,8 +47,9 @@ EXCLUSION_CODES = MappingProxyType({
     "EXCL_BAD_DATA": "資料異常（價格關係不合理、負值、重複列、非交易日卻有行情）",
     "EXCL_NO_DATA": "評估日該市場無任何行情資料（尚未更新或抓取失敗），資料不足",
     "EXCL_SUSPENDED": "停牌（經 trading_halts 或 daily_prices.is_halted 確認）",
-    "EXCL_NO_ROW_SUSPENDED_OR_MISSING": "停牌或資料缺漏，待確認（評估日為交易日、同市場有行情，但本股無資料列，且無停牌紀錄）",
+    "EXCL_NO_ROW_SUSPENDED_OR_MISSING": "停牌或資料缺漏，待確認（評估日為交易日，但本股無資料列，且無法確認停牌：無停牌紀錄，或推定停牌區間內該市場當日整個市場都缺行情）",
     "EXCL_NO_TRADE": "評估日有行情列但無成交（成交量為零或無收盤價）",
+    "EXCL_VOLUME_BASIS": "量額口徑非總量（不含鉅額或口徑不明），量能／成交金額條件無法評估",
     "EXCL_NEW_LISTING": "新上市／上櫃未滿最低交易日數",
     "EXCL_INSUFFICIENT_HISTORY": "有效交易日歷史不足（含交易日曆或行情資料未涵蓋）",
     "EXCL_WINDOW_GAPS": "計算視窗內停牌、無資料列或無成交的交易日過多",
@@ -155,6 +156,9 @@ class ScreenResult:
     summary: pd.DataFrame
     conditions: pd.DataFrame
     computed_at: str = ""      # 計算時間（ISO-8601，Asia/Taipei +08:00）；寫入 *_results.computed_at
+    volume_basis_status: str = "ok"   # ok／volume_basis_column_missing（輸入缺 volume_basis 欄：未檢查口徑，writer 拒寫）
+    coverage_scope_note: Optional[str] = None   # 覆蓋表 scope 篩選說明（io_sqlite；資料庫無 scope 欄為 None）
+    lagging_symbols: tuple = ()       # 評估範圍內最新行情列（交易日）早於 as_of 或無行情的代號（規則同 adjust.AS_OF_RULE 第 4 點；摘要用）
 
     def selected(self) -> pd.DataFrame:
         """通過全部已啟用條件的股票；零檔時回傳空表（不放寬）。"""
@@ -173,8 +177,9 @@ SUMMARY_COLUMNS = [
     "prior_high_twd", "prior_avg_volume_shares", "volume_ratio",
     "pass_trend", "pass_breakout", "pass_volume", "pass_turnover",
     "n_valid_days", "window_start", "window_gap_days", "window_halt_days", "window_missing_days",
-    "window_no_trade_days", "n_adj_events", "adj_events",
-    "coverage_note", "price_source", "price_fetched_at", "price_version",
+    "window_no_trade_days", "window_bad_data_days", "volume_basis", "window_volume_basis_days",
+    "n_adj_events", "adj_events",
+    "coverage_note", "data_note", "price_source", "price_fetched_at", "price_version",
 ]
 CONDITION_COLUMNS = [
     "symbol", "price_date", "condition_id", "condition_name", "enabled",
@@ -194,8 +199,12 @@ def screen(
     actions_coverage: Any = None,
     market_days: Optional[pd.DataFrame] = None,
     halts: Optional[pd.DataFrame] = None,
+    coverage_scope_note: Optional[str] = None,
 ) -> ScreenResult:
-    """對 as_of（交易日）執行篩選；只使用 <= as_of 的資料（無前視）。"""
+    """對 as_of（交易日）執行篩選；只使用 <= as_of 的資料（無前視）。
+    market_days 有 n_rows 欄（該市場該日現行列數）時，n_rows < adjust.FULL_MARKET_MIN_ROWS 的日子視為「整個市場都缺行情」
+    （停牌 insufficient 規則，docs/indicators.md 第 10 節）；沒有 n_rows 欄時，market_days 內的日子都視為有全市場行情。
+    coverage_scope_note：io_sqlite 讀覆蓋表時的 scope 篩選說明（資料庫有 scope 欄才有值），只附在覆蓋有問題（coverage_note 非空）的列的 data_note；完整說明在 ScreenResult.coverage_scope_note。"""
     p = ScreenParams() if params is None else params
     if not isinstance(p, ScreenParams):
         raise TypeError("params 必須是 ScreenParams")
@@ -205,6 +214,7 @@ def screen(
     if not trade_all:
         raise ValueError("交易日曆沒有任何交易日")
     px = A.normalize_prices(prices)
+    vb_present = "volume_basis" in prices.columns     # 缺欄＝研究模式：照算、不檢查口徑、結果標 volume_basis_column_missing
     if as_of is None:
         # 預設評估日：追蹤範圍內有行情的最新交易日（adjust.resolve_as_of，與 io_sqlite.default_as_of 同一規則）
         if universe is not None:
@@ -234,8 +244,14 @@ def screen(
         md = market_days.copy()
         md["price_date"] = pd.to_datetime(md["price_date"]).dt.normalize()
         mkt_dates = {(str(m), d) for m, d in zip(md["market"], md["price_date"])}
+        if "n_rows" in md.columns:
+            n = pd.to_numeric(md["n_rows"], errors="coerce").fillna(0)
+            mkt_full = {(str(m), d) for m, d, k in zip(md["market"], md["price_date"], n) if k >= A.FULL_MARKET_MIN_ROWS}
+        else:
+            mkt_full = set(mkt_dates)
     else:
         mkt_dates = {(str(m), d) for m, d in zip(px["market"], px["date"])}
+        mkt_full = set(mkt_dates)
 
     if universe is not None:
         ids = list(dict.fromkeys(str(x).strip() for x in universe))
@@ -244,10 +260,13 @@ def screen(
     else:
         ids = sorted(px["symbol"].unique())
 
+    latest_by_sym = A.latest_trade_day_by_symbol(px["symbol"], px["date"], trade)
+    lagging = tuple(sorted(sid for sid in ids if latest_by_sym.get(sid) != as_of_ts))
     pgroups = {k: g for k, g in px.groupby("symbol", sort=False)}
     agroups = {k: g for k, g in acts.groupby("symbol", sort=False)}
     ctx = dict(p=p, as_of=as_of_ts, trade=trade, tpos=tpos, non_trade=non_trade, coverage=coverage,
-               mkt_dates=mkt_dates, halts=halt_map)
+               mkt_dates=mkt_dates, mkt_full=mkt_full, halts=halt_map, vb=vb_present,
+               cov_scope_note=coverage_scope_note)
     summaries, conds = [], []
     for sid in ids:
         sec = None if secs is None else (secs.loc[sid] if sid in secs.index else None)
@@ -259,7 +278,9 @@ def screen(
                         analysis_version=ANALYSIS_VERSION,
                         summary=pd.DataFrame(summaries, columns=SUMMARY_COLUMNS),
                         conditions=pd.DataFrame(conds, columns=CONDITION_COLUMNS),
-                        computed_at=_now_taipei())
+                        computed_at=_now_taipei(),
+                        volume_basis_status="ok" if vb_present else A.VOLUME_BASIS_COLUMN_MISSING,
+                        coverage_scope_note=coverage_scope_note, lagging_symbols=lagging)
 
 
 def _now_taipei() -> str:
@@ -329,25 +350,56 @@ def _evaluate(sid: str, g: pd.DataFrame, acts: pd.DataFrame, sec: Any, has_secs:
         why = "非交易日卻有行情" if d0 in ctx["non_trade"] else "日期不在 trading_calendar 中"
         return X("EXCL_BAD_DATA", f"{d0.date()} {why}")
 
-    hiv = ctx["halts"].get(sid, [])
+    # 停牌區間（docs/indicators.md 停牌規則，2026-11-17 18:31 核可）：無官方恢復日時以停牌日後第一個有官方成交的
+    # 交易日推定恢復；只用評估日（含）以前的成交（g 已限 ≤ as_of），不前視
+    # insufficient 規則（2026-11-17 19:41 核可）：推定區間內「整個市場都缺行情」的日子，本股無資料列時不算停牌
+    full, mk = ctx["mkt_full"], market or ""
+    if market:
+        def is_hole(d):
+            return (mk, d) not in full
+    else:
+        mkts = {m for m, _ in full} or {""}
+        def is_hole(d):
+            return all((m, d) not in full for m in mkts)
+    hiv = A.resolve_halts(ctx["halts"].get(sid, []), g.loc[(g["volume"] > 0) & g["close"].notna(), "date"], as_of,
+                          trade_days=trade, is_hole=is_hole)
+    hnotes = [A.halt_note(h) for h in hiv if h.resume is None or h.resume > ctx["trade"][0]]
+    if hnotes:
+        base["data_note"] = "停牌紀錄：" + "；".join(hnotes)
     today = g[g["date"] == as_of]
     no_trade_today = today.empty or pd.isna(today["close"].iloc[0]) or (
         pd.notna(today["volume"].iloc[0]) and today["volume"].iloc[0] == 0)
     if today.empty:
         if (market or "", as_of) in ctx["mkt_dates"] or (market is None and any(d == as_of for _, d in ctx["mkt_dates"])):
-            if A.is_halt_day(hiv, as_of):
-                return X("EXCL_SUSPENDED", f"{as_of.date()} 本股無資料列；trading_halts 有停牌紀錄")
+            hs = A.halt_span_on(hiv, as_of, has_row=False)
+            if hs is not None:
+                return X("EXCL_SUSPENDED", f"{as_of.date()} 本股無資料列；trading_halts {A.halt_note(hs)}")
+            hi = A.halt_span_on(hiv, as_of)
+            if hi is not None:   # 推定區間內、評估日整個市場都缺行情 → 不算停牌（insufficient）
+                return X("EXCL_NO_ROW_SUSPENDED_OR_MISSING",
+                         f"{as_of.date()} 本股無資料列，且該市場當日整個市場都缺行情；trading_halts {A.halt_note(hi)}")
             return X("EXCL_NO_ROW_SUSPENDED_OR_MISSING", f"{as_of.date()} 同市場有行情但本股無資料列")
         return X("EXCL_NO_DATA", f"{as_of.date()} 市場 {market or '未知'} 無行情資料")
     t = today.iloc[0]
-    if no_trade_today and (bool(t.is_halted) or A.is_halt_day(hiv, as_of)):
-        src = "daily_prices.is_halted＝1" if bool(t.is_halted) else "trading_halts 有停牌紀錄"
+    if ctx["vb"]:
+        base["volume_basis"] = A.clean_str(t.volume_basis)
+    nt_note = A.no_trade_flag_conflict(t.close, t.volume, t.is_no_trade)
+    if nt_note:
+        base["data_note"] = "；".join(x for x in (base["data_note"], f"is_no_trade 交叉檢查：{as_of.date()} {nt_note}") if x)   # 只標註，不改結果碼（核可 ③）
+    hs = A.halt_span_on(hiv, as_of)
+    if no_trade_today and (bool(t.is_halted) or hs is not None):
+        src = "daily_prices.is_halted＝1" if bool(t.is_halted) else f"trading_halts {A.halt_note(hs)}"
         return X("EXCL_SUSPENDED", f"{as_of.date()} {src}")
     if no_trade_today:
         return X("EXCL_NO_TRADE", f"{as_of.date()} 無成交")
+    if A.row_kind(t.close, t.volume) == "bad_volume":
+        return X("EXCL_BAD_DATA", f"{as_of.date()} 有收盤價但成交量缺漏（NULL）")
     prob = _row_problem(t, check_turnover=True)
     if prob:
         return X("EXCL_BAD_DATA", f"{as_of.date()} {prob}")
+    # 5a（§9.2）：評估日量額口徑非總量 → 排除；C3、C4 都停用時不檢查
+    if ctx["vb"] and (p.enable_volume or p.enable_turnover) and not A.is_total_basis(t.volume_basis):
+        return X("EXCL_VOLUME_BASIS", f"{as_of.date()} 量額口徑 {A.basis_label(t.volume_basis)}")
 
     listing_idx0: Optional[int] = None
     if sec is not None and pd.notna(sec["listed_date"]):
@@ -368,28 +420,53 @@ def _evaluate(sid: str, g: pd.DataFrame, acts: pd.DataFrame, sec: Any, has_secs:
     # 缺口拆解（只供說明；門檻仍以合計 gaps 判斷，邏輯不變）
     rows_by_date = {d: r for d, r in zip(g["date"], g.itertuples(index=False))}
     vset = set(valid["date"])
-    n_halt = n_miss = n_nt = 0
+    n_halt = n_miss = n_nt = n_bad = 0
+    first_bad = None
+    flag_conflicts = []
     for d in trade[tpos[w0]:tpos[as_of] + 1]:
+        r = rows_by_date.get(d)
+        if r is not None and d != as_of and A.no_trade_flag_conflict(r.close, r.volume, r.is_no_trade):
+            flag_conflicts.append(d)
         if d in vset:
             continue
-        r = rows_by_date.get(d)
-        if (r is not None and bool(r.is_halted)) or A.is_halt_day(hiv, d):
+        if r is not None and A.row_kind(r.close, r.volume) == "bad_volume":
+            n_bad += 1                      # 核可 ①：有收盤價但量 NULL＝資料錯誤（仍計入缺口合計）
+            first_bad = first_bad or d
+        elif (r is not None and bool(r.is_halted)) or A.is_halt_day(hiv, d, has_row=r is not None):
             n_halt += 1
         elif r is None:
             n_miss += 1
         else:
             n_nt += 1
+    if flag_conflicts:
+        msg = f"is_no_trade 交叉檢查：視窗內 {len(flag_conflicts)} 日旗標與價量不一致（首日 {flag_conflicts[0].date()}）"
+        base["data_note"] = "；".join(x for x in (base["data_note"], msg) if x)
     extra = {"n_valid_days": len(valid), "window_start": w0, "window_gap_days": gaps,
-             "window_halt_days": n_halt, "window_missing_days": n_miss, "window_no_trade_days": n_nt}
+             "window_halt_days": n_halt, "window_missing_days": n_miss, "window_no_trade_days": n_nt,
+             "window_bad_data_days": n_bad}
     if gaps > p.max_gap_days:
         return X("EXCL_WINDOW_GAPS", f"視窗 {w0.date()}～{as_of.date()} 內 {gaps} 個交易日無資料列或無成交 > {p.max_gap_days}", **extra)
+    if first_bad is not None:
+        return X("EXCL_BAD_DATA", f"{first_bad.date()} 有收盤價但成交量缺漏（NULL）（視窗內，共 {n_bad} 日）", **extra)
     for r in W.itertuples(index=False):
         prob = _row_problem(r, check_turnover=False)
         if prob:
             return X("EXCL_BAD_DATA", f"{r.date.date()} {prob}", **extra)
+    # 9a（§9.3 方案 A）：均量窗口（評估日前 volume_lookback 個有效交易日）任一日非總量 → 排除（C3 停用時只記數）
+    if ctx["vb"]:
+        aw = W.iloc[len(W) - 1 - p.volume_lookback:len(W) - 1]
+        off = [(d, v) for d, v in zip(aw["date"], aw["volume_basis"]) if not A.is_total_basis(v)]
+        extra["window_volume_basis_days"] = len(off)
+        if p.enable_volume and off:
+            return X("EXCL_VOLUME_BASIS",
+                     f"均量窗口 {aw['date'].iloc[0].date()}～{aw['date'].iloc[-1].date()} 內 {len(off)} 日非總量口徑"
+                     f"（首日 {off[0][0].date()}：{A.basis_label(off[0][1])}）", **extra)
 
     cov_probs = A.coverage_problems(ctx["coverage"], market, w0, ctx["as_of"])
     coverage_note = ";".join(cov_probs) or None
+    if cov_probs and ctx["cov_scope_note"]:
+        # 覆蓋表 scope 篩選說明：只附在覆蓋有問題的列（其他列看 ScreenResult.coverage_scope_note）
+        base["data_note"] = "；".join(x for x in (base["data_note"], ctx["cov_scope_note"]) if x)
     if cov_probs and p.coverage_policy == "strict":
         return X("EXCL_ADJ_COVERAGE_GAP", f"視窗起日 {w0.date()}；{coverage_note}", coverage_note=coverage_note, **extra)
 
@@ -420,6 +497,12 @@ def _evaluate(sid: str, g: pd.DataFrame, acts: pd.DataFrame, sec: Any, has_secs:
     cbase, is_ev = A.change_base(float(W["close"].iloc[-2]), W["date"].iloc[-2], as_of, events)
     change_pct = (close / cbase - 1.0) * 100.0
     chk, src_chg, chk_diff, _ = A.check_change(close, cbase, is_ev, t.change_twd, t.change_sign)
+    prev_day = trade[tpos[as_of] - 1] if tpos[as_of] > 0 else None
+    prev_row = rows_by_date.get(prev_day) if prev_day is not None else None
+    if not is_ev and prev_row is not None and A.row_kind(prev_row.close, prev_row.volume) == "no_trade":
+        chk, src_chg, chk_diff, _, chk_note = A.check_change_after_no_trade(
+            close, cbase, t.change_twd, t.change_sign, t.change_note, prev_row.next_ref_twd)
+        base["data_note"] = "；".join(x for x in (chk_note, base["data_note"]) if x)
 
     c1 = (close > ma_s) and (ma_s > ma_l)
     c2 = close > prior_high

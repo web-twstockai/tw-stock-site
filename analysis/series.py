@@ -29,6 +29,13 @@ MA_SERIES_STATUS = {
     "no_trade": "無成交或無資料列（停牌或資料缺漏，待確認）",
     "unavailable": "調整因子不可用（見 unavailable_code／unavailable_reason）",
 }
+# 核可 ①：有收盤價但成交量 NULL 的列＝資料錯誤；狀態仍為 no_trade（不可畫、不計入），另標代碼與原因
+BAD_VOLUME_CODE = "EXCL_BAD_DATA"
+BAD_VOLUME_REASON = "有收盤價但成交量缺漏（NULL），視為資料錯誤"
+
+
+def _bad_volume(r0: Optional[dict]) -> bool:
+    return bool(r0) and A.row_kind(r0.get("close"), r0.get("volume")) == "bad_volume"
 
 
 def _prepare(prices, actions, calendar, symbol, as_of, securities, actions_coverage):
@@ -138,6 +145,7 @@ def ma_series(
         mas[w] = (m, note)
 
     vpos = {d: i for i, d in enumerate(valid["date"])}
+    raw_by_date = {d: row for d, row in zip(px["date"], px.to_dict("records"))}
     first = px["date"].iloc[0]
     rows = []
     for d in trade[tpos[first]:]:
@@ -157,6 +165,8 @@ def ma_series(
                 r[f"ma_{w}_note"] = None if val is not None else (note[i] or "ADJ_UNAVAILABLE")
         else:
             r.update(close_twd=None, status="no_trade", unavailable_reason=MA_SERIES_STATUS["no_trade"])
+            if _bad_volume(raw_by_date.get(d)):
+                r.update(unavailable_code=BAD_VOLUME_CODE, unavailable_reason=BAD_VOLUME_REASON)
             for w in ws:
                 r[f"ma_{w}"], r[f"ma_{w}_note"] = None, "NO_TRADE"
         rows.append(r)
@@ -190,6 +200,7 @@ def change_series(
         return pd.DataFrame(columns=cols)
     events = A.resolve_events(valid, acts, None, p.adj_prev_close_tolerance, p.derive_share_factor)
     cb, probs, cb_note = A.coverage_boundary(cov, market, as_of_ts)
+    by_date = {d: row for d, row in zip(px["date"], px.to_dict("records"))}
     rows = []
     for i in range(len(valid)):
         r = valid.iloc[i]
@@ -209,6 +220,17 @@ def change_series(
         base, is_ev = A.change_base(float(pv["close"]), pv["date"], r["date"], between)
         chk, src, diff, tol = A.check_change(float(r["close"]), base, is_ev, r["change_twd"], r["change_sign"])
         notes = []
+        k = tpos.get(r["date"])
+        prev_row = by_date.get(trade[k - 1]) if k is not None and k > 0 else None
+        if not is_ev and prev_row is not None and A.row_kind(prev_row["close"], prev_row["volume"]) == "no_trade":
+            # 核可 ②：無成交日的次一有效交易日改標 after_no_trade（官方參考價可比時才可能 mismatch）
+            chk, src, diff, tol, nt = A.check_change_after_no_trade(
+                float(r["close"]), base, r["change_twd"], r["change_sign"], r.get("change_note"),
+                prev_row.get("next_ref_twd"))
+            notes.append(nt)
+        conflict = A.no_trade_flag_conflict(r["close"], r["volume"], r.get("is_no_trade"))
+        if conflict:
+            notes.append(f"is_no_trade 交叉檢查：{conflict}")   # 核可 ③：只標註
         if probs:
             notes.append(";".join(probs))
         elif cb is not None and r["date"] < cb:
@@ -222,6 +244,7 @@ def change_series(
 
 
 OHLC_COLUMNS = ["price_date", "symbol", "open_twd", "high_twd", "low_twd", "close_twd", "volume_shares", "amount_twd",
+                "volume_basis",   # 量額口徑（§9；只作標示，不改計算；缺欄為 None）
                 "adj_factor", "share_factor", "adj_open_twd", "adj_high_twd", "adj_low_twd", "adj_close_twd",
                 "adj_volume_shares", "status", "unavailable_code", "unavailable_reason"]
 EVENT_COLUMNS = ["action_date", "action_type", "action_kind", "status", "price_factor", "share_factor",
@@ -282,9 +305,11 @@ def ohlc_series(
         out: dict[str, Any] = {"price_date": d, "symbol": str(symbol), "open_twd": _f(r0.get("open")),
                                "high_twd": _f(r0.get("high")), "low_twd": _f(r0.get("low")),
                                "close_twd": _f(r0.get("close")), "volume_shares": _f(r0.get("volume")),
-                               "amount_twd": _f(r0.get("turnover"))}
+                               "amount_twd": _f(r0.get("turnover")), "volume_basis": A.clean_str(r0.get("volume_basis"))}
         if d not in vpos:
             out.update(status="no_trade", unavailable_reason=MA_SERIES_STATUS["no_trade"])
+            if _bad_volume(r0):
+                out.update(unavailable_code=BAD_VOLUME_CODE, unavailable_reason=BAD_VOLUME_REASON)
         else:
             i = vpos[d]
             if usable[i]:

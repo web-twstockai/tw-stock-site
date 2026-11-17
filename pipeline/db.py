@@ -37,6 +37,42 @@ def _add_col(conn: sqlite3.Connection, table: str, col: str, decl: str) -> None:
         conn.execute(f"ALTER TABLE {table} ADD COLUMN {col} {decl}")
 
 
+COVERAGE_DDL = """CREATE TABLE corporate_actions_coverage (
+  market TEXT NOT NULL,
+  action_kind TEXT NOT NULL,
+  coverage_start TEXT NOT NULL,
+  coverage_end TEXT NOT NULL,
+  source TEXT NOT NULL,
+  fetched_at TEXT NOT NULL,
+  notes TEXT,
+  scope TEXT NOT NULL DEFAULT 'unknown',
+  symbol_count INTEGER,
+  PRIMARY KEY(market, action_kind, coverage_start, coverage_end, source, scope)
+)"""
+
+
+def _migrate_coverage_pk(conn: sqlite3.Connection) -> None:
+    """corporate_actions_coverage 主鍵加入 scope（可重跑；已含 scope 即略過）。
+    舊列 scope 為 NULL 時：corporate_actions 內的代號全在追蹤清單 SAMPLE30 內 → 'sample30'（舊資料是 sample30 過濾寫入）；否則 'unknown'。
+    只重建覆蓋表本身，不碰 corporate_actions 內容（不重新版本化）。"""
+    info = list(conn.execute("PRAGMA table_info(corporate_actions_coverage)"))
+    if not info or "scope" in {r[1] for r in info if r[5]}:
+        return
+    syms = {r[0] for r in conn.execute("SELECT DISTINCT symbol FROM corporate_actions")}
+    legacy = "sample30" if syms <= set(config.SAMPLE30) else "unknown"
+    conn.execute("UPDATE corporate_actions_coverage SET scope=? WHERE scope IS NULL", (legacy,))
+    conn.execute("DROP TABLE IF EXISTS corporate_actions_coverage_old")
+    conn.execute("ALTER TABLE corporate_actions_coverage RENAME TO corporate_actions_coverage_old")
+    conn.execute(COVERAGE_DDL)
+    conn.execute(
+        """INSERT INTO corporate_actions_coverage(market,action_kind,coverage_start,coverage_end,source,fetched_at,notes,scope,symbol_count)
+           SELECT market,action_kind,coverage_start,coverage_end,source,fetched_at,notes,COALESCE(scope,'unknown'),symbol_count
+           FROM corporate_actions_coverage_old"""
+    )
+    conn.execute("DROP TABLE corporate_actions_coverage_old")
+    conn.commit()
+
+
 def migrate(conn: sqlite3.Connection) -> None:
     """可重跑的欄位／表升級。"""
     mig = Path(__file__).resolve().parent / "migrate.sql"
@@ -73,6 +109,26 @@ def migrate(conn: sqlite3.Connection) -> None:
         _add_col(conn, tbl, "derivation_method", "TEXT")
     # material url
     _add_col(conn, "material_infos", "url", "TEXT")
+    # Phase 3b：月營收抓取狀態加範圍（舊 'ok' 是 sample30 過濾後的列數，不可當全市場已完成）
+    _add_col(conn, "revenue_fetch_status", "scope", "TEXT")
+    _add_col(conn, "revenue_fetch_status", "page_rows", "INTEGER")
+    # Phase 3b：停牌統一規則（對齊研究分析 0.9.1）：沒有恢復日的紀錄，依成交推定恢復日；不進 CONTENT_KEYS、就地更新
+    _add_col(conn, "trading_halts", "resume_date_inferred", "TEXT")
+    _add_col(conn, "trading_halts", "resume_basis", "TEXT")
+    _add_col(conn, "trading_halts", "resume_basis_note", "TEXT")
+    # Phase 3b／fix1：除權息覆蓋表加範圍並把 scope 放進主鍵（sample30／subset／all 對同一區間不互相覆蓋）
+    _add_col(conn, "corporate_actions_coverage", "scope", "TEXT")
+    _add_col(conn, "corporate_actions_coverage", "symbol_count", "INTEGER")
+    _migrate_coverage_pk(conn)
+    # fix1：delistings.last_trade_*、securities_history.valid_*（只加欄、就地回填；不重新版本化任何表）
+    _add_col(conn, "delistings", "last_trade_date", "TEXT")
+    _add_col(conn, "delistings", "last_trade_basis", "TEXT")
+    for col in ("valid_from", "valid_to", "valid_basis"):
+        _add_col(conn, "securities_history", col, "TEXT")
+    conn.commit()
+    from pipeline.fetchers.delistings import fill_last_trade_dates
+
+    fill_last_trade_dates(conn)
     # analysis tables (pipeline 不寫內容；欄位遷移冪等)
     for tbl in ("screen_results", "news_events", "daily_summaries"):
         _add_col(conn, tbl, "computed_at", "TEXT")
@@ -87,6 +143,10 @@ def migrate(conn: sqlite3.Connection) -> None:
     ):
         _add_col(conn, "daily_summaries", col, decl)
     conn.commit()
+    # analysis-0.9.0：screen_results 加四欄＋change_check CHECK 加 after_no_trade（需重建表；已遷移則略過；失敗整體回滾後丟例外）
+    from pipeline.screen_results_migration import migrate_screen_results
+
+    migrate_screen_results(conn)
 
 
 def checksum(obj: dict[str, Any], keys: Iterable[str]) -> str:

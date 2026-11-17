@@ -315,9 +315,10 @@ def _derive(base, ap, A):
         why = c.loc[m, "reason"].map(lambda r: re.sub(r"^(成立|不成立)：", "", r or ""))
         c.loc[m, "passed"] = None
         c.loc[m, "reason"] = "未啟用（不列入判斷）；參考：" + why
-    return A.ScreenResult(as_of=base.as_of, params=ap.to_dict(), params_hash=A.params_hash(ap),
-                          analysis_version=base.analysis_version, summary=s, conditions=c,
-                          computed_at=base.computed_at)
+    # 用 dataclasses.replace 沿用 base 的其他欄位：analysis-0.9.x 起 ScreenResult 多了 volume_basis_status、
+    # coverage_scope_note、lagging_symbols 等，重新建構會被設回預設值，推導頁就少了「未檢查量額口徑」等說明（v1／v2 不一致）
+    import dataclasses
+    return dataclasses.replace(base, params=ap.to_dict(), params_hash=A.params_hash(ap), summary=s, conditions=c)
 
 
 def _derivable(base, p) -> bool:

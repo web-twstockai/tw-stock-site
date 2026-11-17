@@ -119,6 +119,12 @@ def _looks_like_block_page(resp) -> str | None:
     return None
 
 
+# 目前這一頁的範圍／頁面總列數（fetch_month 設定；單執行緒）。
+# scope='all'＝不過濾（或宇宙 >100 檔）；'sample30'＝只存少數檔。舊 'ok' 列 scope 為 NULL，不得視為全市場已完成。
+_CTX: dict = {"scope": None, "page_rows": None}
+from pipeline.scope import scope_of  # noqa: E402,F401  （共用；保留舊匯入路徑）
+
+
 def _write_fetch_status(
     conn: sqlite3.Connection,
     *,
@@ -131,21 +137,24 @@ def _write_fetch_status(
     error: str | None = None,
 ) -> None:
     conn.execute(
-        """INSERT INTO revenue_fetch_status(market,revenue_month,status,http_status,row_count,source,fetched_at,error)
-           VALUES(?,?,?,?,?,?,?,?)
+        """INSERT INTO revenue_fetch_status(market,revenue_month,status,http_status,row_count,source,fetched_at,error,scope,page_rows)
+           VALUES(?,?,?,?,?,?,?,?,?,?)
            ON CONFLICT(market,revenue_month) DO UPDATE SET
              status=excluded.status,
              http_status=excluded.http_status,
              row_count=excluded.row_count,
              source=excluded.source,
              fetched_at=excluded.fetched_at,
-             error=excluded.error
+             error=excluded.error,
+             scope=excluded.scope,
+             page_rows=excluded.page_rows
         """,
-        (market, ym, status, http_status, row_count, source, now_iso(), error),
+        (market, ym, status, http_status, row_count, source, now_iso(), error, _CTX["scope"], _CTX["page_rows"]),
     )
 
 
 def fetch_month(conn: sqlite3.Connection, ym: str, symbols: set[str], market: str) -> int:
+    _CTX.update(scope=scope_of(symbols, conn, market), page_rows=None)
     roc_y, roc_m = iso_to_roc_ym(ym)
     path = "sii" if market == "TWSE" else "otc"
     url = f"https://mopsov.twse.com.tw/nas/t21/{path}/t21sc03_{roc_y}_{roc_m}.html"
@@ -190,6 +199,7 @@ def fetch_month(conn: sqlite3.Connection, ym: str, symbols: set[str], market: st
         return 0
     page_rows_all = _parse_nas(resp.content, symbols=None)
     page_n = len(page_rows_all)
+    _CTX["page_rows"] = page_n
     rows = [r for r in page_rows_all if (not symbols) or r["symbol"] in symbols]
     mkt_map = {r[0]: r[1] for r in conn.execute("SELECT symbol, market FROM securities")}
     n = 0

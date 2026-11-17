@@ -50,6 +50,9 @@ CREATE TABLE IF NOT EXISTS securities_history (
   unit_conversion TEXT,
   checksum TEXT,
   archived_at TEXT NOT NULL,
+  valid_from TEXT,     -- fix1：有效起日。官方下市清單沒有上市日 → NULL（分析端以資料窗起點起算、以實際有行情列為準）；一般封存列為 NULL
+  valid_to TEXT,       -- fix1：有效迄日＝終止上市／上櫃日（delistings.delist_date）；一般封存列為 NULL
+  valid_basis TEXT,    -- fix1：'delistings'＝本列由下市清單補寫（symbol 已不在現行 securities）；其餘 NULL
   PRIMARY KEY(symbol, version)
 );
 
@@ -117,7 +120,9 @@ CREATE TABLE IF NOT EXISTS corporate_actions_coverage (
   source TEXT NOT NULL,
   fetched_at TEXT NOT NULL,
   notes TEXT,
-  PRIMARY KEY(market, action_kind, coverage_start, coverage_end, source)
+  scope TEXT NOT NULL DEFAULT 'unknown',  -- fix1：'all'（不過濾或涵蓋全部現行普通股）／'all_pending_ratio'（all 但上市配股比例待補）／'sample30'／'subset'／'unknown'（舊資料）；屬主鍵
+  symbol_count INTEGER,                   -- 該次查詢的過濾代號數；不過濾（all）時為當時現行普通股數
+  PRIMARY KEY(market, action_kind, coverage_start, coverage_end, source, scope)
 );
 
 CREATE TABLE IF NOT EXISTS corporate_actions (
@@ -171,6 +176,9 @@ CREATE TABLE IF NOT EXISTS trading_halts (
   version INTEGER NOT NULL DEFAULT 1,
   is_current INTEGER NOT NULL DEFAULT 1,
   checksum TEXT,
+  resume_date_inferred TEXT,   -- 無恢復日時，依成交推定的恢復日（停牌日之後第一個有官方成交列的日期）；不進 checksum、就地更新
+  resume_basis TEXT,           -- official／inferred_by_trade／ongoing／insufficient（見 docs/schema.md §3.5b）
+  resume_basis_note TEXT,
   PRIMARY KEY(market, symbol, halt_date, halt_time, version)
 );
 CREATE TABLE IF NOT EXISTS trading_halts (
@@ -188,6 +196,9 @@ CREATE TABLE IF NOT EXISTS trading_halts (
   version INTEGER NOT NULL DEFAULT 1,
   is_current INTEGER NOT NULL DEFAULT 1,
   checksum TEXT,
+  resume_date_inferred TEXT,   -- 無恢復日時，依成交推定的恢復日（停牌日之後第一個有官方成交列的日期）；不進 checksum、就地更新
+  resume_basis TEXT,           -- official／inferred_by_trade／ongoing／insufficient（見 docs/schema.md §3.5b）
+  resume_basis_note TEXT,
   PRIMARY KEY(market, symbol, halt_date, halt_time, version)
 );
 CREATE UNIQUE INDEX IF NOT EXISTS ux_trading_halts_current
@@ -468,16 +479,20 @@ CREATE TABLE IF NOT EXISTS screen_results (
   change_pct                    REAL,                          -- 收盤 ÷ 基準價 − 1（百分點）；事件日基準＝參考價
   change_base_twd               REAL,
   source_change_twd             REAL,                          -- 來源漲跌（帶號；不覆蓋自算值）
-  change_check                  TEXT    CHECK (change_check IN ('ok', 'mismatch', 'no_source', 'source_not_comparable', 'source_sign_conflict')),
+  change_check                  TEXT    CHECK (change_check IN ('ok', 'mismatch', 'no_source', 'source_not_comparable', 'source_sign_conflict', 'after_no_trade')),  -- after_no_trade：前一交易日整股無成交（analysis-0.9.0）
   change_check_diff_twd         REAL,
-  volume_shares                 REAL,                          -- 一般交易口徑（待 sources.md 確認）
+  volume_shares                 REAL,                          -- 官方總量（含鉅額，不扣 block）；口徑見 volume_basis
   amount_twd                    REAL,
+  volume_basis                  TEXT    CHECK (volume_basis IN ('incl_block', 'excl_block')),  -- 評估日 daily_prices.volume_basis 原值；NULL＝口徑不明或未到評估日列（analysis-0.9.0）
   n_valid_days                  INTEGER,
   window_start                  TEXT,
   window_gap_days               INTEGER,
   window_halt_days              INTEGER,
   window_missing_days           INTEGER,
   window_no_trade_days          INTEGER,
+  window_bad_data_days          INTEGER,                       -- 有收盤價但成交量 NULL 的日數（analysis-0.9.0）
+  window_volume_basis_days      INTEGER,                       -- 均量窗口內非 incl_block 日數（analysis-0.9.0）
+  data_note                     TEXT,                          -- 說明欄：after_no_trade 比對說明、無比價、is_no_trade 交叉檢查（analysis-0.9.0）
   n_adj_events                  INTEGER,
   adj_events                    TEXT,                          -- 視窗內調整事件與 f／s 因子文字
   -- 追溯
@@ -634,6 +649,8 @@ CREATE TABLE IF NOT EXISTS revenue_fetch_status (
   source          TEXT    NOT NULL,
   fetched_at      TEXT    NOT NULL,
   error           TEXT,
+  scope           TEXT,                          -- 'all'＝全市場（不過濾）；'sample30'＝只存 30 檔（舊列 NULL 視為 sample30）
+  page_rows       INTEGER,                       -- 官方頁面解析出的總列數（過濾前）
   PRIMARY KEY (market, revenue_month)
 );
 CREATE INDEX IF NOT EXISTS ix_revenue_fetch_status_fetched
@@ -674,3 +691,72 @@ CREATE TABLE IF NOT EXISTS coverage_summaries (
 );
 CREATE INDEX IF NOT EXISTS ix_coverage_summaries_kind
   ON coverage_summaries(universe, data_kind, market, fetched_at);
+
+-- ============================================================
+-- price_gaps：全市場已入庫交易日中「該股沒有行情列」的缺口與其證據（2026-11-17，halt_fix 作業寫入）
+-- status：halted_official＝官方停止買賣／暫停交易涵蓋該日（證據在 trading_halts）；not_listed＝該代號當日尚未在該市場上市櫃（有官方證據）；
+--         insufficient＝資料不足（查無官方證據；不補造、不推定為停牌）
+-- ============================================================
+CREATE TABLE IF NOT EXISTS price_gaps (
+  symbol TEXT NOT NULL,
+  market TEXT NOT NULL,
+  price_date TEXT NOT NULL,
+  status TEXT NOT NULL CHECK (status IN ('halted_official','not_listed','insufficient')),
+  reason TEXT,
+  evidence_source TEXT,
+  evidence_level TEXT,
+  note TEXT,
+  fetched_at TEXT NOT NULL,
+  version INTEGER NOT NULL DEFAULT 1,
+  is_current INTEGER NOT NULL DEFAULT 1,
+  checksum TEXT,
+  PRIMARY KEY(symbol, price_date, version)
+);
+CREATE UNIQUE INDEX IF NOT EXISTS ux_price_gaps_current ON price_gaps(symbol, price_date) WHERE is_current = 1;
+CREATE INDEX IF NOT EXISTS ix_price_gaps_status ON price_gaps(status, price_date) WHERE is_current = 1;
+
+
+-- ============================================================
+-- Phase 3 回補狀態（2026-11-17）：檢查點存在 DB（Actions 臨時機器不保留 logs/）
+-- ============================================================
+CREATE TABLE IF NOT EXISTS backfill_state (
+  job         TEXT NOT NULL,          -- market_backfill／（之後）corp_backfill 等
+  key         TEXT NOT NULL,          -- 例：日期 '2026-03-02'、'no_data:2026-03-02'
+  status      TEXT NOT NULL,          -- done／no_data／failed／info
+  attempts    INTEGER NOT NULL DEFAULT 0,
+  detail      TEXT,
+  updated_at  TEXT NOT NULL,
+  PRIMARY KEY (job, key)
+);
+
+-- 財報抓取狀態（市場 × 季 × 表），與 revenue_fetch_status 對應（Phase 3b）
+CREATE TABLE IF NOT EXISTS financial_fetch_status (
+  market          TEXT    NOT NULL CHECK (market IN ('TWSE','TPEx')),
+  fiscal_year     INTEGER NOT NULL,
+  fiscal_quarter  INTEGER NOT NULL,
+  table_kind      TEXT    NOT NULL CHECK (table_kind IN ('income','cashflow')),
+  status          TEXT    NOT NULL CHECK (status IN ('ok','fail','empty','blocked')),
+  http_status     INTEGER,
+  row_count       INTEGER NOT NULL DEFAULT 0,    -- 寫入（過濾後）列數
+  scope           TEXT,                          -- 'all'／'sample30'
+  attempts        INTEGER NOT NULL DEFAULT 0,
+  source          TEXT    NOT NULL,
+  fetched_at      TEXT    NOT NULL,
+  error           TEXT,
+  PRIMARY KEY (market, fiscal_year, fiscal_quarter, table_kind)
+);
+
+-- 下市（終止上市／終止上櫃）清單（Phase 3b；delist_backfill）
+CREATE TABLE IF NOT EXISTS delistings (
+  market      TEXT NOT NULL CHECK (market IN ('TWSE','TPEx')),
+  symbol      TEXT NOT NULL,
+  name        TEXT,
+  delist_date TEXT NOT NULL,          -- 終止上市／上櫃日 YYYY-MM-DD
+  reason      TEXT,                   -- 上櫃有原因文字；上市來源無
+  last_trade_date  TEXT,              -- fix1：DB 內該代號（同市場）≤ delist_date 的最後一筆「有成交」官方行情日；沒有或期間缺行情 → NULL（不推估）
+  last_trade_basis TEXT,              -- fix1：last_trade_date 的依據；'daily_prices:last_traded_row'；NULL 時不填
+  source      TEXT NOT NULL,
+  fetched_at  TEXT NOT NULL,
+  PRIMARY KEY (market, symbol, delist_date)
+);
+

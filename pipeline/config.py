@@ -47,5 +47,13 @@ ALL_PRICE_TRADE_DAYS = 150
 ALL_REVENUE_MONTHS = 24
 ALL_FINANCIAL_QUARTERS = 8
 ALL_MATERIAL_DAYS = 30
+# Phase 3（2026-11-17）：全市場行情回補
+ALL_BACKFILL_START = "2026-03-02"          # 與 sample30 起始日一致
+FULL_DAY_RATIO = 0.85                      # 該日該市場現行列數 ≥ 此比例 × 現行普通股數，視為全市場日
+ALL_EVENING_REVENUE_MONTHS = 3             # all 模式 evening：只重抓最近 3 個月營收（歷史由 revenue_backfill）
+ALL_EVENING_FINANCIAL_QUARTERS = 2         # all 模式 evening：只重抓最近 2 季財報（歷史由 financials_backfill）
+ENRICH_PER_RUN = 20                        # all 模式 daily／evening：MOPS 配股補強每次最多幾個代號（其餘留到下次）
+RANGE_BLOCK_COOLDOWN_MIN = 60              # 區間端點（TWSE／TPEx）被擋後至少等幾分鐘才可再送（存在 backfill_state，Actions 換機器也有效）
+REDIRECT_STREAK_STOP = 3                   # 連續幾次 3xx／擋頁／錯誤就停止該作業（視為來源限流）
 CHECKPOINT_ALL = LOG_DIR / "backfill_all_checkpoint.json"
 COVERAGE_ALL_JSON = LOG_DIR / "coverage_all.json"

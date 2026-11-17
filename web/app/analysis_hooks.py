@@ -181,8 +181,13 @@ def _symbol_inputs(source: DataSource, code: str) -> dict:
             try:
                 # 評估日與選股相同：追蹤範圍內最新行情日（範圍外較新的列不讓個股頁跳日）
                 lp = getattr(source, "_latest_price_date", None)
-                as_of = lp() if callable(lp) and source.universe_symbols() is not None else None
-                return io.load_symbol_inputs(db, code, **({"as_of": as_of} if as_of else {}))
+                tracked = source.universe_symbols() is not None
+                as_of = lp() if callable(lp) and tracked else None
+                # 追蹤範圍（sample30）傳 coverage_scope="tracked"；代號不在清單內時 analysis 會保守只認 scope=all
+                kw = {"coverage_scope": "tracked"} if tracked else {}
+                if as_of:
+                    kw["as_of"] = as_of
+                return io.load_symbol_inputs(db, code, **kw)
             except Exception as e:
                 raise DataUnavailable("db_error", f"io_sqlite.load_symbol_inputs：{type(e).__name__}: {e}")
     kw = _frame(source)

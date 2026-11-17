@@ -1329,7 +1329,9 @@ class SqliteSource(DataSource):
             uni = self.universe.symbols   # 追蹤範圍（app/universe.py）；None＝全市場
             # 評估日＝追蹤範圍內最新行情日（analysis 預設取全表最新日；全市場回補先寫入範圍外的較新日期時會跳日）
             as_of = self._latest_price_date() if uni is not None else None
+            # 追蹤範圍（sample30）須用 coverage_scope="tracked"（3b 遷移後覆蓋表只有 sample30 列；analysis-0.9.1）
             inputs = mod.load_screen_inputs(self.db_path, symbols=list(uni) if uni is not None else None,
+                                            coverage_scope="tracked" if uni is not None else "all",
                                             **({"as_of": as_of} if as_of else {}))
         except (ValueError, FileNotFoundError) as e:
             raise DataUnavailable("table_empty", str(e))

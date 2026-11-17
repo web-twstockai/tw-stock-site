@@ -73,11 +73,11 @@ def _fetch_holiday_map() -> tuple[dict[str, tuple[str, str, bool]], str]:
     raise FetchError(f"holidaySchedule unavailable: {last_err}")
 
 
-def _fmtqik_dates(year: int) -> set[str]:
+def _fmtqik_dates(year: int, first_month: int = 1) -> set[str]:
     """證交所 FMTQIK 月表實際有列的日期＝上市集中市場有行情日。"""
     out: set[str] = set()
     end = today()
-    for month in range(1, 13):
+    for month in range(first_month, 13):
         d0 = date(year, month, 1)
         if d0 > end:
             break
@@ -97,11 +97,11 @@ def _fmtqik_dates(year: int) -> set[str]:
     return out
 
 
-def _st41_dates(year: int) -> set[str]:
+def _st41_dates(year: int, first_month: int = 1) -> set[str]:
     """櫃買 st41 月表實際有列的日期＝櫃買有行情日。"""
     out: set[str] = set()
     end = today()
-    for month in range(1, 13):
+    for month in range(first_month, 13):
         d0 = date(year, month, 1)
         if d0 > end:
             break
@@ -169,37 +169,45 @@ def _upsert_calendar_row(
     return "updated"
 
 
-def fetch_and_store(conn: sqlite3.Connection, year: int | None = None) -> int:
+def fetch_and_store(conn: sqlite3.Connection, year: int | None = None, start: date | None = None) -> int:
+    """start（歷史回補，calendar_backfill）：只處理該年 start 之後的日期；歷史年度沒有 holidaySchedule（openapi 只有當年），
+    改以 FMTQIK／st41 兩市月表交叉：平日兩市皆無行情＝休市（名稱不明）。回補模式不動 source_status 的當年紀錄。"""
     year = year or today().year
-    holiday_map, holiday_url = _fetch_holiday_map()
-    touch_source(conn, "twse_holiday", url=holiday_url, ok=True, http_status=200, data_date=f"{year}-01-01")
+    backfill = start is not None
+    if backfill:
+        holiday_map, holiday_url = {}, "n/a（歷史回補：僅 FMTQIK＋st41 交叉，無 holidaySchedule）"
+    else:
+        holiday_map, holiday_url = _fetch_holiday_map()
+        touch_source(conn, "twse_holiday", url=holiday_url, ok=True, http_status=200, data_date=f"{year}-01-01")
 
-    twse_bars = _fmtqik_dates(year)
-    tpex_bars = _st41_dates(year)
-    touch_source(
-        conn,
-        "twse_fmtqik_calendar_xref",
-        url=FMTQIK_URL.format(yyyymmdd=f"{year}0101"),
-        ok=True,
-        http_status=200,
-        data_date=max(twse_bars) if twse_bars else f"{year}-01-01",
-        notes=f"fmtqik_days={len(twse_bars)}",
-    )
-    touch_source(
-        conn,
-        "tpex_st41_calendar_xref",
-        url=ST41_URL.format(roc_ym=f"{year - 1911}/01"),
-        ok=True,
-        http_status=200,
-        data_date=max(tpex_bars) if tpex_bars else f"{year}-01-01",
-        notes=f"st41_days={len(tpex_bars)}",
-    )
+    first_month = start.month if (backfill and start.year == year) else 1
+    twse_bars = _fmtqik_dates(year, first_month)
+    tpex_bars = _st41_dates(year, first_month)
+    if not backfill:
+        touch_source(
+            conn,
+            "twse_fmtqik_calendar_xref",
+            url=FMTQIK_URL.format(yyyymmdd=f"{year}0101"),
+            ok=True,
+            http_status=200,
+            data_date=max(twse_bars) if twse_bars else f"{year}-01-01",
+            notes=f"fmtqik_days={len(twse_bars)}",
+        )
+        touch_source(
+            conn,
+            "tpex_st41_calendar_xref",
+            url=ST41_URL.format(roc_ym=f"{year - 1911}/01"),
+            ok=True,
+            http_status=200,
+            data_date=max(tpex_bars) if tpex_bars else f"{year}-01-01",
+            notes=f"st41_days={len(tpex_bars)}",
+        )
 
     as_of = today()
     n = 0
     updated = 0
     anomalies: list[dict] = []
-    d = date(year, 1, 1)
+    d = max(date(year, 1, 1), start) if backfill else date(year, 1, 1)
     d1 = date(year, 12, 31)
     while d <= d1:
         iso = d.isoformat()
@@ -228,7 +236,7 @@ def fetch_and_store(conn: sqlite3.Connection, year: int | None = None) -> int:
             if is_trade and has_both_missing:
                 # 年曆／平日預設為交易日，但兩市指數月表皆無列 → 臨時休市（颱風等）
                 special = KNOWN_SPECIAL_CLOSURES.get(iso, {})
-                name = special.get("name") or "臨時休市（無行情交叉驗證）"
+                name = special.get("name") or ("休市（兩市皆無行情；歷史年度無假日名稱）" if backfill else "臨時休市（無行情交叉驗證）")
                 desc = special.get("description") or (
                     f"weekday_default/holiday 標交易日，但 FMTQIK 與 st41 皆無 {iso}；"
                     f"twse_bar={has_twse} tpex_bar={has_tpex}"
@@ -323,7 +331,7 @@ def fetch_and_store(conn: sqlite3.Connection, year: int | None = None) -> int:
     except Exception as e:  # noqa: BLE001
         log.warning("calendar anomaly log write failed: %s", e)
 
-    if year == today().year:
+    if year == today().year and not backfill:
         fetch_and_store(conn, year - 1)
     return n
 

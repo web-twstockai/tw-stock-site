@@ -5,6 +5,6 @@
 並同步更新 `analysis/USAGE.md` 開頭的版本號與變更紀錄（`tests/test_usage_doc.py` 會檢查兩者一致）。
 """
 
-ANALYSIS_VERSION = "analysis-0.8.0"
+ANALYSIS_VERSION = "analysis-0.9.1"
 
 __all__ = ["ANALYSIS_VERSION"]

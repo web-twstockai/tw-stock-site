@@ -7,10 +7,11 @@
 
 from __future__ import annotations
 
+import bisect
 import math
 from dataclasses import dataclass
 from types import MappingProxyType
-from typing import Any, Mapping, Optional, Sequence
+from typing import Any, Iterable, Mapping, NamedTuple, Optional, Sequence
 
 import numpy as np
 import pandas as pd
@@ -136,6 +137,13 @@ def normalize_prices(prices: pd.DataFrame) -> pd.DataFrame:
         "change_sign": sign if sign is not None else None,
         # daily_prices.is_halted（資料庫已遷移、schema.md DDL 尚未列）：1＝來源標示停牌；缺欄或 NULL＝未知
         "is_halted": (_numeric(df, "is_halted").fillna(0) == 1) if "is_halted" in df.columns else False,
+        # 2026-11-10 12:05 核可 ③：is_no_trade 只做交叉檢查（說明欄），不參與判定；缺欄或 NULL＝未知
+        "is_no_trade": _numeric(df, "is_no_trade") if "is_no_trade" in df.columns else math.nan,
+        "change_note": df["change_note"].map(clean_str) if "change_note" in df.columns else None,
+        # 量額口徑（docs/indicators.md §9，2026-11-17 16:09 核可）：incl_block／excl_block／NULL；缺欄＝None（研究模式）
+        "volume_basis": df["volume_basis"].map(clean_str) if "volume_basis" in df.columns else None,
+        # 官方次日參考價（TPEx dailyQuotes「次日參考價」，記在該日列，供下一交易日比對）；缺欄＝無官方參考價
+        "next_ref_twd": _numeric(df, NEXT_REF_COLUMN) if NEXT_REF_COLUMN in df.columns else math.nan,
         "source": df["source"] if "source" in df.columns else None,
         "fetched_at": df["fetched_at"] if "fetched_at" in df.columns else None,
         "version": _numeric(df, "version") if "version" in df.columns else math.nan,
@@ -160,27 +168,150 @@ def normalize_actions(actions: Optional[pd.DataFrame]) -> pd.DataFrame:
 
 
 HALT_REQUIRED = ("symbol", "halt_date")
+# 選用欄：io_sqlite.load_halts 由資料庫算出「停牌日之後、評估日（含）以前第一個有官方成交的交易日」（只在 resume_date 為 NULL 時）
+HALT_TRADE_RESUME_COLUMN = "trade_resume_date"
+HALT_SRC_OFFICIAL = "官方恢復日"
+HALT_SRC_TRADE = "依成交推定"
+HALT_SRC_ONGOING = "仍停牌"
+# 0.9.1（2026-11-17 19:41 核可）：推定區間（依成交推定／仍停牌）內有「整個市場都缺行情」的交易日 → 來源標記加註此字樣；
+# 這些日子本股無資料列時不算停牌（停牌日當天仍算停牌），改計缺漏（評估日則為 EXCL_NO_ROW_SUSPENDED_OR_MISSING）
+HALT_SRC_INSUFFICIENT = "資料不足（insufficient）"
+HALT_SOURCES = (HALT_SRC_OFFICIAL, HALT_SRC_TRADE, HALT_SRC_ONGOING, HALT_SRC_INSUFFICIENT)
+# 「整個市場都缺行情」：某市場某交易日的現行 daily_prices 列數 < 此值（與管線 halt_fix.FULL_MARKET_MIN_ROWS 同值，分市場判定）
+FULL_MARKET_MIN_ROWS = 100
+# 選用欄：io_sqlite.load_halts 以「評估日（含）以前」的資料預先算好的推定區間缺行情日數與起訖（讀取窗口以前的部分也算進去）
+HALT_HOLE_COLUMNS = ("halt_hole_days", "halt_hole_first", "halt_hole_last")
+# 選用欄：管線 3b 的推定結果，只寫進 data_note 當交叉檢查，不用於判定
+HALT_XCHECK_COLUMNS = ("resume_basis", "resume_date_inferred")
 
 
-def normalize_halts(halts: Optional[pd.DataFrame]) -> dict[str, list[tuple[pd.Timestamp, Optional[pd.Timestamp]]]]:
-    """trading_halts → {symbol: [(halt_date, resume_date 或 None)]}。None／缺表＝無停牌資訊。
-    停牌日判定：halt_date ≤ d 且（resume_date 為 NULL 或 d < resume_date）。只取 is_current=1。"""
+class HaltSpan(NamedTuple):
+    """解析後的停牌區間：停牌日 halt_date（含）～ resume（不含；None＝至評估日仍停牌）。
+    source：官方恢復日／依成交推定／仍停牌。
+    n_holes／hole_first／hole_last：推定區間（停牌日之後、評估日（含）以前、恢復日之前）內「整個市場都缺行情」的交易日數與起訖；
+    > 0 即為「資料不足（insufficient）」。holes：其中落在本次可判定範圍（讀取窗口）內的日期，供逐日判定。
+    xcheck：管線 resume_basis／resume_date_inferred 交叉檢查文字（只標註）。"""
+    halt_date: pd.Timestamp
+    resume: Optional[pd.Timestamp]
+    source: str
+    n_holes: int = 0
+    hole_first: Optional[pd.Timestamp] = None
+    hole_last: Optional[pd.Timestamp] = None
+    holes: frozenset = frozenset()
+    xcheck: Optional[str] = None
+
+    @property
+    def insufficient(self) -> bool:
+        return self.n_holes > 0
+
+
+def normalize_halts(halts: Optional[pd.DataFrame]) -> dict[str, list[tuple]]:
+    """trading_halts → {symbol: [(halt_date, resume_date 或 None, trade_resume_date 或 None,
+    缺行情日數 或 None, 缺行情首日 或 None, 缺行情末日 或 None, 管線交叉檢查文字 或 None)]}。None／缺表＝無停牌資訊。
+    只取 is_current=1。停牌日判定要再經 resolve_halts()（docs/indicators.md 第 10 節）。
+    resume_basis／resume_date_inferred（管線 3b 欄）只組成交叉檢查文字，不參與判定。"""
     if halts is None or len(halts) == 0:
         return {}
     require(halts, HALT_REQUIRED, "halts（trading_halts）")
     df = _current(halts)
     hd = _dates(df["halt_date"])
     rd = _dates(df["resume_date"]) if "resume_date" in df.columns else pd.Series(pd.NaT, index=df.index)
+    td = (_dates(df[HALT_TRADE_RESUME_COLUMN]) if HALT_TRADE_RESUME_COLUMN in df.columns
+          else pd.Series(pd.NaT, index=df.index))
+    nh = (pd.to_numeric(df[HALT_HOLE_COLUMNS[0]], errors="coerce") if HALT_HOLE_COLUMNS[0] in df.columns
+          else pd.Series(math.nan, index=df.index))
+    hf = _dates(df[HALT_HOLE_COLUMNS[1]]) if HALT_HOLE_COLUMNS[1] in df.columns else pd.Series(pd.NaT, index=df.index)
+    hl = _dates(df[HALT_HOLE_COLUMNS[2]]) if HALT_HOLE_COLUMNS[2] in df.columns else pd.Series(pd.NaT, index=df.index)
+    has_x = any(c in df.columns for c in HALT_XCHECK_COLUMNS)
+    xb = df[HALT_XCHECK_COLUMNS[0]] if HALT_XCHECK_COLUMNS[0] in df.columns else pd.Series(None, index=df.index, dtype=object)
+    xi = df[HALT_XCHECK_COLUMNS[1]] if HALT_XCHECK_COLUMNS[1] in df.columns else pd.Series(None, index=df.index, dtype=object)
     out: dict[str, list] = {}
-    for sym, a, b in zip(df["symbol"].astype(str).str.strip(), hd, rd):
+    for sym, a, b, c, n, f, l, x1, x2 in zip(df["symbol"].astype(str).str.strip(), hd, rd, td, nh, hf, hl, xb, xi):
         if pd.isna(a):
             continue
-        out.setdefault(sym, []).append((a, None if pd.isna(b) else b))
+        xc = (f"管線交叉檢查：resume_basis＝{clean_str(x1) or '（空）'}，resume_date_inferred＝{clean_str(x2) or '（空）'}"
+              if has_x else None)
+        out.setdefault(sym, []).append((a, None if pd.isna(b) else b, None if pd.isna(c) else c,
+                                        None if pd.isna(n) else int(n), None if pd.isna(f) else f,
+                                        None if pd.isna(l) else l, xc))
     return out
 
 
-def is_halt_day(intervals: Sequence[tuple[pd.Timestamp, Optional[pd.Timestamp]]], d: pd.Timestamp) -> bool:
-    return any(a <= d and (b is None or d < b) for a, b in intervals)
+def resolve_halts(records: Sequence[tuple], valid_dates: Iterable[pd.Timestamp], as_of: pd.Timestamp,
+                  trade_days: Optional[Iterable[pd.Timestamp]] = None,
+                  is_hole: Optional[Any] = None) -> list[HaltSpan]:
+    """停牌規則（docs/indicators.md 第 10 節；18:31 核可、19:04 確認、19:41 insufficient 規則）：停牌從停牌日開始算。
+    - 有官方恢復日：停到恢復日前一天（source＝官方恢復日），一律用官方日。
+    - 沒有恢復日：停到停牌日之後第一個有官方成交列（有收盤價且成交量 > 0）的前一天（source＝依成交推定）；
+      停牌日之後到評估日都沒有成交 → 仍在停牌（source＝仍停牌）。
+    - 資料不足（insufficient）：推定區間（停牌日之後、評估日（含）以前、恢復日之前）內「整個市場都缺行情」的交易日
+      （is_hole(d) 為真）記入 holes；這些日子本股無資料列時不算停牌（見 halt_span_on 的 has_row）。停牌日當天不受影響。
+      records 第 4～6 欄（io_sqlite 以評估日以前資料預算的缺行情日數／首日／末日，含讀取窗口以前）有值時用來標示，
+      否則以 trade_days 範圍內自行計算。
+    不前視：只用評估日（含）以前的成交；valid_dates 與 records 第 3 欄（資料庫推得的成交恢復日）晚於 as_of 一律不用。
+    停牌日晚於 as_of 的紀錄不採用。"""
+    vd = sorted(d for d in valid_dates if d <= as_of)
+    td = sorted(d for d in (trade_days or ()) if d <= as_of)
+    out: list[HaltSpan] = []
+    for rec in records:
+        a, b = rec[0], rec[1]
+        pre = rec[2] if len(rec) > 2 else None
+        pn, pf, pl = (rec[3], rec[4], rec[5]) if len(rec) > 5 else (None, None, None)
+        xc = rec[6] if len(rec) > 6 else None
+        if a is None or a > as_of:
+            continue
+        if b is not None:
+            out.append(HaltSpan(a, b, HALT_SRC_OFFICIAL, xcheck=xc))
+            continue
+        i = bisect.bisect_right(vd, a)
+        first = vd[i] if i < len(vd) else None
+        if pre is not None and a < pre <= as_of and (first is None or pre < first):
+            first = pre
+        src = HALT_SRC_TRADE if first is not None else HALT_SRC_ONGOING
+        holes = frozenset(d for d in td if d > a and (first is None or d < first) and is_hole is not None and is_hole(d))
+        if pn is not None:
+            n, hf, hl = int(pn), pf, pl
+        else:
+            n = len(holes)
+            hf, hl = (min(holes), max(holes)) if holes else (None, None)
+        out.append(HaltSpan(a, first, src, n, hf, hl, holes, xc))
+    return out
+
+
+def halt_span_on(spans: Sequence[tuple], d: pd.Timestamp, has_row: bool = True) -> Optional[tuple]:
+    """d 落在哪個停牌區間（halt_date ≤ d 且（resume 為 None 或 d < resume））；沒有則 None。
+    has_row=False（本股當日無資料列）且 d 是該區間的「整個市場都缺行情」日（HaltSpan.holes）→ 不算停牌（insufficient 規則）。"""
+    for x in spans:
+        a, b = x[0], x[1]
+        if a <= d and (b is None or d < b):
+            if not has_row and d in getattr(x, "holes", ()):
+                continue
+            return x
+    return None
+
+
+def halt_note(span: HaltSpan) -> str:
+    """停牌區間的來源說明（寫入 data_note／排除明細）。"""
+    a = span.halt_date.date()
+    if span.source == HALT_SRC_OFFICIAL:
+        s = f"停牌日 {a}，官方恢復日 {span.resume.date()}"
+    elif span.source == HALT_SRC_TRADE:
+        s = f"停牌日 {a}，無官方恢復日，恢復日 {span.resume.date()}（依成交推定）"
+    else:
+        s = f"停牌日 {a}，無官方恢復日，停牌日後至評估日無官方成交，視為仍停牌"
+    if getattr(span, "insufficient", False):
+        rng = (f"{span.hole_first.date()}～{span.hole_last.date()}" if span.hole_first is not None and span.hole_last is not None
+               else "日期見讀取窗口")
+        s += (f"；推定區間內 {span.n_holes} 個交易日整個市場都缺行情（{rng}），這些日子本股無資料列時不算停牌"
+              f"（{HALT_SRC_INSUFFICIENT}）")
+    if getattr(span, "xcheck", None):
+        s += f"；{span.xcheck}"
+    return s
+
+
+def is_halt_day(intervals: Sequence[tuple], d: pd.Timestamp, has_row: bool = True) -> bool:
+    """intervals 為 HaltSpan 或 (halt_date, resume) 序列；resume 為 None＝未結束。has_row 見 halt_span_on。"""
+    return halt_span_on(intervals, d, has_row) is not None
 
 
 def normalize_securities(secs: Optional[pd.DataFrame]) -> Optional[pd.DataFrame]:
@@ -562,6 +693,96 @@ def signed_source_change(change_twd: Any, change_sign: Any) -> tuple[Optional[fl
     if sign == "+" and v < 0:
         return None, "source_sign_conflict"
     return v, "ok"
+
+
+# ---------------- 量額口徑（docs/indicators.md §9；2026-11-17 16:09 核可，方案 A）----------------
+
+VOLUME_BASIS_TOTAL = "incl_block"           # 選股採用的總量口徑（含鉅額）
+VOLUME_BASIS_VALUES = ("incl_block", "excl_block")
+VOLUME_BASIS_COLUMN_MISSING = "volume_basis_column_missing"
+
+
+def is_total_basis(v: Any) -> bool:
+    """只有 incl_block 算總量口徑；excl_block、NULL、其他值一律否（不推定、不以 block 欄補算）。"""
+    return clean_str(v) == VOLUME_BASIS_TOTAL
+
+
+def basis_label(v: Any) -> str:
+    s = clean_str(v)
+    if s == "excl_block":
+        return "excl_block（不含鉅額，tradingStock）"
+    if s is None:
+        return "NULL（口徑不明）"
+    return s if s == VOLUME_BASIS_TOTAL else f"{s}（非允許值，視為口徑不明）"
+
+
+# ---------------- 整股無成交日相關（DECISIONS 2026-11-10 12:05 核可三項）----------------
+
+NEXT_REF_COLUMN = "next_ref_price_twd"   # daily_prices 選用欄：官方次日參考價（TPEx dailyQuotes「次日參考價」；資料工程 2026-11-10 12:08 新增）
+NO_COMPARE_NOTE = "無比價"              # TWSE 漲跌符號 X（不比價）的顯示文字，與 daily_prices.change_note 同字
+CHANGE_CHECK_STATUSES = ("ok", "mismatch", "no_source", "source_not_comparable", "source_sign_conflict",
+                         "after_no_trade")
+
+
+def row_kind(close: Any, volume: Any) -> str:
+    """單列行情分類（只看價量，不看 is_no_trade／is_halted）：
+    valid＝收盤非 NULL 且成交量 > 0；bad_volume＝有收盤價但成交量 NULL（核可 ①：一律資料錯誤）；
+    no_trade＝其餘（收盤 NULL，或成交量 0；含只有零股成交而收盤 NULL 的日子）。"""
+    c_na = close is None or pd.isna(close)
+    v_na = volume is None or pd.isna(volume)
+    if not c_na and v_na:
+        return "bad_volume"
+    if not c_na and not v_na and float(volume) > 0:
+        return "valid"
+    return "no_trade"
+
+
+def no_trade_flag_conflict(close: Any, volume: Any, is_no_trade: Any) -> Optional[str]:
+    """is_no_trade 交叉檢查（核可 ③：只標註，不改結果碼）。旗標 NULL／缺欄或該列為 bad_volume 時不比對。
+    回傳衝突說明或 None。"""
+    if is_no_trade is None or pd.isna(is_no_trade):
+        return None
+    kind = row_kind(close, volume)
+    if kind == "bad_volume":
+        return None
+    flag = int(float(is_no_trade)) == 1
+    if flag and kind == "valid":
+        return "is_no_trade＝1 但價量顯示有成交"
+    if not flag and kind == "no_trade":
+        return "is_no_trade＝0 但價量顯示整股無成交（收盤 NULL 或量 0）"
+    return None
+
+
+def check_change_after_no_trade(close: float, last_close: float, change_twd: Any, change_sign: Any,
+                                change_note: Any = None, official_ref: Any = None
+                                ) -> tuple[str, Optional[float], Optional[float], Optional[float], str]:
+    """整股無成交日的次一有效交易日（前一交易日有列但整股無成交）之漲跌核對（核可 ②）。
+    官方漲跌以參考價計（TWSE 標 X 不比價；TPEx 以次日參考價為基準），自算仍以前一有效收盤為基準（只顯示，不覆蓋）。
+    回傳 (狀態, 來源帶號漲跌, 差異, 容許值, 說明)：
+    - 來源 X 或 change_note＝「無比價」→ after_no_trade，說明「無比價」；
+    - 有官方參考價 official_ref → 以 (收盤 − 參考價) 與來源漲跌比對：一致 after_no_trade，超過容許值 mismatch；
+    - 無官方參考價 → after_no_trade（不比對、不算 mismatch），說明列出來源隱含的參考價；
+    - 來源正負號矛盾 → source_sign_conflict（資料問題優先）；來源無漲跌 → after_no_trade。"""
+    src, st = signed_source_change(change_twd, change_sign)
+    head = "前一交易日整股無成交"
+    sign = clean_str(change_sign)
+    is_x = sign is not None and sign.upper() == "X"            # 來源 X 時 change_twd 多為 NULL，先判 X
+    if is_x or st == "source_not_comparable" or (src is None and clean_str(change_note) == NO_COMPARE_NOTE):
+        return "after_no_trade", None, None, None, f"{NO_COMPARE_NOTE}（{head}，官方漲跌標 X）"
+    if st == "source_sign_conflict":
+        return st, src, None, None, f"{head}；來源漲跌正負號矛盾"
+    ref = None if official_ref is None or pd.isna(official_ref) or float(official_ref) <= 0 else float(official_ref)
+    if st == "no_source":
+        extra = f"；官方參考價 {ref:.2f}" if ref is not None else ""
+        return "after_no_trade", None, None, None, f"{head}；官方未提供漲跌{extra}"
+    if ref is not None:
+        tol = NON_EVENT_TOLERANCE_TWD
+        diff = (close - ref) - src
+        if abs(diff) <= tol + 1e-9:
+            return "after_no_trade", src, diff, tol, f"{head}；依官方參考價 {ref:.2f} 比對一致"
+        return "mismatch", src, diff, tol, f"{head}；依官方參考價 {ref:.2f} 比對不一致（差 {diff:+.3f} 元）"
+    return ("after_no_trade", src, None, None,
+            f"{head}；官方漲跌以參考價計（隱含參考價 {close - src:.2f} 元），自算以前一有效收盤 {last_close:.2f} 元為基準，不比對")
 
 
 def check_change(close: float, base: float, is_event_day: bool, change_twd: Any, change_sign: Any

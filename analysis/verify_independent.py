@@ -40,7 +40,7 @@ NUMERIC_FIELDS = ("close_twd", "change_pct", "volume_shares", "amount_twd", "ma_
                   "prior_high_twd", "prior_avg_volume_shares", "volume_ratio")
 EXACT_FIELDS = ("status", "exclusion_code", "pass_trend", "pass_breakout", "pass_volume", "pass_turnover",
                 "change_check", "coverage_note", "window_gap_days", "window_halt_days", "window_missing_days",
-                "window_no_trade_days")
+                "window_no_trade_days", "window_bad_data_days", "volume_basis", "window_volume_basis_days")
 # 獨立寫一份對映（不 import adjust）
 TYPE_ALIAS = {"ex_dividend": "cash_dividend", "ex_rights": "stock_dividend"}
 DIVIDEND_TYPES = ("cash_dividend", "stock_dividend", "ex_both")
@@ -61,7 +61,12 @@ def _f(v: Any) -> Optional[float]:
     return None if v is None or v == "" else float(v)
 
 
-def load_db(db_path: Path, as_of: Optional[str] = None, lookback: int = 250) -> dict[str, Any]:
+FULL_MIN = 100          # 獨立寫一份：某市場某日現行列數 < 100＝整個市場都缺行情（停牌 insufficient 規則）
+COV_ACCEPT = {"all": ("all",), "tracked": ("sample30", "all")}   # 覆蓋表 scope（有 scope 欄才篩選）
+
+
+def load_db(db_path: Path, as_of: Optional[str] = None, lookback: int = 250, coverage_scope: str = "all",
+            symbols: Optional[list] = None) -> dict[str, Any]:
     con = sqlite3.connect(f"file:{Path(db_path).resolve()}?mode=ro", uri=True)
     with closing(con):
         cal_rows = con.execute("SELECT calendar_date, is_trade_day FROM trading_calendar").fetchall()
@@ -82,18 +87,32 @@ def load_db(db_path: Path, as_of: Optional[str] = None, lookback: int = 250) -> 
         i = trade_all.index(as_of_d)
         start = trade_all[max(0, i - lookback + 1)]
         prices = []
+        tset_all = set(trade_all)
+        traded_all: dict[str, list] = {}     # 全表（不限窗口）評估日以前有成交的交易日：停牌恢復推定用
+        mkt_count: dict = {}                 # (market, date) → 評估日以前現行列數（逐列累加）
         pc = [r[1] for r in con.execute("PRAGMA table_info(daily_prices)")]
         chg = "COALESCE(\"change\", change_twd)" if "change" in pc else "change_twd"
         hal = "is_halted" if "is_halted" in pc else "0"
+        cno = "change_note" if "change_note" in pc else "NULL"
+        nref = "next_ref_price_twd" if "next_ref_price_twd" in pc else "NULL"
+        vb_present = "volume_basis" in pc            # 缺欄＝研究模式（不檢查口徑）
+        vbc = "volume_basis" if vb_present else "NULL"
         for row in con.execute("SELECT symbol, market, price_date, open_twd, high_twd, low_twd, close_twd, "
-                               "volume_shares, amount_twd, " + chg + ", change_sign, " + hal +
+                               "volume_shares, amount_twd, " + chg + ", change_sign, " + hal + ", " + cno + ", " + nref +
+                               ", " + vbc +
                                " FROM daily_prices WHERE is_current=1"):
             d = _d(row[2])
+            if d <= as_of_d:
+                mkt_count[(row[1], d)] = mkt_count.get((row[1], d), 0) + 1
+            if d <= as_of_d and d in tset_all and row[6] is not None and row[7] is not None and float(row[7]) > 0:
+                traded_all.setdefault(row[0], []).append(d)
             if start <= d <= as_of_d:
                 prices.append({"symbol": row[0], "market": row[1], "date": d, "open": _f(row[3]), "high": _f(row[4]),
                                "low": _f(row[5]), "close": _f(row[6]), "volume": _f(row[7]), "turnover": _f(row[8]),
                                "chg": _f(row[9]), "sign": (row[10] or "").strip() or None,
-                               "halted": row[11] is not None and int(row[11]) == 1})
+                               "halted": row[11] is not None and int(row[11]) == 1,
+                               "note": (row[12] or "").strip() or None, "ref": _f(row[13]),
+                               "vb": (row[14] or "").strip() or None})
         actions = []
         ac = [r[1] for r in con.execute("PRAGMA table_info(corporate_actions)")]
         opt = [(c if c in ac else "NULL") for c in ("cash_subscription_ratio", "share_exchange_ratio")]
@@ -109,11 +128,12 @@ def load_db(db_path: Path, as_of: Optional[str] = None, lookback: int = 250) -> 
         halts = {}
         if con.execute("SELECT 1 FROM sqlite_master WHERE type='table' AND name='trading_halts'").fetchone():
             hc = [r[1] for r in con.execute("PRAGMA table_info(trading_halts)")]
-            q = "SELECT symbol, halt_date, " + ("resume_date" if "resume_date" in hc else "NULL") + " FROM trading_halts" + \
+            q = "SELECT symbol, halt_date, " + ("resume_date" if "resume_date" in hc else "NULL") + ", " + \
+                ("market" if "market" in hc else "NULL") + " FROM trading_halts" + \
                 (" WHERE is_current=1" if "is_current" in hc else "")
-            for sym, h0, r0 in con.execute(q):
+            for sym, h0, r0, m0 in con.execute(q):    # 不讀 resume_basis／resume_date_inferred
                 if h0:
-                    halts.setdefault(sym.strip(), []).append((_d(h0), _d(r0) if r0 else None))
+                    halts.setdefault(sym.strip(), []).append((_d(h0), _d(r0) if r0 else None, m0))
         secs = {}
         for row in con.execute("SELECT symbol, market, listed_date FROM securities WHERE is_current=1 AND is_common=1"):
             secs[row[0]] = {"market": row[1], "listed": _d(row[2])}
@@ -121,8 +141,24 @@ def load_db(db_path: Path, as_of: Optional[str] = None, lookback: int = 250) -> 
         if con.execute("SELECT 1 FROM sqlite_master WHERE type='table' AND name='corporate_actions_coverage'").fetchone():
             ccols = [r[1] for r in con.execute("PRAGMA table_info(corporate_actions_coverage)")]
             q = "SELECT market, action_kind, coverage_start, " + ("coverage_end" if "coverage_end" in ccols else "NULL") + \
+                ", " + ("scope" if "scope" in ccols else "'__noscope__'") + \
                 " FROM corporate_actions_coverage" + (" WHERE is_current=1" if "is_current" in ccols else "")
-            rows = con.execute(q).fetchall()
+            rows0 = con.execute(q).fetchall()
+            if "scope" in ccols:
+                ok = COV_ACCEPT[coverage_scope]
+                if coverage_scope == "tracked":    # 追蹤清單須全部屬 universe_members sample30，否則（或表不存在）只認 all
+                    mem = set()
+                    if con.execute("SELECT 1 FROM sqlite_master WHERE type='table' AND name='universe_members'").fetchone():
+                        mem = {str(r[0]).strip() for r in con.execute(
+                            "SELECT symbol FROM universe_members WHERE universe_id='sample30'")}
+                    req = {str(x).strip() for x in (symbols or [])}
+                    if not mem or not req or not req <= mem:
+                        ok = ("all",)
+                rows = [r[:4] for r in rows0 if r[4] is not None and str(r[4]).strip() in ok]
+                if rows0 and not rows:
+                    rows = None      # 有列但全部不採用：當作無覆蓋（與空表同樣走 strict）
+            else:
+                rows = [r[:4] for r in rows0]
             if not rows:
                 cov = "coverage_table_empty"
             else:
@@ -132,13 +168,40 @@ def load_db(db_path: Path, as_of: Optional[str] = None, lookback: int = 250) -> 
                         for kk in COV_ALIAS[k.strip()]:
                             cov.setdefault((m, kk), []).append((_d(s0), _d(e0) if e0 else date(9999, 12, 31)))
     trade = [d for d in trade_all if start <= d <= as_of_d]
+    # 獨立實作停牌規則（2026-11-17 18:31 核可）：有官方恢復日→[停牌日, 恢復日)；無→停到停牌日後第一個成交日前一天，
+    # 評估日以前都沒成交→至今仍停牌。只用 ≤ as_of 的成交（不前視）
+    # 0.9.1 insufficient 規則（2026-11-17 19:41 核可）：推定區間（無官方恢復日）內，某市場列數 < FULL_MIN 的交易日＝整個市場都缺行情，
+    # 本股當日無資料列時不算停牌；停牌日當天不受影響。只看評估日以前的列數（不前視）
+    full_days = {k for k, n in mkt_count.items() if n >= FULL_MIN}
+    all_mkts = {m for m, _ in full_days}
+    spans = {}
+    for sym, lst in halts.items():
+        tl = sorted(traded_all.get(sym, []))
+        for a, b, m0 in lst:
+            if a > as_of_d:
+                continue
+            holes = set()
+            if b is None:
+                later = [x for x in tl if x > a]
+                b = later[0] if later else None
+                for x in trade_all:
+                    if a < x <= as_of_d and (b is None or x < b):
+                        if m0 is not None:
+                            hole = (m0, x) not in full_days
+                        else:
+                            hole = all((mm, x) not in full_days for mm in (all_mkts or {""}))
+                        if hole:
+                            holes.add(x)
+            spans.setdefault(sym, []).append((a, b, holes))
     return {"trade": trade, "non_trade": non_trade, "as_of": as_of_d, "start": start, "prices": prices,
-            "actions": actions, "secs": secs, "cov": cov, "halts": halts}
+            "actions": actions, "secs": secs, "cov": cov, "halts": halts, "halt_spans": spans, "vb_present": vb_present}
 
 
-def halted_on(data, sym, d):
-    for a, b in data["halts"].get(sym, []):
+def halted_on(data, sym, d, has_row=True):
+    for a, b, holes in data["halt_spans"].get(sym, []):
         if a <= d and (b is None or d < b):
+            if not has_row and d in holes:
+                continue
             return True
     return False
 
@@ -196,6 +259,40 @@ def tick(price):
     if price < 1000:
         return 1.0
     return 5.0
+
+
+def _kind(r):
+    """獨立實作：valid／bad_volume（有收盤、量 NULL）／no_trade。"""
+    if r["close"] is not None and r["volume"] is None:
+        return "bad_volume"
+    if r["close"] is not None and r["volume"] is not None and r["volume"] > 0:
+        return "valid"
+    return "no_trade"
+
+
+def change_check_after_nt(close, chg, sign, note, ref):
+    """獨立實作：前一交易日整股無成交時的漲跌核對（DECISIONS 2026-11-10 12:05 ②）。"""
+    if (sign is not None and sign.upper() == "X") or (chg is None and note == "無比價"):
+        return "after_no_trade"
+    if chg is None:
+        return "after_no_trade"
+    v = chg
+    if sign == "-" and v > 0:
+        v = -v
+    if sign == "+" and v < 0:
+        return "source_sign_conflict"
+    if ref is not None and ref > 0:
+        return "after_no_trade" if abs((close - ref) - v) <= 0.005 + 1e-9 else "mismatch"
+    return "after_no_trade"
+
+
+def _prev_no_trade_row(data, by_date, d):
+    tr = data["trade"]
+    i = tr.index(d) if d in tr else -1
+    if i <= 0:
+        return None
+    r = by_date.get(tr[i - 1])
+    return r if (r is not None and _kind(r) == "no_trade") else None
 
 
 def change_check(close, base, is_ev, chg, sign):
@@ -356,13 +453,18 @@ def _one(sid, g, acts, data, pos, mkt_days, p, need):
     if t is None:
         if (market, as_of) not in mkt_days:
             return ex("EXCL_NO_DATA")
-        return ex("EXCL_SUSPENDED") if halted_on(data, sid, as_of) else ex("EXCL_NO_ROW_SUSPENDED_OR_MISSING")
+        return ex("EXCL_SUSPENDED") if halted_on(data, sid, as_of, has_row=False) else ex("EXCL_NO_ROW_SUSPENDED_OR_MISSING")
+    vbp = data.get("vb_present", False)
+    if vbp:
+        wx["volume_basis"] = t["vb"]
     if t["close"] is None or t["volume"] == 0:
         if t["halted"] or halted_on(data, sid, as_of):
             return ex("EXCL_SUSPENDED")
         return ex("EXCL_NO_TRADE")
     if _bad(t, True):
         return ex("EXCL_BAD_DATA")
+    if vbp and (p["enable_volume"] or p["enable_turnover"]) and t["vb"] != "incl_block":
+        return ex("EXCL_VOLUME_BASIS")      # 獨立實作 §9.2（5a）
 
     lst = None
     if sec["listed"] is not None and sec["listed"] >= data["trade"][0]:
@@ -382,22 +484,35 @@ def _one(sid, g, acts, data, pos, mkt_days, p, need):
     w0 = W[0]["date"]
     by_date = {r["date"]: r for r in g}
     vd = {r["date"] for r in valid}
-    nh = nm = nn = 0
+    nh = nm = nn = nb = 0
     for d in data["trade"]:
         if w0 <= d <= as_of and d not in vd:
             r = by_date.get(d)
-            if (r is not None and r["halted"]) or halted_on(data, sid, d):
+            if r is not None and _kind(r) == "bad_volume":
+                nb += 1
+            elif (r is not None and r["halted"]) or halted_on(data, sid, d, has_row=r is not None):
                 nh += 1
             elif r is None:
                 nm += 1
             else:
                 nn += 1
-    wx.update(window_gap_days=nh + nm + nn, window_halt_days=nh, window_missing_days=nm, window_no_trade_days=nn)
+    wx.update(window_gap_days=nh + nm + nn + nb, window_halt_days=nh, window_missing_days=nm, window_no_trade_days=nn,
+              window_bad_data_days=nb)
     if (pos[as_of] - pos[w0] + 1) - need > p["max_gap_days"]:
         return ex("EXCL_WINDOW_GAPS")
+    if nb > 0:
+        return ex("EXCL_BAD_DATA")
     for r in W:
         if _bad(r, False):
             return ex("EXCL_BAD_DATA")
+    if vbp:                                  # 獨立實作 §9.3 方案 A（9a）
+        cnt = 0
+        for r in W[len(W) - 1 - p["volume_lookback"]:len(W) - 1]:
+            if r["vb"] != "incl_block":
+                cnt += 1
+        wx["window_volume_basis_days"] = cnt
+        if p["enable_volume"] and cnt > 0:
+            return ex("EXCL_VOLUME_BASIS")
 
     notes = cov_notes(data["cov"], market, w0, as_of)
     note = ";".join(notes) if notes else None
@@ -455,6 +570,9 @@ def _one(sid, g, acts, data, pos, mkt_days, p, need):
             base = base * f
             is_ev = True
     chk = change_check(close, base, is_ev, t["chg"], t["sign"])
+    pr = _prev_no_trade_row(data, by_date, as_of)
+    if pr is not None and not is_ev:
+        chk = change_check_after_nt(close, t["chg"], t["sign"], t.get("note"), pr.get("ref"))
     c1 = close > ma_s and ma_s > ma_l
     c2 = close > ph
     c3 = vol >= pav * p["volume_multiplier"]
@@ -559,6 +677,7 @@ def ind_change_series(data, sym, p):
     g, valid, acts, market, lst = _sym_rows(data, sym)
     res = ind_resolve_all(acts, valid, p, None)
     out = {}
+    by_date = {x["date"]: x for x in g}
     for i in range(1, len(valid)):
         r, pv = valid[i], valid[i - 1]
         between = [x for x in res if pv["date"] < x[0] <= r["date"]]
@@ -568,8 +687,11 @@ def ind_change_series(data, sym, p):
         base = pv["close"]
         for x in between:
             base = base * x[2]
-        out[r["date"]] = {"status": "ok", "change_pct": (r["close"] / base - 1.0) * 100.0,
-                          "change_check": change_check(r["close"], base, len(between) > 0, r["chg"], r["sign"])}
+        chk = change_check(r["close"], base, len(between) > 0, r["chg"], r["sign"])
+        pr = _prev_no_trade_row(data, by_date, r["date"])
+        if pr is not None and not between:
+            chk = change_check_after_nt(r["close"], r["chg"], r["sign"], r.get("note"), pr.get("ref"))
+        out[r["date"]] = {"status": "ok", "change_pct": (r["close"] / base - 1.0) * 100.0, "change_check": chk}
     return out
 
 
@@ -651,7 +773,8 @@ PARAM_SETS = {
 }
 
 
-def run_comparison(db_path: Path, n_dates: int = 20) -> dict[str, Any]:
+def run_comparison(db_path: Path, n_dates: int = 20, coverage_scope: str = "all",
+                   symbols: Optional[list] = None) -> dict[str, Any]:
     import io_sqlite
     import screener
 
@@ -661,9 +784,11 @@ def run_comparison(db_path: Path, n_dates: int = 20) -> dict[str, Any]:
              "status_counts": {}}
     for d in dates:
         ds = d.isoformat()
-        inputs = io_sqlite.load_screen_inputs(db_path, as_of=ds)
-        mine_data = load_db(db_path, as_of=ds)
+        inputs = io_sqlite.load_screen_inputs(db_path, as_of=ds, symbols=symbols, coverage_scope=coverage_scope)
+        mine_data = load_db(db_path, as_of=ds, coverage_scope=coverage_scope, symbols=symbols)
         universe = sorted({r["symbol"] for r in mine_data["prices"]} | set(mine_data["secs"]))
+        if symbols is not None:
+            universe = sorted(set(symbols))
         for label, overrides in PARAM_SETS.items():
             params = screener.ScreenParams(**overrides)
             res = screener.screen(**inputs.screen_kwargs(), params=params, universe=universe)

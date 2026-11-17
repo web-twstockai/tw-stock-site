@@ -22,19 +22,19 @@ def _x1000(v: float | None) -> int | None:
 
 
 def _latest_filed_quarter() -> tuple[int, int]:
-    """粗估：11 月起可能有 Q3；保守取上一完整季。"""
+    """最近一個「申報期限已過」的季別（全市場已齊）：Q1→5/15、Q2→8/14、Q3→11/14、Q4（年報）→次年 3/31。
+    （3b 修正：舊版整個 11 月都回 Q2，Q3 要到 12 月才會抓。）期限當天還在申報，所以要「晚於期限」才算。"""
     t = today()
-    # 2026-11 → 仍可能 Q3 申報中；用 Q2 2026 = 115/2 作為最新完整季起點
-    y = t.year
-    if t.month <= 3:
-        return y - 1, 3
-    if t.month <= 5:
-        return y - 1, 4
-    if t.month <= 8:
-        return y, 1
-    if t.month <= 11:
-        return y, 2
-    return y, 3
+    md = (t.month, t.day)
+    if md > (11, 14):
+        return t.year, 3
+    if md > (8, 14):
+        return t.year, 2
+    if md > (5, 15):
+        return t.year, 1
+    if md > (3, 31):
+        return t.year - 1, 4
+    return t.year - 1, 3
 
 
 def _parse_tables_by_code(html: bytes) -> dict[str, list[str]]:
@@ -220,19 +220,134 @@ def fetch_income_season(conn: sqlite3.Connection, year: int, season: int, symbol
     return n
 
 
-def fetch_all(conn: sqlite3.Connection, symbols: list[str]) -> dict:
+# ---------------------------------------------------------------------------
+# 頁級抓取（市場 × 季 × 表）：financial_fetch_status、頁級重試、連續 3xx／擋頁就停（Phase 3）
+# ---------------------------------------------------------------------------
+KIND_FUNCS = {"income": fetch_income_season, "cashflow": fetch_cashflow_season}
+_SRC = {"income": "https://mopsov.twse.com.tw/mops/web/ajax_t163sb04", "cashflow": "https://mopsov.twse.com.tw/mops/web/ajax_t163sb20"}
+
+
+def _scope_of(conn: sqlite3.Connection, symset: set[str], typek: str) -> str:
+    from pipeline.scope import scope_of
+    return scope_of(symset, conn, "TWSE" if typek == "sii" else "TPEx")
+
+
+def _write_page_status(conn: sqlite3.Connection, *, typek: str, y: int, q: int, kind: str, status: str,
+                       http_status: int | None, n: int, scope: str, error: str | None) -> None:
+    mkt = "TWSE" if typek == "sii" else "TPEx"
+    conn.execute(
+        """INSERT INTO financial_fetch_status(market,fiscal_year,fiscal_quarter,table_kind,status,http_status,row_count,scope,attempts,source,fetched_at,error)
+           VALUES(?,?,?,?,?,?,?,?,1,?,?,?)
+           ON CONFLICT(market,fiscal_year,fiscal_quarter,table_kind) DO UPDATE SET
+             status=excluded.status, http_status=excluded.http_status, row_count=excluded.row_count, scope=excluded.scope,
+             attempts=financial_fetch_status.attempts+1, source=excluded.source, fetched_at=excluded.fetched_at, error=excluded.error""",
+        (mkt, y, q, kind, status, http_status, n, scope, _SRC[kind], now_iso(), error),
+    )
+    conn.commit()
+
+
+def page_done(conn: sqlite3.Connection, typek: str, y: int, q: int, kind: str, scope: str) -> bool:
+    mkt = "TWSE" if typek == "sii" else "TPEx"
+    r = conn.execute(
+        "SELECT status, scope FROM financial_fetch_status WHERE market=? AND fiscal_year=? AND fiscal_quarter=? AND table_kind=?",
+        (mkt, y, q, kind)).fetchone()
+    return bool(r and r[0] == "ok" and r[1] == scope)
+
+
+def fetch_page(conn: sqlite3.Connection, kind: str, y: int, q: int, symset: set[str], typek: str) -> dict:
+    """抓一頁並寫 financial_fetch_status。回傳 {n, status, error, redirect}；不丟 FetchError（RateLimited 除外）。"""
+    from pipeline.httputil import RateLimited
+
+    scope = _scope_of(conn, symset, typek)
+    try:
+        n = KIND_FUNCS[kind](conn, y, q, symset, typek)
+    except RateLimited:
+        raise
+    except FetchError as e:
+        msg = str(e)
+        redirect = "redirect/http=" in msg or e.blocked
+        _write_page_status(conn, typek=typek, y=y, q=q, kind=kind, status="blocked" if e.blocked else "fail",
+                           http_status=e.status, n=0, scope=scope, error=msg[:300])
+        return {"n": 0, "status": "blocked" if e.blocked else "fail", "error": msg, "redirect": redirect}
+    status = "ok" if n > 0 else "empty"
+    _write_page_status(conn, typek=typek, y=y, q=q, kind=kind, status=status, http_status=200, n=n, scope=scope, error=None)
+    return {"n": n, "status": status, "error": None, "redirect": False}
+
+
+def fetch_pages(conn: sqlite3.Connection, pages: list[tuple[int, int, str, str]], symset: set[str], *,
+                budget=None, max_pages: int | None = None, skip_done: bool = False, retry_failed: bool = True) -> dict:
+    """依序抓 pages=[(年, 季, typek, kind)]。
+    - skip_done：已是同範圍 ok 的頁不再抓。
+    - 連續 REDIRECT_STREAK_STOP 頁 3xx／擋頁就停止（視為 MOPS 限流，留待下次）。
+    - 頁級重試：主流程結束後，把本次失敗的頁再試一次（未停止且時間預算內）。
+    - max_pages：本次最多送出幾頁請求。"""
+    from pipeline.httputil import RateLimited
+
+    out: dict = {"pages_total": len(pages), "fetched": 0, "skipped_done": 0, "rows": {"income": 0, "cashflow": 0},
+                 "failed": [], "empty": [], "stopped": None, "retried": 0, "retry_ok": 0}
+    streak = 0
+    failed_pages: list[tuple[int, int, str, str]] = []
+
+    def one(pg) -> bool:
+        nonlocal streak
+        y, q, typek, kind = pg
+        try:
+            r = fetch_page(conn, kind, y, q, symset, typek)
+        except RateLimited as e:
+            out["stopped"] = f"rate_limited:{e}"
+            return False
+        out["fetched"] += 1
+        if r["status"] in ("fail", "blocked"):
+            out["failed"].append(f"{kind}:{typek}:{y}Q{q}:{r['error']}")
+            failed_pages.append(pg)
+            streak = streak + 1 if r["redirect"] else 0
+            if streak >= config.REDIRECT_STREAK_STOP:
+                out["stopped"] = f"consecutive_redirects:{streak}"
+                return False
+        else:
+            streak = 0
+            out["rows"][kind] += r["n"]
+            if r["status"] == "empty":
+                out["empty"].append(f"{kind}:{typek}:{y}Q{q}")
+        return True
+
+    for pg in pages:
+        y, q, typek, kind = pg
+        if skip_done and page_done(conn, typek, y, q, kind, _scope_of(conn, symset, typek)):
+            out["skipped_done"] += 1
+            continue
+        if max_pages is not None and out["fetched"] >= max_pages:
+            out["stopped"] = "max_pages"
+            break
+        if budget is not None and budget.expired(reserve_s=60):
+            out["stopped"] = "budget"
+            break
+        if not one(pg):
+            break
+    if retry_failed and failed_pages and not out["stopped"]:
+        for pg in list(failed_pages):
+            if (max_pages is not None and out["fetched"] >= max_pages) or (budget is not None and budget.expired(reserve_s=60)):
+                break
+            out["retried"] += 1
+            before = len(out["failed"])
+            if not one(pg):
+                break
+            if len(out["failed"]) == before:
+                out["retry_ok"] += 1
+                out["failed"] = [f for f in out["failed"] if not f.startswith(f"{pg[3]}:{pg[2]}:{pg[0]}Q{pg[1]}:")]
+    return out
+
+
+def build_pages(quarters: list[tuple[int, int]]) -> list[tuple[int, int, str, str]]:
+    """每季 × 市場（sii／otc）× 表（income／cashflow），由新到舊。"""
+    return [(y, q, typek, kind) for (y, q) in quarters for typek in ("sii", "otc") for kind in ("income", "cashflow")]
+
+
+def fetch_all(conn: sqlite3.Connection, symbols: list[str], *, quarters: int | None = None) -> dict:
+    """evening 用：抓最近 quarters 季（預設 config.FINANCIAL_QUARTERS；all 模式 evening 傳 2）。每頁都記 financial_fetch_status。"""
     ey, eq = _latest_filed_quarter()
-    quarters = quarter_iter(ey, eq, config.FINANCIAL_QUARTERS)
+    qs = quarter_iter(ey, eq, quarters or config.FINANCIAL_QUARTERS)
     symset = set(symbols)
-    stats = {"cf": 0, "income": 0, "failed": []}
-    for y, q in quarters:
-        for typek in ("sii", "otc"):
-            try:
-                stats["cf"] += fetch_cashflow_season(conn, y, q, symset, typek)
-            except FetchError as e:
-                stats["failed"].append(f"cf:{typek}:{y}Q{q}:{e}")
-            try:
-                stats["income"] += fetch_income_season(conn, y, q, symset, typek)
-            except FetchError as e:
-                stats["failed"].append(f"inc:{typek}:{y}Q{q}:{e}")
-    return stats
+    r = fetch_pages(conn, build_pages(qs), symset, skip_done=False, retry_failed=True)
+    return {"cf": r["rows"]["cashflow"], "income": r["rows"]["income"], "failed": r["failed"], "pages": r["fetched"],
+            "stopped": r["stopped"]}

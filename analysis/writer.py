@@ -221,10 +221,10 @@ def screen_rows(result: Any, input_max_fetched_at: Optional[str]) -> list[dict]:
         )
         for c in ("close_twd", "change_pct", "change_base_twd", "source_change_twd", "change_check",
                   "change_check_diff_twd", "volume_shares", "amount_twd", "n_adj_events", "adj_events",
-                  "price_source", "price_fetched_at"):
+                  "price_source", "price_fetched_at", "data_note", "volume_basis"):
             r[c] = _clean(s.get(c))
         for c in ("n_valid_days", "window_gap_days", "window_halt_days", "window_missing_days",
-                  "window_no_trade_days", "n_adj_events"):
+                  "window_no_trade_days", "window_bad_data_days", "window_volume_basis_days", "n_adj_events"):
             v = _clean(s.get(c))
             r[c] = None if v is None else int(v)
         r["window_start"] = _clean(s.get("window_start"))
@@ -237,6 +237,14 @@ def screen_rows(result: Any, input_max_fetched_at: Optional[str]) -> list[dict]:
     return rows
 
 
+def _change_check_allowed(con: sqlite3.Connection) -> Optional[set[str]]:
+    """screen_results.change_check 的 CHECK 允許值（DDL 中 `change_check ... IN (...)`）；無此限制回傳 None。"""
+    import re
+    row = con.execute("SELECT sql FROM sqlite_master WHERE type = 'table' AND name = 'screen_results'").fetchone()
+    m = re.search(r"change_check[^,]*?CHECK\s*\(\s*change_check\s+IN\s*\(([^)]*)\)", (row or [""])[0] or "", re.I)
+    return None if m is None else set(re.findall(r"'([^']*)'", m.group(1)))
+
+
 def write_screen_results(con: sqlite3.Connection, result: Any, input_max_fetched_at: Optional[str], *,
                          screen_run_id: Any = None, retire_missing: bool = False,
                          generated_at: Optional[str] = None) -> WriteReport:
@@ -247,6 +255,15 @@ def write_screen_results(con: sqlite3.Connection, result: Any, input_max_fetched
     rows = screen_rows(result, input_max_fetched_at)
     rep = WriteReport("screen_results")
     gen = generated_at or _now()
+    vbs = getattr(result, "volume_basis_status", "ok")
+    if vbs != "ok":   # §9.3：輸入缺 volume_basis 欄時未檢查量額口徑，不得寫成正式結果
+        raise ValueError(f"輸入行情缺 volume_basis 欄（{vbs}），未檢查量額口徑；正式寫入拒絕，未寫入任何列")
+    allowed = _change_check_allowed(con)
+    if allowed is not None:
+        bad = sorted({r["change_check"] for r in rows if r.get("change_check") is not None} - allowed)
+        if bad:   # 例如 after_no_trade（DECISIONS 2026-11-10 12:05 ②）：資料庫 CHECK 未遷移前不寫，明確報錯
+            raise ValueError(f"screen_results.change_check 的 CHECK 不允許 {bad}（允許 {sorted(allowed)}）；"
+                             "請資料工程先遷移 CHECK，未寫入任何列")
     with _tx(con):
         cols = _columns(con, "screen_results")
         rid = _run_id(con, screen_run_id)

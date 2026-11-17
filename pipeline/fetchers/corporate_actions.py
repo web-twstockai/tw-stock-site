@@ -9,6 +9,7 @@ from urllib.parse import urlencode
 from pipeline.dates import ad_yyyymmdd, now_iso, parse_number, roc_ymd_to_iso, today
 from pipeline.db import touch_source, upsert_versioned
 from pipeline.httputil import tpex, twse
+from pipeline.scope import scope_info
 
 log = logging.getLogger("pipeline.corp")
 
@@ -47,19 +48,66 @@ def _mirror_stock_split_coverage(conn, market: str, start, end, source: str) -> 
         f"covered_by=par_value_change; source_url={source}; DECISIONS.md 2026-11-10 03:45",
     )
 
+# 目前這個區間查詢的範圍（各 fetch_* 開頭設定；單執行緒）。覆蓋表只能宣稱「實際入庫的範圍」：
+# 以 30 檔過濾入庫的查詢，覆蓋範圍就是 sample30，不是全市場（2026-11-17 研究分析發現：表內只有 29 檔 38 列，覆蓋表卻寫成全市場）。
+_COV: dict = {"symbols": None}
+
+
+def _set_scope(symbols) -> None:
+    """記下本次區間查詢的過濾清單；scope 在 _write_coverage 依市場與現行普通股清單判定（fix1：不再用 >100 檔）。"""
+    _COV["symbols"] = set(symbols) if symbols else None
+
+
 def _write_coverage(conn: sqlite3.Connection, market: str, kind: str, start: str, end: str, source: str, notes: str | None = None) -> None:
-    conn.execute(
-        """INSERT INTO corporate_actions_coverage(market,action_kind,coverage_start,coverage_end,source,fetched_at,notes)
-           VALUES(?,?,?,?,?,?,?)
-           ON CONFLICT(market,action_kind,coverage_start,coverage_end,source) DO UPDATE SET
-             fetched_at=excluded.fetched_at, notes=excluded.notes
-        """,
-        (market, kind, start, end, source, now_iso(), notes),
+    """覆蓋表主鍵含 scope：sample30／subset／all 對同一區間各自一列，不互相覆蓋。
+    'all' 與 'all_pending_ratio' 視為同一列的兩種狀態（只更新原列，不會並存）。"""
+    scope, nsym = scope_info(conn, _COV["symbols"], market)
+    now = now_iso()
+    fam = ("all", "all_pending_ratio") if scope == "all" else (scope,)
+    cur = conn.execute(
+        f"""UPDATE corporate_actions_coverage SET fetched_at=?, notes=?, symbol_count=?
+            WHERE market=? AND action_kind=? AND coverage_start=? AND coverage_end=? AND source=? AND scope IN ({','.join('?' * len(fam))})""",
+        (now, notes, nsym, market, kind, start, end, source, *fam),
     )
+    if cur.rowcount == 0:
+        conn.execute(
+            """INSERT INTO corporate_actions_coverage(market,action_kind,coverage_start,coverage_end,source,fetched_at,notes,scope,symbol_count)
+               VALUES(?,?,?,?,?,?,?,?,?)""",
+            (market, kind, start, end, source, now, notes, scope, nsym),
+        )
     conn.commit()
 
 
+def pending_ratio_rows(conn: sqlite3.Connection) -> int:
+    """上市 權／權息 列中，配股比例仍是 NULL 且尚未用 MOPS 查過（沒有 corp_enrich 紀錄）的列數。"""
+    return conn.execute(
+        """SELECT COUNT(*) FROM corporate_actions a
+           WHERE a.is_current=1 AND a.market='TWSE' AND a.action_type IN ('ex_both','ex_rights')
+             AND a.stock_dividend_per_thousand IS NULL
+             AND NOT EXISTS (SELECT 1 FROM backfill_state b WHERE b.job='corp_enrich' AND b.key=a.symbol AND b.status='done')"""
+    ).fetchone()[0]
+
+
+def refresh_enrich_scope(conn: sqlite3.Connection) -> dict:
+    """上市「配股」與「權息」兩類覆蓋：配股比例還有未補的列 → scope 降為 'all_pending_ratio'（分析不得當全市場已齊）；補完 → 回 'all'。
+    只調整原本是 'all' 或 'all_pending_ratio' 的列。"""
+    n = pending_ratio_rows(conn)
+    want = "all" if n == 0 else "all_pending_ratio"
+    note = f"；配股比例待補 {n} 列（MOPS t05st09_2）" if n else ""
+    cur = conn.execute(
+        "UPDATE corporate_actions_coverage SET scope=? WHERE market='TWSE' AND action_kind IN ('stock_dividend','ex_both') AND scope IN ('all','all_pending_ratio')",
+        (want,),
+    )
+    if note:
+        conn.execute(
+            "UPDATE corporate_actions_coverage SET notes=COALESCE(notes,'') || ? WHERE market='TWSE' AND action_kind IN ('stock_dividend','ex_both') AND scope='all_pending_ratio' AND COALESCE(notes,'') NOT LIKE '%配股比例待補%'",
+            (note,))
+    conn.commit()
+    return {"pending_ratio_rows": n, "scope": want, "coverage_rows_updated": cur.rowcount}
+
+
 def fetch_twse_exrights(conn: sqlite3.Connection, symbols: set[str], start, end) -> int:
+    _set_scope(symbols)
     url = (
         "https://www.twse.com.tw/rwd/zh/exRight/TWT49U?"
         + urlencode({"response": "json", "startDate": ad_yyyymmdd(start), "endDate": ad_yyyymmdd(end), "stockNo": ""})
@@ -129,12 +177,14 @@ def fetch_twse_exrights(conn: sqlite3.Connection, symbols: set[str], start, end)
     # TWT49U 一次涵蓋現金股利／股票股利／權息同日；coverage 分三種 action_kind 各記一列
     for kind in ("cash_dividend", "stock_dividend", "ex_both"):
         _write_coverage(conn, "TWSE", kind, start.isoformat(), end.isoformat(), url, "TWT49U 區間查詢成功；同源涵蓋三種除權息")
+    refresh_enrich_scope(conn)      # TWT49U 沒有配股比例：待 MOPS 補強前，配股／權息兩類不算全市場已齊
     conn.commit()
     return n
 
 
 def fetch_twse_twtauu(conn: sqlite3.Connection, symbols: set[str], start, end) -> int:
     """減資恢復買賣參考價；action_date = 恢復買賣日期。"""
+    _set_scope(symbols)
     url = (
         "https://www.twse.com.tw/exchangeReport/TWTAUU?"
         + urlencode({"response": "json", "startDate": ad_yyyymmdd(start), "endDate": ad_yyyymmdd(end)})
@@ -204,6 +254,7 @@ def fetch_twse_twtauu(conn: sqlite3.Connection, symbols: set[str], start, end) -
 
 
 def fetch_tpex_exrights(conn: sqlite3.Connection, symbols: set[str], start, end) -> int:
+    _set_scope(symbols)
     d = f"{start.year-1911}/{start.month:02d}/{start.day:02d}"
     ed = f"{end.year-1911}/{end.month:02d}/{end.day:02d}"
     url = f"https://www.tpex.org.tw/web/stock/exright/dailyquo/exDailyQ_result.php?l=zh-tw&d={d}&ed={ed}&o=json"
@@ -303,6 +354,7 @@ def fetch_tpex_revivt(conn: sqlite3.Connection, symbols: set[str], start, end) -
     """上櫃減資恢復買賣參考價；action_date = 恢復買賣日期。
     頁面：/zh-tw/announce/market/reduction/reference.html → API bulletin/revivt
     """
+    _set_scope(symbols)
     payload = {
         "startDate": f"{start.year}/{start.month:02d}/{start.day:02d}",
         "endDate": f"{end.year}/{end.month:02d}/{end.day:02d}",
@@ -405,6 +457,7 @@ def _parse_pv_detail(html: str) -> dict:
 
 def fetch_twse_twtb8u(conn: sqlite3.Connection, symbols: set[str], start, end) -> int:
     """變更股票面額恢復買賣參考價；action_date=恢復買賣日。同源無獨立「分割」表。"""
+    _set_scope(symbols)
     url = (
         "https://www.twse.com.tw/exchangeReport/TWTB8U?"
         + urlencode({"response": "json", "startDate": ad_yyyymmdd(start), "endDate": ad_yyyymmdd(end)})
@@ -490,6 +543,7 @@ def fetch_twse_twtb8u(conn: sqlite3.Connection, symbols: set[str], start, end) -
 
 def fetch_tpex_pv_chg(conn: sqlite3.Connection, symbols: set[str], start, end) -> int:
     """上櫃變更股票面額恢復買賣參考價；API bulletin/pvChgRslt。"""
+    _set_scope(symbols)
     payload = {
         "startDate": f"{start.year}/{start.month:02d}/{start.day:02d}",
         "endDate": f"{end.year}/{end.month:02d}/{end.day:02d}",
@@ -563,7 +617,7 @@ def fetch_tpex_pv_chg(conn: sqlite3.Connection, symbols: set[str], start, end) -
     return n
 
 
-def enrich_twse_stock_dividends_from_mops(conn: sqlite3.Connection, symbols: set[str]) -> dict:
+def enrich_twse_stock_dividends_from_mops(conn: sqlite3.Connection, symbols: set[str], max_items: int | None = None) -> dict:
     """對缺 stock_dividend_per_thousand 的上市 權／權息 列，以 MOPS t05st09_2 補強。
     單位：盈餘轉增資配股(元/股) ÷ 面額 ×1000 → stock_dividend_per_thousand；不倒推參考價。
     """
@@ -594,18 +648,42 @@ def enrich_twse_stock_dividends_from_mops(conn: sqlite3.Connection, symbols: set
         ).fetchall()
 
     out: dict = {"filled": 0, "failed": [], "skipped": 0}
+    out["pending"] = len(need)
+    attempted: list[str] = []
+    if max_items is not None:
+        # 以「代號」為單位限量（同代號共用一次 MOPS 請求）；嘗試次數少的先做，查不到的往後排，避免每次都卡在同一批
+        from pipeline.runstats import state_get
+        syms_sorted = sorted({r["symbol"] for r in need},
+                             key=lambda x: ((state_get(conn, "corp_enrich", x) or (None, 0))[1], x))
+        keep = set(syms_sorted[:max_items])
+        need = [r for r in need if r["symbol"] in keep]
+        out["symbols_this_run"] = len(keep)
     if not need:
+        out["coverage"] = refresh_enrich_scope(conn)
         return out
     try:
         warm_mops("https://mopsov.twse.com.tw/mops/web/t05st09_2")
     except Exception as e:
         out["failed"].append(f"warm:{e}")
 
+    from pipeline import config as _cfg
     cache: dict[str, dict | None] = {}
+    err_syms: set[str] = set()
+    streak = 0
     for row in need:
         sym = row["symbol"]
         if sym not in cache:
-            cache[sym] = _fetch_mops_t05st09(sym)
+            if streak >= _cfg.REDIRECT_STREAK_STOP:
+                out["stopped"] = f"consecutive_errors:{streak}"
+                break
+            errs: list = []
+            cache[sym] = _fetch_mops_t05st09(sym, errs)
+            attempted.append(sym)
+            if errs:
+                err_syms.add(sym)
+                streak += 1
+            else:
+                streak = 0
         info = cache[sym]
         if not info:
             out["failed"].append(f"{sym}:no_mops_dividend")
@@ -658,11 +736,18 @@ def enrich_twse_stock_dividends_from_mops(conn: sqlite3.Connection, symbols: set
         )
         out["filled"] += 1
         touch_source(conn, f"mops_t05st09_{sym}", url=src, ok=True, http_status=200, data_date=row["action_date"])
+    if attempted:
+        from pipeline.runstats import state_set
+        for sym in attempted:
+            if sym not in err_syms:      # 請求失敗／擋頁的代號不記嘗試次數（下次仍優先）
+                state_set(conn, "corp_enrich", sym, "done", None, bump=True)
     conn.commit()
+    out["coverage"] = refresh_enrich_scope(conn)
     return out
 
 
-def _fetch_mops_t05st09(symbol: str) -> dict | None:
+def _fetch_mops_t05st09(symbol: str, errors: list | None = None) -> dict | None:
+    """errors（可選）：請求失敗／擋頁時附加原因（與「查無配股資料」區分，供連續失敗停止判斷）。"""
     from bs4 import BeautifulSoup
     from pipeline.httputil import mops, FetchError
     import re as _re
@@ -688,9 +773,13 @@ def _fetch_mops_t05st09(symbol: str) -> dict | None:
         resp = mops.request("POST", url, data=payload, retries=3)
     except FetchError as e:
         log.warning("mops t05st09 %s: %s", symbol, e)
+        if errors is not None:
+            errors.append(str(e)[:200])
         return None
     text = resp.content.decode("utf-8", errors="replace")
     if "安全性考量" in text or "無法呈現" in text:
+        if errors is not None:
+            errors.append("blocked_page")
         return None
     soup = BeautifulSoup(text, "lxml")
     for tr in soup.find_all("tr"):
@@ -719,9 +808,9 @@ def _fetch_mops_t05st09(symbol: str) -> dict | None:
 
 
 
-def fetch_all(conn: sqlite3.Connection, symbols: list[str]) -> dict:
+def fetch_all(conn: sqlite3.Connection, symbols: list[str], *, max_enrich: int | None = None, start=None) -> dict:
     end = today()
-    start = end - timedelta(days=400)
+    start = start or end - timedelta(days=400)
     s = set(symbols)
     out = {
         "twse_ex": fetch_twse_exrights(conn, s, start, end),
@@ -732,7 +821,7 @@ def fetch_all(conn: sqlite3.Connection, symbols: list[str]) -> dict:
         "tpex_par_value": fetch_tpex_pv_chg(conn, s, start, end),
     }
     try:
-        out["mops_div_enrich"] = enrich_twse_stock_dividends_from_mops(conn, s)
+        out["mops_div_enrich"] = enrich_twse_stock_dividends_from_mops(conn, s, max_items=max_enrich)
     except Exception as e:
         log.exception("mops dividend enrich")
         out["mops_div_enrich"] = {"failed": [str(e)]}

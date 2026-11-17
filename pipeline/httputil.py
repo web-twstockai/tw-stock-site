@@ -119,6 +119,25 @@ def _is_errors_location(loc: str | None) -> bool:
     return path.endswith("/errors") or path == "/errors"
 
 
+# 請求計數（每次實際送出的 HTTP 嘗試，含重試；依主機）。作業摘要用 runstats 取差值。
+STATS: dict[str, int] = {}
+
+
+_SINGLE_SHOT = 0
+
+
+@contextlib.contextmanager
+def single_shot():
+    """區間／大查詢端點用：區塊內每個請求只送 1 次（不重試、失敗後不 sleep）。
+    2026-11-17 TWSE 區間端點被 WAF 擋頁，預設 3 次重試會把一次擋頁放大成 3 個請求；改用本模式後一次擋頁＝1 個請求。"""
+    global _SINGLE_SHOT
+    _SINGLE_SHOT += 1
+    try:
+        yield
+    finally:
+        _SINGLE_SHOT -= 1
+
+
 class _NoErrorsRedirectSession(requests.Session):
     """遇到「轉到 /errors」的 3xx 不追轉址（直接回傳該 3xx 回應，由 RateClient 判為限流）。"""
 
@@ -153,6 +172,8 @@ class RateClient:
     ) -> requests.Response:
         kwargs.setdefault("timeout", (20, 60))
         deadline = float(kwargs.pop("deadline", HTTP_DEADLINE))
+        if _SINGLE_SHOT:
+            retries = 1
         last_err: Exception | None = None
         host = urlparse(url).hostname or ""
         for attempt in range(1, retries + 1):
@@ -163,6 +184,7 @@ class RateClient:
                     host=host, retry_after_s=left, circuit_open=True,
                 )
             self._wait()
+            STATS[host] = STATS.get(host, 0) + 1
             try:
                 with _hard_deadline(deadline, f"{method} {url}"):
                     resp = self.session.request(method, url, **kwargs)
@@ -207,14 +229,16 @@ class RateClient:
                 last_err = e
                 sleep = (config.BACKOFF_BASE ** attempt) + random.uniform(0, 1)
                 log.warning("attempt %s/%s %s; sleep %.1fs", attempt, retries, e, sleep)
-                time.sleep(sleep)
+                if attempt < retries:
+                    time.sleep(sleep)
                 if e.blocked:
                     self.interval = min(self.interval * 1.5, 30)
             except requests.RequestException as e:
                 last_err = e
                 sleep = (config.BACKOFF_BASE ** attempt) + random.uniform(0, 1)
                 log.warning("attempt %s/%s net %s; sleep %.1fs", attempt, retries, e, sleep)
-                time.sleep(sleep)
+                if attempt < retries:
+                    time.sleep(sleep)
         raise FetchError(f"failed after retries: {last_err}")
 
 

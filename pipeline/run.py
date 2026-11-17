@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import argparse
+import json
 import logging
 import os
 import sys
@@ -43,11 +44,15 @@ def resolve_symbols(conn, mode: str) -> list[str]:
     return [r[0] for r in rows]
 
 
-def run_job(job: str, symbols_mode: str, *, stop_before_s: str | None = None) -> int:
+def run_job(job: str, symbols_mode: str, *, stop_before_s: str | None = None, budget_min: float | None = None) -> int:
     setup_logging()
     log = logging.getLogger("pipeline.run")
     assert_no_other_pipeline()
     stop_before = parse_stop_before(stop_before_s)
+    if budget_min and stop_before is None:
+        # --budget-min：換算成 stop-before；時間到時沿用既有的「interrupted、可續跑」語意
+        from pipeline.runstats import stop_before_from_budget
+        stop_before = stop_before_from_budget(budget_min)
     if stop_before:
         log.info("stop-before=%s", stop_before.isoformat())
     conn = connect()
@@ -59,6 +64,8 @@ def run_job(job: str, symbols_mode: str, *, stop_before_s: str | None = None) ->
         securities.fetch_and_store(conn)
 
     run_id = start_job(conn, job, symbols_mode, today().isoformat())
+    from pipeline.runstats import Tally
+    tally = Tally(conn)
     success: list[str] = []
     failed: list[str] = []
     try:
@@ -110,7 +117,7 @@ def run_job(job: str, symbols_mode: str, *, stop_before_s: str | None = None) ->
                         raise InterruptedError("stop-before before prices")
                     st = market_prices.fetch_market_prices(
                         conn, trade_days=depth, stop_before=stop_before,
-                        run_id=run_id, resume=True,
+                        run_id=run_id, resume=True, use_db_state=True,   # 檢查點在 DB（Actions 臨時機器不保留 logs/）
                     )
                     success.append(
                         f"prices:batch:ok_dates={len(st.get('ok_dates') or [])}:days={depth}:rss={st.get('peak_rss_mb')}"
@@ -130,10 +137,10 @@ def run_job(job: str, symbols_mode: str, *, stop_before_s: str | None = None) ->
                 log.exception("prices")
 
             # analysis-0.5.0：daily 在行情入庫後寫選股／摘要（writer 失敗不影響行情）
-            # all 宇宙暫不跑分析（記憶體；不影響 sample30 排程）
-            if job == "daily" and symbols_mode != "all":
+            if job == "daily":
                 try:
-                    ar = analysis_bridge.run_screen_and_write(conn, run_id, symbols)
+                    # all 模式傳 None＝analysis 讀 securities 全部普通股（不展開 1,956 個代號參數）
+                    ar = analysis_bridge.run_screen_and_write(conn, run_id, None if symbols_mode == "all" else symbols)
                     if ar.get("ok"):
                         success.append(f"analysis:{ar.get('screen')}")
                         if ar.get("interface_notes"):
@@ -146,7 +153,8 @@ def run_job(job: str, symbols_mode: str, *, stop_before_s: str | None = None) ->
                     log.exception("analysis")
 
             try:
-                st = corporate_actions.fetch_all(conn, symbols)
+                st = corporate_actions.fetch_all(
+                    conn, symbols, max_enrich=config.ENRICH_PER_RUN if symbols_mode == "all" else None)
                 success.append(f"corp:{st}")
             except Exception as e:
                 failed.append(f"corp:{e}")
@@ -158,6 +166,15 @@ def run_job(job: str, symbols_mode: str, *, stop_before_s: str | None = None) ->
             except Exception as e:
                 failed.append(f"halts:{e}")
                 log.exception("halts")
+
+            try:
+                # 停牌統一規則（離線、0 請求）：推定恢復日＋重算停牌旗標；必須在 halts 與行情入庫之後
+                from pipeline import halt_fix
+                hr = halt_fix.apply_unified_rule(conn)
+                success.append(f"halt_rule:{hr['resume_rule'].get('by_basis')}:flags={hr['recompute'].get('counts')}")
+            except Exception as e:
+                failed.append(f"halt_rule:{e}")
+                log.exception("halt_rule")
 
             try:
                 st = indices.fetch_window(conn)
@@ -172,7 +189,7 @@ def run_job(job: str, symbols_mode: str, *, stop_before_s: str | None = None) ->
                 if job == "daily":
                     rev_n = config.DAILY_REVENUE_MONTHS
                 elif symbols_mode == "all":
-                    rev_n = config.ALL_REVENUE_MONTHS
+                    rev_n = config.ALL_EVENING_REVENUE_MONTHS   # evening 只重抓最近 3 個月；歷史由 revenue_backfill
                 else:
                     rev_n = config.REVENUE_MONTHS
                 if should_stop(stop_before):
@@ -186,7 +203,8 @@ def run_job(job: str, symbols_mode: str, *, stop_before_s: str | None = None) ->
 
             if job == "evening":
                 try:
-                    st = financials.fetch_all(conn, symbols)
+                    st = financials.fetch_all(
+                        conn, symbols, quarters=config.ALL_EVENING_FINANCIAL_QUARTERS if symbols_mode == "all" else None)
                     success.append(f"financials:cf={st.get('cf')},inc={st.get('income')}")
                     failed.extend(st.get("failed") or [])
                 except Exception as e:
@@ -202,6 +220,10 @@ def run_job(job: str, symbols_mode: str, *, stop_before_s: str | None = None) ->
                     # 全市場只用整批快照，不用逐檔 t05st01（約 1900 檔會超時／被封）
                     st = material_batch.fetch_snapshots(conn, symbols, run_id=run_id)
                     success.append(f"material:snapshot:rows={st.get('rows')}:{st.get('note')}")
+                    from pipeline.runstats import state_init
+                    # 重訊整批快照只有近期、沒有歷史：記下「自哪天起累積」，網站據此標示（之前為「資料不足」）
+                    if state_init(conn, "material_snapshot", "since", "info", today().isoformat()):
+                        conn.commit()
                     failed.extend(st.get("failed") or [])
                 else:
                     mat_days = config.DAILY_MATERIAL_DAYS if job == "daily" else config.MATERIAL_DAYS
@@ -227,6 +249,7 @@ def run_job(job: str, symbols_mode: str, *, stop_before_s: str | None = None) ->
             status = "partial" if success else "failed"
         else:
             status = "success"
+        success.append("summary:" + json.dumps(tally.summary(), ensure_ascii=False))
         finish_job(conn, run_id, status, success, failed, error="; ".join(report.errors + report.gaps[:20]))
         log.info("job done status=%s success=%s failed=%s rss=%.1fMB", status, success, failed, max_rss_mb())
         log.info("quality errors=%s warnings=%s gaps=%s", report.errors, report.warnings[:10], report.gaps[:30])
@@ -266,11 +289,19 @@ def run_job(job: str, symbols_mode: str, *, stop_before_s: str | None = None) ->
 
 def main(argv: list[str] | None = None) -> int:
     p = argparse.ArgumentParser(description="台股官方資料管線")
-    p.add_argument("--job", choices=["daily", "evening", "tpex_volume_fix"], required=False)
+    p.add_argument("--job", choices=["daily", "evening", "tpex_volume_fix", "screen_results_migrate", "halt_fix", "next_ref_fix",
+                                      "market_backfill", "corp_backfill", "revenue_backfill", "financials_backfill", "halts_backfill", "delist_backfill",
+                                      "calendar_backfill"], required=False)
     p.add_argument("--symbols", choices=["sample30", "all"], required=False)
-    p.add_argument("--fix-from", default=None, help="tpex_volume_fix：起始日 YYYY-MM-DD（抽樣驗證用）")
-    p.add_argument("--fix-to", default=None, help="tpex_volume_fix：結束日 YYYY-MM-DD")
-    p.add_argument("--max-dates", type=int, default=None, help="tpex_volume_fix：本次最多處理幾個交易日（每日 1 個請求）")
+    p.add_argument("--fix-from", default=None, help="起始日 YYYY-MM-DD：tpex_volume_fix／halt_fix／next_ref_fix／market_backfill／corp_backfill／revenue_backfill／financials_backfill／halts_backfill／delist_backfill／calendar_backfill（歷史回補到 2023-11-01 用）")
+    p.add_argument("--fix-to", default=None, help="tpex_volume_fix／halt_fix／next_ref_fix／market_backfill：結束日 YYYY-MM-DD（market_backfill 預設昨日）")
+    p.add_argument("--max-dates", type=int, default=None, help="tpex_volume_fix／next_ref_fix／market_backfill：本次最多處理幾個交易日（market_backfill 每日每缺的市場各 1 個請求）；halt_fix：最多處理幾個全市場日")
+    p.add_argument("--budget-min", type=float, default=None, help="時間預算（分鐘），到時收尾並標 partial（market_backfill）；daily／evening 換算成 stop-before（interrupted，可續跑）")
+    p.add_argument("--months", type=int, default=None, help="revenue_backfill：回補最近幾個月（預設 24）")
+    p.add_argument("--quarters", type=int, default=None, help="financials_backfill：回補最近幾季（預設 8）")
+    p.add_argument("--max-pages", type=int, default=None, help="revenue_backfill／financials_backfill：本次最多送出幾頁請求")
+    p.add_argument("--max-enrich", type=int, default=60, help="corp_backfill：MOPS 配股補強最多幾個代號（0＝只跑區間查詢）")
+    p.add_argument("--no-fetch", action="store_true", help="halt_fix：不抓官方快照（TWSE 停止買賣 API、tpex_cmode；預設各 1 個請求）；halts_backfill：不打上市 TWTAWU")
     p.add_argument("--init-db-only", action="store_true", help="僅建立 schema")
     p.add_argument(
         "--stop-before",
@@ -288,9 +319,49 @@ def main(argv: list[str] | None = None) -> int:
         from pipeline import tpex_volume_fix
         setup_logging()
         return tpex_volume_fix.main_job(date_from=args.fix_from, date_to=args.fix_to, max_dates=args.max_dates)
+    if args.job == "screen_results_migrate":
+        from pipeline import screen_results_migration
+        setup_logging()
+        return screen_results_migration.main_job()
+    if args.job == "halt_fix":
+        from pipeline import halt_fix
+        setup_logging()
+        return halt_fix.main_job(fetch=not args.no_fetch, date_from=args.fix_from, date_to=args.fix_to, max_dates=args.max_dates)
+    if args.job == "next_ref_fix":
+        from pipeline import next_ref_fix
+        setup_logging()
+        return next_ref_fix.main_job(date_from=args.fix_from, date_to=args.fix_to, max_dates=args.max_dates)
+    if args.job == "market_backfill":
+        from pipeline import market_backfill
+        setup_logging()
+        return market_backfill.main_job(date_from=args.fix_from, date_to=args.fix_to, max_dates=args.max_dates, budget_min=args.budget_min)
+    if args.job == "corp_backfill":
+        from pipeline import corp_backfill
+        setup_logging()
+        return corp_backfill.main_job(date_from=args.fix_from, max_enrich=args.max_enrich, budget_min=args.budget_min)
+    if args.job == "revenue_backfill":
+        from pipeline import revenue_backfill
+        setup_logging()
+        return revenue_backfill.main_job(months=args.months, max_pages=args.max_pages, budget_min=args.budget_min, date_from=args.fix_from)
+    if args.job == "financials_backfill":
+        from pipeline import financials_backfill
+        setup_logging()
+        return financials_backfill.main_job(quarters=args.quarters, max_pages=args.max_pages, budget_min=args.budget_min, date_from=args.fix_from)
+    if args.job == "halts_backfill":
+        from pipeline import halts_backfill
+        setup_logging()
+        return halts_backfill.main_job(date_from=args.fix_from, twse=not args.no_fetch)
+    if args.job == "delist_backfill":
+        from pipeline import delist_backfill
+        setup_logging()
+        return delist_backfill.main_job(date_from=args.fix_from)
+    if args.job == "calendar_backfill":
+        from pipeline import calendar_backfill
+        setup_logging()
+        return calendar_backfill.main_job(date_from=args.fix_from)
     if not args.job or not args.symbols:
         p.error("--job 與 --symbols 為必要參數（除非使用 --init-db-only）")
-    return run_job(args.job, args.symbols, stop_before_s=args.stop_before)
+    return run_job(args.job, args.symbols, stop_before_s=args.stop_before, budget_min=args.budget_min)
 
 
 if __name__ == "__main__":

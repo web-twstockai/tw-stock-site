@@ -4,7 +4,7 @@
 > 本檔由研究分析提出欄位與約束；研究分析程式只寫入這三張表，以及隨 `news_events` 一併寫入的 `news_event_symbols`（第四張，資料工程建表）。`index_daily`、`news_items`、`news_item_symbols`、
 > `material_infos`、`daily_prices`、`corporate_actions`、`corporate_actions_coverage` 由資料工程寫入，研究分析**只讀**。
 >
-> 最後更新：2026-11-10（Asia/Taipei，UTC+8），analysis-0.6.0。對照 `docs/schema.md` §7.7（四張表已由資料工程建表）與 DECISIONS 2026-11-10 03:45 ③；`data/twstock.db` 實際欄位已含 computed_at／input_max_fetched_at、news_events 已移除 related_symbols_json，daily_summaries 另有 data_date／provider／screen_run_id（網站讀取用）。screen_results 的 window_halt_days／window_missing_days／window_no_trade_days 已補欄（2026-11-10 04:0x 唯讀確認）；screen_results 目前沒有 screen_run_id 欄（writer 有此欄才寫）。
+> 最後更新：2026-11-10（Asia/Taipei，UTC+8），analysis-0.6.0。對照 `docs/schema.md` §7.7（四張表已由資料工程建表）與 DECISIONS 2026-11-10 03:45 ③；`data/twstock.db` 實際欄位已含 computed_at／input_max_fetched_at、news_events 已移除 related_symbols_json，daily_summaries 另有 data_date／provider／screen_run_id（網站讀取用）。screen_results 的 window_halt_days／window_missing_days／window_no_trade_days 已補欄（2026-11-10 04:0x 唯讀確認）；screen_results 目前沒有 screen_run_id 欄（writer 有此欄才寫）。**analysis-0.9.0（2026-11-17）**：screen_results 新增 `window_bad_data_days`、`data_note`、`volume_basis`、`window_volume_basis_days`，`change_check` 的 CHECK 加 `after_no_trade`；正式庫需由資料工程遷移（清單見 `analysis/pending/screen_results_migration_0.9.0.md`）。
 > 寫入程式：`analysis/writer.py`（第 5 節程序的實作；測試 `tests/test_writer.py` 只用暫存 SQLite）。
 > 下方 DDL 區塊由 `analysis/tests/test_tables_draft.py` 在記憶體 SQLite（3.46）實際執行並做約束測試。
 
@@ -13,8 +13,8 @@
 | 項目 | 約定 | 理由 |
 |---|---|---|
 | 時間 | `generated_at`、`reviewed_at` 等為 ISO-8601 含 `+08:00`；日期欄 `YYYY-MM-DD` | 與 schema.md `fetched_at` 一致 |
-| 單位 | 量＝股、金額＝新台幣元（暫定口徑：官方公布總量；上市含零股、盤後定價、鉅額，上櫃不含鉅額，兩市場目前不同，見 docs/indicators.md 第 0 節）、價格＝元、百分比欄位名帶 `_pct` 且為「百分點」（例如 1.23 表示 1.23%） | SPEC／負責人決議；與 `screener` 輸出一致 |
-| 版本 | `analysis_version`＝`analysis/version.py` 的 `ANALYSIS_VERSION`（`screener.ANALYSIS_VERSION` 同值；目前 `analysis-0.4.0`，變更紀錄見 `analysis/USAGE.md` 開頭） | 程式變更可追溯 |
+| 單位 | 量＝股、金額＝新台幣元（總量口徑 `volume_basis=incl_block`，兩市場都含鉅額；上市另含零股、盤後定價，上櫃 dailyQuotes 是否含盤後定價、零股場次待查證，兩市場不是完全一致的口徑，見 docs/indicators.md 第 0、9 節）、價格＝元、百分比欄位名帶 `_pct` 且為「百分點」（例如 1.23 表示 1.23%） | SPEC／負責人決議；與 `screener` 輸出一致 |
+| 版本 | `analysis_version`＝`analysis/version.py` 的 `ANALYSIS_VERSION`（`screener.ANALYSIS_VERSION` 同值；目前 `analysis-0.9.0`，變更紀錄見 `analysis/USAGE.md` 開頭） | 程式變更可追溯 |
 | 參數 | `params_json`＝`ScreenParams.to_dict()` 依鍵排序的 JSON；`params_hash`＝其 SHA-256 十六進位（`screener.params_hash()`） | 同參數可重現同結果 |
 | 冪等 | 自然鍵＋`version`＋`is_current`（與資料工程相同）；寫入前以 `checksum` 比對現行列：相同→不寫；不同→舊列 `is_current=0`、新列 `version=舊+1` | 見第 5 節 |
 | 合成資料 | 代號 `TEST` 開頭者以 CHECK 擋下，測試用合成資料不可能寫入正式表 | 原則：合成資料不得混入正式結果 |
@@ -38,6 +38,7 @@ CREATE TABLE IF NOT EXISTS screen_results (
   status                        TEXT    NOT NULL CHECK (status IN ('PASS', 'FAIL', 'EXCLUDED')),
   exclusion_code                TEXT,                          -- 見 analysis/USAGE.md 排除代碼表
   exclusion_reason              TEXT,                          -- 中文說明＋細節（程式產生）
+  data_note                     TEXT,                          -- 說明欄：停牌紀錄的恢復日與來源（官方恢復日／依成交推定／仍停牌；analysis-0.9.1）、無成交次日漲跌核對說明（含「無比價」）、is_no_trade 交叉檢查（只標註，不改結果碼；需補欄）
   coverage_note                 TEXT,                          -- coverage_table_missing／coverage_table_empty／coverage_missing:M:K／window_before_coverage_start:M:K:日期／coverage_end_before_as_of:M:K:日期／coverage_hole:M:K:日期，多項以 ; 分隔
   -- 條件 C1 趨勢：收盤 > MA短 > MA長（還原收盤）
   c1_enabled                    INTEGER NOT NULL CHECK (c1_enabled IN (0, 1)),
@@ -68,16 +69,19 @@ CREATE TABLE IF NOT EXISTS screen_results (
   change_pct                    REAL,                          -- 收盤 ÷ 基準價 − 1（百分點）；事件日基準＝參考價
   change_base_twd               REAL,
   source_change_twd             REAL,                          -- 來源漲跌（帶號；不覆蓋自算值）
-  change_check                  TEXT    CHECK (change_check IN ('ok', 'mismatch', 'no_source', 'source_not_comparable', 'source_sign_conflict')),
+  change_check                  TEXT    CHECK (change_check IN ('ok', 'mismatch', 'no_source', 'source_not_comparable', 'source_sign_conflict', 'after_no_trade')),  -- after_no_trade：前一交易日整股無成交（DECISIONS 2026-11-10 12:05 ②；需遷移 CHECK）
   change_check_diff_twd         REAL,
-  volume_shares                 REAL,                          -- 官方總量口徑，依市場不同，見 daily_prices.source（上市含零股／盤後定價／鉅額；上櫃不含鉅額）
+  volume_shares                 REAL,                          -- 官方總量（含鉅額，不扣 block_shares）；口徑見 volume_basis，兩市場組成不完全一致（indicators.md §9）
   amount_twd                    REAL,                          -- 同上口徑（元），跨市場比較要留意
+  volume_basis                  TEXT    CHECK (volume_basis IN ('incl_block', 'excl_block')),  -- 評估日量額口徑（daily_prices.volume_basis 原值；NULL＝口徑不明或未到評估日列）（analysis-0.9.0；需補欄）
   n_valid_days                  INTEGER,
   window_start                  TEXT,
-  window_gap_days               INTEGER,                       -- 視窗內非有效交易日數（＝下三欄合計；門檻判斷用合計）
+  window_gap_days               INTEGER,                       -- 視窗內非有效交易日數（＝下四欄合計；門檻判斷用合計）
   window_halt_days              INTEGER,                       -- 其中確認停牌（trading_halts／is_halted）
-  window_missing_days           INTEGER,                       -- 其中無資料列且無停牌紀錄
+  window_missing_days           INTEGER,                       -- 其中無資料列且無法確認停牌（含推定區間內全市場缺行情日）
   window_no_trade_days          INTEGER,                       -- 其中有列但無成交
+  window_bad_data_days          INTEGER,                       -- 其中有收盤價但成交量 NULL（資料錯誤；DECISIONS 2026-11-10 12:05 ①；需補欄）
+  window_volume_basis_days      INTEGER,                       -- 均量窗口（評估日前 volume_lookback 個有效交易日）內非 incl_block 日數；未算到窗口為 NULL（analysis-0.9.0；需補欄）
   n_adj_events                  INTEGER,
   adj_events                    TEXT,                          -- 視窗內調整事件與 f／s 因子文字
   -- 追溯

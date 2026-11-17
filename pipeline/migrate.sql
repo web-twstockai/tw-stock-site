@@ -6,7 +6,9 @@ CREATE TABLE IF NOT EXISTS corporate_actions_coverage (
   source TEXT NOT NULL,
   fetched_at TEXT NOT NULL,
   notes TEXT,
-  PRIMARY KEY(market, action_kind, coverage_start, coverage_end, source)
+  scope TEXT NOT NULL DEFAULT 'unknown',  -- fix1：'all'（不過濾或涵蓋全部現行普通股）／'all_pending_ratio'（all 但上市配股比例待補）／'sample30'／'subset'／'unknown'（舊資料）；屬主鍵
+  symbol_count INTEGER,                   -- 該次查詢的過濾代號數；不過濾（all）時為當時現行普通股數
+  PRIMARY KEY(market, action_kind, coverage_start, coverage_end, source, scope)
 );
 
 CREATE TABLE IF NOT EXISTS trading_halts (
