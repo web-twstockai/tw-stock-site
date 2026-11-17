@@ -30,23 +30,23 @@
       <button type="submit">前往個股</button>
     </form>
   </div><div class="wrap meta-bar" role="status" aria-label="資料更新狀態">
-    <span class="mi">資料日期 <strong data-date="2026-11-09">2026-11-09</strong></span>
-    <span class="mi">更新 <span class="pill pill-warn">◐ 部分成功</span></span>
+    <span class="mi">資料日期 <strong data-date="2026-11-16">2026-11-16</strong></span>
+    <span class="mi">更新 <span class="pill pill-ok">● 成功</span></span>
     <span class="mi src-ok">行情 <span class="dot ok" aria-hidden="true"></span>正常</span>
     <span class="mi src-ok">月營收 <span class="dot ok" aria-hidden="true"></span>正常</span>
     <span class="mi src-ok">重大訊息 <span class="dot ok" aria-hidden="true"></span>正常</span>
-    <span class="mi muted">最後更新 2026-11-10 07:45（台北）</span>
+    <span class="mi muted">最後更新 2026-11-17 09:45（台北）</span>
     
     <a class="mi status-link" href="./">資料狀態 →</a>
   </div>
 </header>
 <main id="main" class="wrap">
-<div class="static-banner" role="note" data-testid="static-banner"><strong>公開靜態版</strong><span>資料日期 <b>2026-11-09</b>｜最近一次更新工作完成 2026-11-10 07:45（台北時間）｜本頁產生於 2026-11-10 10:47（台北時間）。每交易日 18:00、每日 22:00 更新後重新產生；資料全部來自證交所、櫃買中心、公開資訊觀測站。</span></div>
+<div class="static-banner" role="note" data-testid="static-banner"><strong>公開靜態版</strong><span>資料日期 <b>2026-11-16</b>｜最近一次更新工作完成 2026-11-17 09:45（台北時間）｜本頁產生於 2026-11-17 09:47（台北時間）。每交易日 18:00、每日 22:00 更新後重新產生；資料全部來自證交所、櫃買中心、公開資訊觀測站。</span></div>
 
 <h1>資料狀態</h1><nav class="jumpbar" aria-label="本頁區塊" data-testid="status-jumpbar">
   <ul>
     <li><a href="#last-run">最近更新</a></li>
-    <li><a href="#sources">各來源</a></li>
+    <li><a href="#sources" class="has-issue" data-state="issue">各來源 <span class="jb-flag" aria-hidden="true">⚠</span><span class="sr">（4 個過期）</span></a></li>
     <li><a href="#jobs" class="has-issue" data-state="issue">工作紀錄 <span class="jb-flag" aria-hidden="true">⚠</span><span class="sr">（14 筆失敗或部分完成）</span></a></li>
     <li><a href="#excluded">排除名單</a></li>
     <li><a href="#coverage">覆蓋起日</a></li>
@@ -55,285 +55,299 @@
   </ul>
 </nav>
 
+
+<section class="card" id="public-site" data-testid="public-site" data-static-build>
+  <h2>公開站版本</h2>
+  <ul class="plain">
+    <li>本版資料日期：<strong data-build-date>2026-11-16</strong>　匯出時間：<span data-build-generated>—</span>（台北）</li>
+    <li class="note" data-build-stale-line hidden></li>
+  </ul>
+  <p class="muted">公開站只在每次發布（每交易日 18:00、每日 22:00）通過自檢後更新；未通過時維持上一版。</p>
+</section>
+
 <section class="card" id="last-run">
   <h2>最近一次更新</h2>
   <ul class="plain">
-    <li>開始：2026-11-10 07:30　完成：2026-11-10 07:45（Asia/Taipei，UTC+8）</li>
-    <li>資料日期：2026-11-09　結果：部分成功</li>
-    <li>12 檔營收僅 35 月（目標&gt;=36）：2330、2454、2412、2881、2882、2002、1101、1216、2912、2207、3711、6547</li>
+    <li>開始：2026-11-17 09:20　完成：2026-11-17 09:45（Asia/Taipei，UTC+8）</li>
+    <li>資料日期：2026-11-16　結果：成功</li>
+    
   </ul>
   
 </section>
 <section class="card" id="sources">
   <h2>各來源 <small>source_status</small></h2>
-  <p class="src-sum" data-testid="source-summary">共 130 個來源：正常 130｜需注意 0</p>
-  <details class="src-ok-fold" data-testid="sources-ok-fold"><summary>其餘 130 個正常來源</summary>
-  <div class="table-wrap stack-wrap" tabindex="0" role="region" aria-label="各來源狀態表（正常）"><table class="data stack">
+  <p class="src-sum" data-testid="source-summary">共 248 個來源：正常 244｜需注意 4（過期 4）</p>
+  <div class="table-wrap stack-wrap" tabindex="0" role="region" aria-label="各來源狀態表（需注意）"><table class="data stack">
     <thead><tr><th>來源</th><th>狀態</th><th>最後成功時間</th><th>最後嘗試</th><th>資料日期</th><th>缺漏／備註</th><th>錯誤紀錄</th></tr></thead>
-    <tbody><tr id="src-isin_tpex">
-      <td class="stack-h"><a href="../source/q_source_id-isin_tpex_table-source_status.html">isin_tpex</a> <small class="muted">基本資料／行事曆</small></td>
-      <td data-status="ok"><span class="badge st-ok">正常</span>
-          </td>
-      <td>2026-11-10 07:35</td><td>2026-11-10 07:35（HTTP 200）</td>
-      <td>2026-11-10</td><td class="wrap">—</td>
-      <td>—</td>
-    </tr><tr id="src-isin_twse">
-      <td class="stack-h"><a href="../source/q_source_id-isin_twse_table-source_status.html">isin_twse</a> <small class="muted">基本資料／行事曆</small></td>
-      <td data-status="ok"><span class="badge st-ok">正常</span>
-          </td>
-      <td>2026-11-10 07:35</td><td>2026-11-10 07:35（HTTP 200）</td>
-      <td>2026-11-10</td><td class="wrap">—</td>
-      <td>—</td>
-    </tr><tr id="src-mops_cf_otc">
+    <tbody><tr id="src-mops_cf_otc">
       <td class="stack-h"><a href="../source/q_source_id-mops_cf_otc_table-source_status.html">mops_cf_otc</a> <small class="muted">財報</small></td>
       <td data-status="ok"><span class="badge st-ok">正常</span>
-          </td>
+          <br><span class="pill pill-warn" data-state="stale" title="季報／年報申報期限；比較 資料表最新資料日">⏱ 過期：應有 2026Q3，目前 2026Q2</span></td>
       <td>2026-11-10 06:37</td><td>2026-11-10 06:37（HTTP 200）</td>
       <td>2024Q3</td><td class="wrap">—</td>
       <td>—</td>
     </tr><tr id="src-mops_cf_sii">
       <td class="stack-h"><a href="../source/q_source_id-mops_cf_sii_table-source_status.html">mops_cf_sii</a> <small class="muted">財報</small></td>
       <td data-status="ok"><span class="badge st-ok">正常</span>
-          </td>
+          <br><span class="pill pill-warn" data-state="stale" title="季報／年報申報期限；比較 資料表最新資料日">⏱ 過期：應有 2026Q3，目前 2026Q2</span></td>
       <td>2026-11-10 06:36</td><td>2026-11-10 06:36（HTTP 200）</td>
       <td>2024Q3</td><td class="wrap">—</td>
       <td>—</td>
     </tr><tr id="src-mops_income_otc">
       <td class="stack-h"><a href="../source/q_source_id-mops_income_otc_table-source_status.html">mops_income_otc</a> <small class="muted">財報</small></td>
       <td data-status="ok"><span class="badge st-ok">正常</span>
-          </td>
+          <br><span class="pill pill-warn" data-state="stale" title="季報／年報申報期限；比較 資料表最新資料日">⏱ 過期：應有 2026Q3，目前 2026Q2</span></td>
       <td>2026-11-10 06:37</td><td>2026-11-10 06:37（HTTP 200）</td>
       <td>2024Q3</td><td class="wrap">—</td>
       <td>—</td>
     </tr><tr id="src-mops_income_sii">
       <td class="stack-h"><a href="../source/q_source_id-mops_income_sii_table-source_status.html">mops_income_sii</a> <small class="muted">財報</small></td>
       <td data-status="ok"><span class="badge st-ok">正常</span>
-          </td>
+          <br><span class="pill pill-warn" data-state="stale" title="季報／年報申報期限；比較 資料表最新資料日">⏱ 過期：應有 2026Q3，目前 2026Q2</span></td>
       <td>2026-11-10 06:36</td><td>2026-11-10 06:36（HTTP 200）</td>
       <td>2024Q3</td><td class="wrap">—</td>
+      <td>—</td>
+    </tr></tbody>
+  </table></div>
+  <details class="src-ok-fold" data-testid="sources-ok-fold"><summary>其餘 244 個正常來源</summary>
+  <div class="table-wrap stack-wrap" tabindex="0" role="region" aria-label="各來源狀態表（正常）"><table class="data stack">
+    <thead><tr><th>來源</th><th>狀態</th><th>最後成功時間</th><th>最後嘗試</th><th>資料日期</th><th>缺漏／備註</th><th>錯誤紀錄</th></tr></thead>
+    <tbody><tr id="src-isin_tpex">
+      <td class="stack-h"><a href="../source/q_source_id-isin_tpex_table-source_status.html">isin_tpex</a> <small class="muted">基本資料／行事曆</small></td>
+      <td data-status="ok"><span class="badge st-ok">正常</span>
+          </td>
+      <td>2026-11-17 09:29</td><td>2026-11-17 09:29（HTTP 200）</td>
+      <td>2026-11-17</td><td class="wrap">—</td>
+      <td>—</td>
+    </tr><tr id="src-isin_twse">
+      <td class="stack-h"><a href="../source/q_source_id-isin_twse_table-source_status.html">isin_twse</a> <small class="muted">基本資料／行事曆</small></td>
+      <td data-status="ok"><span class="badge st-ok">正常</span>
+          </td>
+      <td>2026-11-17 09:28</td><td>2026-11-17 09:28（HTTP 200）</td>
+      <td>2026-11-17</td><td class="wrap">—</td>
       <td>—</td>
     </tr><tr id="src-mops_material">
       <td class="stack-h"><a href="../source/q_source_id-mops_material_table-source_status.html">mops_material</a> <small class="muted">重大訊息</small></td>
       <td data-status="ok"><span class="badge st-ok">正常</span>
           </td>
-      <td>2026-11-10 07:45</td><td>2026-11-10 07:45（HTTP 200）</td>
+      <td>2026-11-17 09:45</td><td>2026-11-17 09:45（HTTP 200）</td>
       <td>—</td><td class="wrap">—</td>
       <td>—</td>
     </tr><tr id="src-mops_material_1101">
       <td class="stack-h"><a href="../source/q_source_id-mops_material_1101_table-source_status.html">mops_material_1101</a> <small class="muted">重大訊息</small></td>
       <td data-status="ok"><span class="badge st-ok">正常</span>
           </td>
-      <td>2026-11-10 07:43</td><td>2026-11-10 07:43（HTTP 200）</td>
+      <td>2026-11-17 09:39</td><td>2026-11-17 09:39（HTTP 200）</td>
       <td>—</td><td class="wrap">—</td>
       <td>—</td>
     </tr><tr id="src-mops_material_1216">
       <td class="stack-h"><a href="../source/q_source_id-mops_material_1216_table-source_status.html">mops_material_1216</a> <small class="muted">重大訊息</small></td>
       <td data-status="ok"><span class="badge st-ok">正常</span>
           </td>
-      <td>2026-11-10 07:43</td><td>2026-11-10 07:43（HTTP 200）</td>
+      <td>2026-11-17 09:41</td><td>2026-11-17 09:41（HTTP 200）</td>
       <td>—</td><td class="wrap">—</td>
       <td>—</td>
     </tr><tr id="src-mops_material_1301">
       <td class="stack-h"><a href="../source/q_source_id-mops_material_1301_table-source_status.html">mops_material_1301</a> <small class="muted">重大訊息</small></td>
       <td data-status="ok"><span class="badge st-ok">正常</span>
           </td>
-      <td>2026-11-10 07:42</td><td>2026-11-10 07:42（HTTP 200）</td>
+      <td>2026-11-17 09:38</td><td>2026-11-17 09:38（HTTP 200）</td>
       <td>—</td><td class="wrap">—</td>
       <td>—</td>
     </tr><tr id="src-mops_material_2002">
       <td class="stack-h"><a href="../source/q_source_id-mops_material_2002_table-source_status.html">mops_material_2002</a> <small class="muted">重大訊息</small></td>
       <td data-status="ok"><span class="badge st-ok">正常</span>
           </td>
-      <td>2026-11-10 07:42</td><td>2026-11-10 07:42（HTTP 200）</td>
+      <td>2026-11-17 09:38</td><td>2026-11-17 09:38（HTTP 200）</td>
       <td>—</td><td class="wrap">—</td>
       <td>—</td>
     </tr><tr id="src-mops_material_2207">
       <td class="stack-h"><a href="../source/q_source_id-mops_material_2207_table-source_status.html">mops_material_2207</a> <small class="muted">重大訊息</small></td>
       <td data-status="ok"><span class="badge st-ok">正常</span>
           </td>
-      <td>2026-11-10 07:43</td><td>2026-11-10 07:43（HTTP 200）</td>
+      <td>2026-11-17 09:42</td><td>2026-11-17 09:42（HTTP 200）</td>
       <td>—</td><td class="wrap">—</td>
       <td>—</td>
     </tr><tr id="src-mops_material_2308">
       <td class="stack-h"><a href="../source/q_source_id-mops_material_2308_table-source_status.html">mops_material_2308</a> <small class="muted">重大訊息</small></td>
       <td data-status="ok"><span class="badge st-ok">正常</span>
           </td>
-      <td>2026-11-10 07:42</td><td>2026-11-10 07:42（HTTP 200）</td>
+      <td>2026-11-17 09:36</td><td>2026-11-17 09:36（HTTP 200）</td>
       <td>—</td><td class="wrap">—</td>
       <td>—</td>
     </tr><tr id="src-mops_material_2317">
       <td class="stack-h"><a href="../source/q_source_id-mops_material_2317_table-source_status.html">mops_material_2317</a> <small class="muted">重大訊息</small></td>
       <td data-status="ok"><span class="badge st-ok">正常</span>
           </td>
-      <td>2026-11-10 07:41</td><td>2026-11-10 07:41（HTTP 200）</td>
+      <td>2026-11-17 09:36</td><td>2026-11-17 09:36（HTTP 200）</td>
       <td>—</td><td class="wrap">—</td>
       <td>—</td>
     </tr><tr id="src-mops_material_2330">
       <td class="stack-h"><a href="../source/q_source_id-mops_material_2330_table-source_status.html">mops_material_2330</a> <small class="muted">重大訊息</small></td>
       <td data-status="ok"><span class="badge st-ok">正常</span>
           </td>
-      <td>2026-11-10 07:41</td><td>2026-11-10 07:41（HTTP 200）</td>
+      <td>2026-11-17 09:36</td><td>2026-11-17 09:36（HTTP 200）</td>
       <td>—</td><td class="wrap">—</td>
       <td>—</td>
     </tr><tr id="src-mops_material_2357">
       <td class="stack-h"><a href="../source/q_source_id-mops_material_2357_table-source_status.html">mops_material_2357</a> <small class="muted">重大訊息</small></td>
       <td data-status="ok"><span class="badge st-ok">正常</span>
           </td>
-      <td>2026-11-10 07:43</td><td>2026-11-10 07:43（HTTP 200）</td>
+      <td>2026-11-17 09:43</td><td>2026-11-17 09:43（HTTP 200）</td>
       <td>—</td><td class="wrap">—</td>
       <td>—</td>
     </tr><tr id="src-mops_material_2412">
       <td class="stack-h"><a href="../source/q_source_id-mops_material_2412_table-source_status.html">mops_material_2412</a> <small class="muted">重大訊息</small></td>
       <td data-status="ok"><span class="badge st-ok">正常</span>
           </td>
-      <td>2026-11-10 07:42</td><td>2026-11-10 07:42（HTTP 200）</td>
+      <td>2026-11-17 09:36</td><td>2026-11-17 09:36（HTTP 200）</td>
       <td>—</td><td class="wrap">—</td>
       <td>—</td>
     </tr><tr id="src-mops_material_2454">
       <td class="stack-h"><a href="../source/q_source_id-mops_material_2454_table-source_status.html">mops_material_2454</a> <small class="muted">重大訊息</small></td>
       <td data-status="ok"><span class="badge st-ok">正常</span>
           </td>
-      <td>2026-11-10 07:42</td><td>2026-11-10 07:42（HTTP 200）</td>
+      <td>2026-11-17 09:36</td><td>2026-11-17 09:36（HTTP 200）</td>
       <td>—</td><td class="wrap">—</td>
       <td>—</td>
     </tr><tr id="src-mops_material_2603">
       <td class="stack-h"><a href="../source/q_source_id-mops_material_2603_table-source_status.html">mops_material_2603</a> <small class="muted">重大訊息</small></td>
       <td data-status="ok"><span class="badge st-ok">正常</span>
           </td>
-      <td>2026-11-10 07:43</td><td>2026-11-10 07:43（HTTP 200）</td>
+      <td>2026-11-17 09:43</td><td>2026-11-17 09:43（HTTP 200）</td>
       <td>—</td><td class="wrap">近 30 日沒有新資料</td>
       <td>—</td>
     </tr><tr id="src-mops_material_2801">
       <td class="stack-h"><a href="../source/q_source_id-mops_material_2801_table-source_status.html">mops_material_2801</a> <small class="muted">重大訊息</small></td>
       <td data-status="ok"><span class="badge st-ok">正常</span>
           </td>
-      <td>2026-11-10 07:42</td><td>2026-11-10 07:42（HTTP 200）</td>
+      <td>2026-11-17 09:38</td><td>2026-11-17 09:38（HTTP 200）</td>
       <td>—</td><td class="wrap">—</td>
       <td>—</td>
     </tr><tr id="src-mops_material_2881">
       <td class="stack-h"><a href="../source/q_source_id-mops_material_2881_table-source_status.html">mops_material_2881</a> <small class="muted">重大訊息</small></td>
       <td data-status="ok"><span class="badge st-ok">正常</span>
           </td>
-      <td>2026-11-10 07:42</td><td>2026-11-10 07:42（HTTP 200）</td>
+      <td>2026-11-17 09:38</td><td>2026-11-17 09:38（HTTP 200）</td>
       <td>—</td><td class="wrap">—</td>
       <td>—</td>
     </tr><tr id="src-mops_material_2882">
       <td class="stack-h"><a href="../source/q_source_id-mops_material_2882_table-source_status.html">mops_material_2882</a> <small class="muted">重大訊息</small></td>
       <td data-status="ok"><span class="badge st-ok">正常</span>
           </td>
-      <td>2026-11-10 07:42</td><td>2026-11-10 07:42（HTTP 200）</td>
+      <td>2026-11-17 09:38</td><td>2026-11-17 09:38（HTTP 200）</td>
       <td>—</td><td class="wrap">—</td>
       <td>—</td>
     </tr><tr id="src-mops_material_2912">
       <td class="stack-h"><a href="../source/q_source_id-mops_material_2912_table-source_status.html">mops_material_2912</a> <small class="muted">重大訊息</small></td>
       <td data-status="ok"><span class="badge st-ok">正常</span>
           </td>
-      <td>2026-11-10 07:43</td><td>2026-11-10 07:43（HTTP 200）</td>
+      <td>2026-11-17 09:42</td><td>2026-11-17 09:42（HTTP 200）</td>
       <td>—</td><td class="wrap">近 30 日沒有新資料</td>
       <td>—</td>
     </tr><tr id="src-mops_material_3008">
       <td class="stack-h"><a href="../source/q_source_id-mops_material_3008_table-source_status.html">mops_material_3008</a> <small class="muted">重大訊息</small></td>
       <td data-status="ok"><span class="badge st-ok">正常</span>
           </td>
-      <td>2026-11-10 07:43</td><td>2026-11-10 07:43（HTTP 200）</td>
+      <td>2026-11-17 09:43</td><td>2026-11-17 09:43（HTTP 200）</td>
       <td>—</td><td class="wrap">—</td>
       <td>—</td>
     </tr><tr id="src-mops_material_3105">
       <td class="stack-h"><a href="../source/q_source_id-mops_material_3105_table-source_status.html">mops_material_3105</a> <small class="muted">重大訊息</small></td>
       <td data-status="ok"><span class="badge st-ok">正常</span>
           </td>
-      <td>2026-11-10 07:44</td><td>2026-11-10 07:44（HTTP 200）</td>
+      <td>2026-11-17 09:44</td><td>2026-11-17 09:44（HTTP 200）</td>
       <td>—</td><td class="wrap">—</td>
       <td>—</td>
     </tr><tr id="src-mops_material_3293">
       <td class="stack-h"><a href="../source/q_source_id-mops_material_3293_table-source_status.html">mops_material_3293</a> <small class="muted">重大訊息</small></td>
       <td data-status="ok"><span class="badge st-ok">正常</span>
           </td>
-      <td>2026-11-10 07:44</td><td>2026-11-10 07:44（HTTP 200）</td>
+      <td>2026-11-17 09:44</td><td>2026-11-17 09:44（HTTP 200）</td>
       <td>—</td><td class="wrap">—</td>
       <td>—</td>
     </tr><tr id="src-mops_material_3711">
       <td class="stack-h"><a href="../source/q_source_id-mops_material_3711_table-source_status.html">mops_material_3711</a> <small class="muted">重大訊息</small></td>
       <td data-status="ok"><span class="badge st-ok">正常</span>
           </td>
-      <td>2026-11-10 07:43</td><td>2026-11-10 07:43（HTTP 200）</td>
+      <td>2026-11-17 09:43</td><td>2026-11-17 09:43（HTTP 200）</td>
       <td>—</td><td class="wrap">—</td>
       <td>—</td>
     </tr><tr id="src-mops_material_4105">
       <td class="stack-h"><a href="../source/q_source_id-mops_material_4105_table-source_status.html">mops_material_4105</a> <small class="muted">重大訊息</small></td>
       <td data-status="ok"><span class="badge st-ok">正常</span>
           </td>
-      <td>2026-11-10 07:45</td><td>2026-11-10 07:45（HTTP 200）</td>
+      <td>2026-11-17 09:45</td><td>2026-11-17 09:45（HTTP 200）</td>
       <td>—</td><td class="wrap">—</td>
       <td>—</td>
     </tr><tr id="src-mops_material_5274">
       <td class="stack-h"><a href="../source/q_source_id-mops_material_5274_table-source_status.html">mops_material_5274</a> <small class="muted">重大訊息</small></td>
       <td data-status="ok"><span class="badge st-ok">正常</span>
           </td>
-      <td>2026-11-10 07:45</td><td>2026-11-10 07:45（HTTP 200）</td>
+      <td>2026-11-17 09:44</td><td>2026-11-17 09:44（HTTP 200）</td>
       <td>—</td><td class="wrap">—</td>
       <td>—</td>
     </tr><tr id="src-mops_material_5347">
       <td class="stack-h"><a href="../source/q_source_id-mops_material_5347_table-source_status.html">mops_material_5347</a> <small class="muted">重大訊息</small></td>
       <td data-status="ok"><span class="badge st-ok">正常</span>
           </td>
-      <td>2026-11-10 07:44</td><td>2026-11-10 07:44（HTTP 200）</td>
+      <td>2026-11-17 09:44</td><td>2026-11-17 09:44（HTTP 200）</td>
       <td>—</td><td class="wrap">—</td>
       <td>—</td>
     </tr><tr id="src-mops_material_5483">
       <td class="stack-h"><a href="../source/q_source_id-mops_material_5483_table-source_status.html">mops_material_5483</a> <small class="muted">重大訊息</small></td>
       <td data-status="ok"><span class="badge st-ok">正常</span>
           </td>
-      <td>2026-11-10 07:45</td><td>2026-11-10 07:45（HTTP 200）</td>
+      <td>2026-11-17 09:44</td><td>2026-11-17 09:44（HTTP 200）</td>
       <td>—</td><td class="wrap">—</td>
       <td>—</td>
     </tr><tr id="src-mops_material_6488">
       <td class="stack-h"><a href="../source/q_source_id-mops_material_6488_table-source_status.html">mops_material_6488</a> <small class="muted">重大訊息</small></td>
       <td data-status="ok"><span class="badge st-ok">正常</span>
           </td>
-      <td>2026-11-10 07:44</td><td>2026-11-10 07:44（HTTP 200）</td>
+      <td>2026-11-17 09:43</td><td>2026-11-17 09:43（HTTP 200）</td>
       <td>—</td><td class="wrap">—</td>
       <td>—</td>
     </tr><tr id="src-mops_material_6505">
       <td class="stack-h"><a href="../source/q_source_id-mops_material_6505_table-source_status.html">mops_material_6505</a> <small class="muted">重大訊息</small></td>
       <td data-status="ok"><span class="badge st-ok">正常</span>
           </td>
-      <td>2026-11-10 07:42</td><td>2026-11-10 07:42（HTTP 200）</td>
+      <td>2026-11-17 09:38</td><td>2026-11-17 09:38（HTTP 200）</td>
       <td>—</td><td class="wrap">—</td>
       <td>—</td>
     </tr><tr id="src-mops_material_6547">
       <td class="stack-h"><a href="../source/q_source_id-mops_material_6547_table-source_status.html">mops_material_6547</a> <small class="muted">重大訊息</small></td>
       <td data-status="ok"><span class="badge st-ok">正常</span>
           </td>
-      <td>2026-11-10 07:45</td><td>2026-11-10 07:45（HTTP 200）</td>
+      <td>2026-11-17 09:45</td><td>2026-11-17 09:45（HTTP 200）</td>
       <td>—</td><td class="wrap">—</td>
       <td>—</td>
     </tr><tr id="src-mops_material_8069">
       <td class="stack-h"><a href="../source/q_source_id-mops_material_8069_table-source_status.html">mops_material_8069</a> <small class="muted">重大訊息</small></td>
       <td data-status="ok"><span class="badge st-ok">正常</span>
           </td>
-      <td>2026-11-10 07:44</td><td>2026-11-10 07:44（HTTP 200）</td>
+      <td>2026-11-17 09:44</td><td>2026-11-17 09:44（HTTP 200）</td>
       <td>—</td><td class="wrap">—</td>
       <td>—</td>
     </tr><tr id="src-mops_material_8299">
       <td class="stack-h"><a href="../source/q_source_id-mops_material_8299_table-source_status.html">mops_material_8299</a> <small class="muted">重大訊息</small></td>
       <td data-status="ok"><span class="badge st-ok">正常</span>
           </td>
-      <td>2026-11-10 07:44</td><td>2026-11-10 07:44（HTTP 200）</td>
+      <td>2026-11-17 09:44</td><td>2026-11-17 09:44（HTTP 200）</td>
       <td>—</td><td class="wrap">—</td>
       <td>—</td>
     </tr><tr id="src-mops_material_9910">
       <td class="stack-h"><a href="../source/q_source_id-mops_material_9910_table-source_status.html">mops_material_9910</a> <small class="muted">重大訊息</small></td>
       <td data-status="ok"><span class="badge st-ok">正常</span>
           </td>
-      <td>2026-11-10 07:44</td><td>2026-11-10 07:44（HTTP 200）</td>
+      <td>2026-11-17 09:43</td><td>2026-11-17 09:43（HTTP 200）</td>
       <td>—</td><td class="wrap">—</td>
       <td>—</td>
     </tr><tr id="src-mops_nas_revenue_TPEx">
       <td class="stack-h"><a href="../source/q_source_id-mops_nas_revenue_TPEx_table-source_status.html">mops_nas_revenue_TPEx</a> <small class="muted">月營收</small></td>
       <td data-status="ok"><span class="badge st-ok">正常</span>
           </td>
-      <td>2026-11-10 07:41</td><td>2026-11-10 07:41（HTTP 200）</td>
+      <td>2026-11-17 09:36</td><td>2026-11-17 09:36（HTTP 200）</td>
       <td>2026-09</td><td class="wrap">—</td>
       <td>—</td>
     </tr><tr id="src-mops_nas_revenue_TPEx_2023-11">
@@ -578,28 +592,28 @@
       <td class="stack-h"><a href="../source/q_source_id-mops_nas_revenue_TPEx_2026-09_table-source_status.html">mops_nas_revenue_TPEx_2026-09</a> <small class="muted">月營收</small></td>
       <td data-status="ok"><span class="badge st-ok">正常</span>
           </td>
-      <td>2026-11-10 07:41</td><td>2026-11-10 07:41（HTTP 200）</td>
+      <td>2026-11-17 09:36</td><td>2026-11-17 09:36（HTTP 200）</td>
       <td>2026-09</td><td class="wrap">—</td>
       <td>—</td>
     </tr><tr id="src-mops_nas_revenue_TPEx_2026-10">
       <td class="stack-h"><a href="../source/q_source_id-mops_nas_revenue_TPEx_2026-10_table-source_status.html">mops_nas_revenue_TPEx_2026-10</a> <small class="muted">月營收</small></td>
       <td data-status="ok"><span class="badge st-ok">正常</span>
           </td>
-      <td>2026-11-10 07:41</td><td>2026-11-10 07:41（HTTP 200）</td>
+      <td>2026-11-17 09:35</td><td>2026-11-17 09:35（HTTP 200）</td>
       <td>2026-10</td><td class="wrap">公告期內，官方彙總表目前只列出部分公司（不算故障）</td>
       <td>—</td>
     </tr><tr id="src-mops_nas_revenue_TPEx_2026-11">
       <td class="stack-h"><a href="../source/q_source_id-mops_nas_revenue_TPEx_2026-11_table-source_status.html">mops_nas_revenue_TPEx_2026-11</a> <small class="muted">月營收</small></td>
       <td data-status="ok"><span class="badge st-ok">正常</span>
           </td>
-      <td>2026-11-10 07:41</td><td>2026-11-10 07:41</td>
+      <td>2026-11-17 09:35</td><td>2026-11-17 09:35</td>
       <td>2026-11</td><td class="wrap">尚未到公告期限</td>
       <td>—</td>
     </tr><tr id="src-mops_nas_revenue_TWSE">
       <td class="stack-h"><a href="../source/q_source_id-mops_nas_revenue_TWSE_table-source_status.html">mops_nas_revenue_TWSE</a> <small class="muted">月營收</small></td>
       <td data-status="ok"><span class="badge st-ok">正常</span>
           </td>
-      <td>2026-11-10 07:41</td><td>2026-11-10 07:41（HTTP 200）</td>
+      <td>2026-11-17 09:35</td><td>2026-11-17 09:35（HTTP 200）</td>
       <td>2026-09</td><td class="wrap">—</td>
       <td>—</td>
     </tr><tr id="src-mops_nas_revenue_TWSE_2023-11">
@@ -844,140 +858,966 @@
       <td class="stack-h"><a href="../source/q_source_id-mops_nas_revenue_TWSE_2026-09_table-source_status.html">mops_nas_revenue_TWSE_2026-09</a> <small class="muted">月營收</small></td>
       <td data-status="ok"><span class="badge st-ok">正常</span>
           </td>
-      <td>2026-11-10 07:41</td><td>2026-11-10 07:41（HTTP 200）</td>
+      <td>2026-11-17 09:35</td><td>2026-11-17 09:35（HTTP 200）</td>
       <td>2026-09</td><td class="wrap">—</td>
       <td>—</td>
     </tr><tr id="src-mops_nas_revenue_TWSE_2026-10">
       <td class="stack-h"><a href="../source/q_source_id-mops_nas_revenue_TWSE_2026-10_table-source_status.html">mops_nas_revenue_TWSE_2026-10</a> <small class="muted">月營收</small></td>
       <td data-status="ok"><span class="badge st-ok">正常</span>
           </td>
-      <td>2026-11-10 07:41</td><td>2026-11-10 07:41（HTTP 200）</td>
+      <td>2026-11-17 09:35</td><td>2026-11-17 09:35（HTTP 200）</td>
       <td>2026-10</td><td class="wrap">公告期內，官方彙總表目前只列出部分公司（不算故障）</td>
       <td>—</td>
     </tr><tr id="src-mops_nas_revenue_TWSE_2026-11">
       <td class="stack-h"><a href="../source/q_source_id-mops_nas_revenue_TWSE_2026-11_table-source_status.html">mops_nas_revenue_TWSE_2026-11</a> <small class="muted">月營收</small></td>
       <td data-status="ok"><span class="badge st-ok">正常</span>
           </td>
-      <td>2026-11-10 07:41</td><td>2026-11-10 07:41</td>
+      <td>2026-11-17 09:35</td><td>2026-11-17 09:35</td>
       <td>2026-11</td><td class="wrap">尚未到公告期限</td>
+      <td>—</td>
+    </tr><tr id="src-tpex_daily_quotes">
+      <td class="stack-h"><a href="../source/q_source_id-tpex_daily_quotes_table-source_status.html">tpex_daily_quotes</a> <small class="muted">行情</small></td>
+      <td data-status="ok"><span class="badge st-ok">正常</span>
+          </td>
+      <td>2026-11-10 11:34</td><td>2026-11-10 11:34（HTTP 200）</td>
+      <td>2026-06-16</td><td class="wrap">—</td>
+      <td>—</td>
+    </tr><tr id="src-tpex_daily_quotes_2026-03-31">
+      <td class="stack-h"><a href="../source/q_source_id-tpex_daily_quotes_2026-03-31_table-source_status.html">tpex_daily_quotes_2026-03-31</a> <small class="muted">行情</small></td>
+      <td data-status="ok"><span class="badge st-ok">正常</span>
+          </td>
+      <td>2026-11-10 11:23</td><td>2026-11-10 11:23（HTTP 200）</td>
+      <td>2026-03-31</td><td class="wrap">—</td>
+      <td>—</td>
+    </tr><tr id="src-tpex_daily_quotes_2026-04-01">
+      <td class="stack-h"><a href="../source/q_source_id-tpex_daily_quotes_2026-04-01_table-source_status.html">tpex_daily_quotes_2026-04-01</a> <small class="muted">行情</small></td>
+      <td data-status="ok"><span class="badge st-ok">正常</span>
+          </td>
+      <td>2026-11-10 11:23</td><td>2026-11-10 11:23（HTTP 200）</td>
+      <td>2026-04-01</td><td class="wrap">—</td>
+      <td>—</td>
+    </tr><tr id="src-tpex_daily_quotes_2026-04-02">
+      <td class="stack-h"><a href="../source/q_source_id-tpex_daily_quotes_2026-04-02_table-source_status.html">tpex_daily_quotes_2026-04-02</a> <small class="muted">行情</small></td>
+      <td data-status="ok"><span class="badge st-ok">正常</span>
+          </td>
+      <td>2026-11-10 11:24</td><td>2026-11-10 11:24（HTTP 200）</td>
+      <td>2026-04-02</td><td class="wrap">—</td>
+      <td>—</td>
+    </tr><tr id="src-tpex_daily_quotes_2026-04-07">
+      <td class="stack-h"><a href="../source/q_source_id-tpex_daily_quotes_2026-04-07_table-source_status.html">tpex_daily_quotes_2026-04-07</a> <small class="muted">行情</small></td>
+      <td data-status="ok"><span class="badge st-ok">正常</span>
+          </td>
+      <td>2026-11-10 11:24</td><td>2026-11-10 11:24（HTTP 200）</td>
+      <td>2026-04-07</td><td class="wrap">—</td>
+      <td>—</td>
+    </tr><tr id="src-tpex_daily_quotes_2026-04-08">
+      <td class="stack-h"><a href="../source/q_source_id-tpex_daily_quotes_2026-04-08_table-source_status.html">tpex_daily_quotes_2026-04-08</a> <small class="muted">行情</small></td>
+      <td data-status="ok"><span class="badge st-ok">正常</span>
+          </td>
+      <td>2026-11-10 11:24</td><td>2026-11-10 11:24（HTTP 200）</td>
+      <td>2026-04-08</td><td class="wrap">—</td>
+      <td>—</td>
+    </tr><tr id="src-tpex_daily_quotes_2026-04-09">
+      <td class="stack-h"><a href="../source/q_source_id-tpex_daily_quotes_2026-04-09_table-source_status.html">tpex_daily_quotes_2026-04-09</a> <small class="muted">行情</small></td>
+      <td data-status="ok"><span class="badge st-ok">正常</span>
+          </td>
+      <td>2026-11-10 11:24</td><td>2026-11-10 11:24（HTTP 200）</td>
+      <td>2026-04-09</td><td class="wrap">—</td>
+      <td>—</td>
+    </tr><tr id="src-tpex_daily_quotes_2026-04-10">
+      <td class="stack-h"><a href="../source/q_source_id-tpex_daily_quotes_2026-04-10_table-source_status.html">tpex_daily_quotes_2026-04-10</a> <small class="muted">行情</small></td>
+      <td data-status="ok"><span class="badge st-ok">正常</span>
+          </td>
+      <td>2026-11-10 11:24</td><td>2026-11-10 11:24（HTTP 200）</td>
+      <td>2026-04-10</td><td class="wrap">—</td>
+      <td>—</td>
+    </tr><tr id="src-tpex_daily_quotes_2026-04-13">
+      <td class="stack-h"><a href="../source/q_source_id-tpex_daily_quotes_2026-04-13_table-source_status.html">tpex_daily_quotes_2026-04-13</a> <small class="muted">行情</small></td>
+      <td data-status="ok"><span class="badge st-ok">正常</span>
+          </td>
+      <td>2026-11-10 11:24</td><td>2026-11-10 11:24（HTTP 200）</td>
+      <td>2026-04-13</td><td class="wrap">—</td>
+      <td>—</td>
+    </tr><tr id="src-tpex_daily_quotes_2026-04-14">
+      <td class="stack-h"><a href="../source/q_source_id-tpex_daily_quotes_2026-04-14_table-source_status.html">tpex_daily_quotes_2026-04-14</a> <small class="muted">行情</small></td>
+      <td data-status="ok"><span class="badge st-ok">正常</span>
+          </td>
+      <td>2026-11-10 11:25</td><td>2026-11-10 11:25（HTTP 200）</td>
+      <td>2026-04-14</td><td class="wrap">—</td>
+      <td>—</td>
+    </tr><tr id="src-tpex_daily_quotes_2026-04-15">
+      <td class="stack-h"><a href="../source/q_source_id-tpex_daily_quotes_2026-04-15_table-source_status.html">tpex_daily_quotes_2026-04-15</a> <small class="muted">行情</small></td>
+      <td data-status="ok"><span class="badge st-ok">正常</span>
+          </td>
+      <td>2026-11-10 11:25</td><td>2026-11-10 11:25（HTTP 200）</td>
+      <td>2026-04-15</td><td class="wrap">—</td>
+      <td>—</td>
+    </tr><tr id="src-tpex_daily_quotes_2026-04-16">
+      <td class="stack-h"><a href="../source/q_source_id-tpex_daily_quotes_2026-04-16_table-source_status.html">tpex_daily_quotes_2026-04-16</a> <small class="muted">行情</small></td>
+      <td data-status="ok"><span class="badge st-ok">正常</span>
+          </td>
+      <td>2026-11-10 11:25</td><td>2026-11-10 11:25（HTTP 200）</td>
+      <td>2026-04-16</td><td class="wrap">—</td>
+      <td>—</td>
+    </tr><tr id="src-tpex_daily_quotes_2026-04-17">
+      <td class="stack-h"><a href="../source/q_source_id-tpex_daily_quotes_2026-04-17_table-source_status.html">tpex_daily_quotes_2026-04-17</a> <small class="muted">行情</small></td>
+      <td data-status="ok"><span class="badge st-ok">正常</span>
+          </td>
+      <td>2026-11-10 11:26</td><td>2026-11-10 11:26（HTTP 200）</td>
+      <td>2026-04-17</td><td class="wrap">—</td>
+      <td>—</td>
+    </tr><tr id="src-tpex_daily_quotes_2026-04-20">
+      <td class="stack-h"><a href="../source/q_source_id-tpex_daily_quotes_2026-04-20_table-source_status.html">tpex_daily_quotes_2026-04-20</a> <small class="muted">行情</small></td>
+      <td data-status="ok"><span class="badge st-ok">正常</span>
+          </td>
+      <td>2026-11-10 11:26</td><td>2026-11-10 11:26（HTTP 200）</td>
+      <td>2026-04-20</td><td class="wrap">—</td>
+      <td>—</td>
+    </tr><tr id="src-tpex_daily_quotes_2026-04-21">
+      <td class="stack-h"><a href="../source/q_source_id-tpex_daily_quotes_2026-04-21_table-source_status.html">tpex_daily_quotes_2026-04-21</a> <small class="muted">行情</small></td>
+      <td data-status="ok"><span class="badge st-ok">正常</span>
+          </td>
+      <td>2026-11-10 11:26</td><td>2026-11-10 11:26（HTTP 200）</td>
+      <td>2026-04-21</td><td class="wrap">—</td>
+      <td>—</td>
+    </tr><tr id="src-tpex_daily_quotes_2026-04-22">
+      <td class="stack-h"><a href="../source/q_source_id-tpex_daily_quotes_2026-04-22_table-source_status.html">tpex_daily_quotes_2026-04-22</a> <small class="muted">行情</small></td>
+      <td data-status="ok"><span class="badge st-ok">正常</span>
+          </td>
+      <td>2026-11-10 11:26</td><td>2026-11-10 11:26（HTTP 200）</td>
+      <td>2026-04-22</td><td class="wrap">—</td>
+      <td>—</td>
+    </tr><tr id="src-tpex_daily_quotes_2026-04-23">
+      <td class="stack-h"><a href="../source/q_source_id-tpex_daily_quotes_2026-04-23_table-source_status.html">tpex_daily_quotes_2026-04-23</a> <small class="muted">行情</small></td>
+      <td data-status="ok"><span class="badge st-ok">正常</span>
+          </td>
+      <td>2026-11-10 11:26</td><td>2026-11-10 11:26（HTTP 200）</td>
+      <td>2026-04-23</td><td class="wrap">—</td>
+      <td>—</td>
+    </tr><tr id="src-tpex_daily_quotes_2026-04-24">
+      <td class="stack-h"><a href="../source/q_source_id-tpex_daily_quotes_2026-04-24_table-source_status.html">tpex_daily_quotes_2026-04-24</a> <small class="muted">行情</small></td>
+      <td data-status="ok"><span class="badge st-ok">正常</span>
+          </td>
+      <td>2026-11-10 11:26</td><td>2026-11-10 11:26（HTTP 200）</td>
+      <td>2026-04-24</td><td class="wrap">—</td>
+      <td>—</td>
+    </tr><tr id="src-tpex_daily_quotes_2026-04-27">
+      <td class="stack-h"><a href="../source/q_source_id-tpex_daily_quotes_2026-04-27_table-source_status.html">tpex_daily_quotes_2026-04-27</a> <small class="muted">行情</small></td>
+      <td data-status="ok"><span class="badge st-ok">正常</span>
+          </td>
+      <td>2026-11-10 11:26</td><td>2026-11-10 11:26（HTTP 200）</td>
+      <td>2026-04-27</td><td class="wrap">—</td>
+      <td>—</td>
+    </tr><tr id="src-tpex_daily_quotes_2026-04-28">
+      <td class="stack-h"><a href="../source/q_source_id-tpex_daily_quotes_2026-04-28_table-source_status.html">tpex_daily_quotes_2026-04-28</a> <small class="muted">行情</small></td>
+      <td data-status="ok"><span class="badge st-ok">正常</span>
+          </td>
+      <td>2026-11-10 11:27</td><td>2026-11-10 11:27（HTTP 200）</td>
+      <td>2026-04-28</td><td class="wrap">—</td>
+      <td>—</td>
+    </tr><tr id="src-tpex_daily_quotes_2026-04-29">
+      <td class="stack-h"><a href="../source/q_source_id-tpex_daily_quotes_2026-04-29_table-source_status.html">tpex_daily_quotes_2026-04-29</a> <small class="muted">行情</small></td>
+      <td data-status="ok"><span class="badge st-ok">正常</span>
+          </td>
+      <td>2026-11-10 11:27</td><td>2026-11-10 11:27（HTTP 200）</td>
+      <td>2026-04-29</td><td class="wrap">—</td>
+      <td>—</td>
+    </tr><tr id="src-tpex_daily_quotes_2026-04-30">
+      <td class="stack-h"><a href="../source/q_source_id-tpex_daily_quotes_2026-04-30_table-source_status.html">tpex_daily_quotes_2026-04-30</a> <small class="muted">行情</small></td>
+      <td data-status="ok"><span class="badge st-ok">正常</span>
+          </td>
+      <td>2026-11-10 11:27</td><td>2026-11-10 11:27（HTTP 200）</td>
+      <td>2026-04-30</td><td class="wrap">—</td>
+      <td>—</td>
+    </tr><tr id="src-tpex_daily_quotes_2026-05-04">
+      <td class="stack-h"><a href="../source/q_source_id-tpex_daily_quotes_2026-05-04_table-source_status.html">tpex_daily_quotes_2026-05-04</a> <small class="muted">行情</small></td>
+      <td data-status="ok"><span class="badge st-ok">正常</span>
+          </td>
+      <td>2026-11-10 11:27</td><td>2026-11-10 11:27（HTTP 200）</td>
+      <td>2026-05-04</td><td class="wrap">—</td>
+      <td>—</td>
+    </tr><tr id="src-tpex_daily_quotes_2026-05-05">
+      <td class="stack-h"><a href="../source/q_source_id-tpex_daily_quotes_2026-05-05_table-source_status.html">tpex_daily_quotes_2026-05-05</a> <small class="muted">行情</small></td>
+      <td data-status="ok"><span class="badge st-ok">正常</span>
+          </td>
+      <td>2026-11-10 11:27</td><td>2026-11-10 11:27（HTTP 200）</td>
+      <td>2026-05-05</td><td class="wrap">—</td>
+      <td>—</td>
+    </tr><tr id="src-tpex_daily_quotes_2026-05-06">
+      <td class="stack-h"><a href="../source/q_source_id-tpex_daily_quotes_2026-05-06_table-source_status.html">tpex_daily_quotes_2026-05-06</a> <small class="muted">行情</small></td>
+      <td data-status="ok"><span class="badge st-ok">正常</span>
+          </td>
+      <td>2026-11-10 11:27</td><td>2026-11-10 11:27（HTTP 200）</td>
+      <td>2026-05-06</td><td class="wrap">—</td>
+      <td>—</td>
+    </tr><tr id="src-tpex_daily_quotes_2026-05-07">
+      <td class="stack-h"><a href="../source/q_source_id-tpex_daily_quotes_2026-05-07_table-source_status.html">tpex_daily_quotes_2026-05-07</a> <small class="muted">行情</small></td>
+      <td data-status="ok"><span class="badge st-ok">正常</span>
+          </td>
+      <td>2026-11-10 11:27</td><td>2026-11-10 11:27（HTTP 200）</td>
+      <td>2026-05-07</td><td class="wrap">—</td>
+      <td>—</td>
+    </tr><tr id="src-tpex_daily_quotes_2026-05-08">
+      <td class="stack-h"><a href="../source/q_source_id-tpex_daily_quotes_2026-05-08_table-source_status.html">tpex_daily_quotes_2026-05-08</a> <small class="muted">行情</small></td>
+      <td data-status="ok"><span class="badge st-ok">正常</span>
+          </td>
+      <td>2026-11-10 11:28</td><td>2026-11-10 11:28（HTTP 200）</td>
+      <td>2026-05-08</td><td class="wrap">—</td>
+      <td>—</td>
+    </tr><tr id="src-tpex_daily_quotes_2026-05-11">
+      <td class="stack-h"><a href="../source/q_source_id-tpex_daily_quotes_2026-05-11_table-source_status.html">tpex_daily_quotes_2026-05-11</a> <small class="muted">行情</small></td>
+      <td data-status="ok"><span class="badge st-ok">正常</span>
+          </td>
+      <td>2026-11-10 11:28</td><td>2026-11-10 11:28（HTTP 200）</td>
+      <td>2026-05-11</td><td class="wrap">—</td>
+      <td>—</td>
+    </tr><tr id="src-tpex_daily_quotes_2026-05-12">
+      <td class="stack-h"><a href="../source/q_source_id-tpex_daily_quotes_2026-05-12_table-source_status.html">tpex_daily_quotes_2026-05-12</a> <small class="muted">行情</small></td>
+      <td data-status="ok"><span class="badge st-ok">正常</span>
+          </td>
+      <td>2026-11-10 11:28</td><td>2026-11-10 11:28（HTTP 200）</td>
+      <td>2026-05-12</td><td class="wrap">—</td>
+      <td>—</td>
+    </tr><tr id="src-tpex_daily_quotes_2026-05-13">
+      <td class="stack-h"><a href="../source/q_source_id-tpex_daily_quotes_2026-05-13_table-source_status.html">tpex_daily_quotes_2026-05-13</a> <small class="muted">行情</small></td>
+      <td data-status="ok"><span class="badge st-ok">正常</span>
+          </td>
+      <td>2026-11-10 11:28</td><td>2026-11-10 11:28（HTTP 200）</td>
+      <td>2026-05-13</td><td class="wrap">—</td>
+      <td>—</td>
+    </tr><tr id="src-tpex_daily_quotes_2026-05-14">
+      <td class="stack-h"><a href="../source/q_source_id-tpex_daily_quotes_2026-05-14_table-source_status.html">tpex_daily_quotes_2026-05-14</a> <small class="muted">行情</small></td>
+      <td data-status="ok"><span class="badge st-ok">正常</span>
+          </td>
+      <td>2026-11-10 11:28</td><td>2026-11-10 11:28（HTTP 200）</td>
+      <td>2026-05-14</td><td class="wrap">—</td>
+      <td>—</td>
+    </tr><tr id="src-tpex_daily_quotes_2026-05-15">
+      <td class="stack-h"><a href="../source/q_source_id-tpex_daily_quotes_2026-05-15_table-source_status.html">tpex_daily_quotes_2026-05-15</a> <small class="muted">行情</small></td>
+      <td data-status="ok"><span class="badge st-ok">正常</span>
+          </td>
+      <td>2026-11-10 11:28</td><td>2026-11-10 11:28（HTTP 200）</td>
+      <td>2026-05-15</td><td class="wrap">—</td>
+      <td>—</td>
+    </tr><tr id="src-tpex_daily_quotes_2026-05-18">
+      <td class="stack-h"><a href="../source/q_source_id-tpex_daily_quotes_2026-05-18_table-source_status.html">tpex_daily_quotes_2026-05-18</a> <small class="muted">行情</small></td>
+      <td data-status="ok"><span class="badge st-ok">正常</span>
+          </td>
+      <td>2026-11-10 11:28</td><td>2026-11-10 11:28（HTTP 200）</td>
+      <td>2026-05-18</td><td class="wrap">—</td>
+      <td>—</td>
+    </tr><tr id="src-tpex_daily_quotes_2026-05-19">
+      <td class="stack-h"><a href="../source/q_source_id-tpex_daily_quotes_2026-05-19_table-source_status.html">tpex_daily_quotes_2026-05-19</a> <small class="muted">行情</small></td>
+      <td data-status="ok"><span class="badge st-ok">正常</span>
+          </td>
+      <td>2026-11-10 11:29</td><td>2026-11-10 11:29（HTTP 200）</td>
+      <td>2026-05-19</td><td class="wrap">—</td>
+      <td>—</td>
+    </tr><tr id="src-tpex_daily_quotes_2026-05-20">
+      <td class="stack-h"><a href="../source/q_source_id-tpex_daily_quotes_2026-05-20_table-source_status.html">tpex_daily_quotes_2026-05-20</a> <small class="muted">行情</small></td>
+      <td data-status="ok"><span class="badge st-ok">正常</span>
+          </td>
+      <td>2026-11-10 11:29</td><td>2026-11-10 11:29（HTTP 200）</td>
+      <td>2026-05-20</td><td class="wrap">—</td>
+      <td>—</td>
+    </tr><tr id="src-tpex_daily_quotes_2026-05-21">
+      <td class="stack-h"><a href="../source/q_source_id-tpex_daily_quotes_2026-05-21_table-source_status.html">tpex_daily_quotes_2026-05-21</a> <small class="muted">行情</small></td>
+      <td data-status="ok"><span class="badge st-ok">正常</span>
+          </td>
+      <td>2026-11-10 11:29</td><td>2026-11-10 11:29（HTTP 200）</td>
+      <td>2026-05-21</td><td class="wrap">—</td>
+      <td>—</td>
+    </tr><tr id="src-tpex_daily_quotes_2026-05-22">
+      <td class="stack-h"><a href="../source/q_source_id-tpex_daily_quotes_2026-05-22_table-source_status.html">tpex_daily_quotes_2026-05-22</a> <small class="muted">行情</small></td>
+      <td data-status="ok"><span class="badge st-ok">正常</span>
+          </td>
+      <td>2026-11-10 11:29</td><td>2026-11-10 11:29（HTTP 200）</td>
+      <td>2026-05-22</td><td class="wrap">—</td>
+      <td>—</td>
+    </tr><tr id="src-tpex_daily_quotes_2026-05-25">
+      <td class="stack-h"><a href="../source/q_source_id-tpex_daily_quotes_2026-05-25_table-source_status.html">tpex_daily_quotes_2026-05-25</a> <small class="muted">行情</small></td>
+      <td data-status="ok"><span class="badge st-ok">正常</span>
+          </td>
+      <td>2026-11-10 11:30</td><td>2026-11-10 11:30（HTTP 200）</td>
+      <td>2026-05-25</td><td class="wrap">—</td>
+      <td>—</td>
+    </tr><tr id="src-tpex_daily_quotes_2026-05-26">
+      <td class="stack-h"><a href="../source/q_source_id-tpex_daily_quotes_2026-05-26_table-source_status.html">tpex_daily_quotes_2026-05-26</a> <small class="muted">行情</small></td>
+      <td data-status="ok"><span class="badge st-ok">正常</span>
+          </td>
+      <td>2026-11-10 11:31</td><td>2026-11-10 11:31（HTTP 200）</td>
+      <td>2026-05-26</td><td class="wrap">—</td>
+      <td>—</td>
+    </tr><tr id="src-tpex_daily_quotes_2026-05-27">
+      <td class="stack-h"><a href="../source/q_source_id-tpex_daily_quotes_2026-05-27_table-source_status.html">tpex_daily_quotes_2026-05-27</a> <small class="muted">行情</small></td>
+      <td data-status="ok"><span class="badge st-ok">正常</span>
+          </td>
+      <td>2026-11-10 11:31</td><td>2026-11-10 11:31（HTTP 200）</td>
+      <td>2026-05-27</td><td class="wrap">—</td>
+      <td>—</td>
+    </tr><tr id="src-tpex_daily_quotes_2026-05-28">
+      <td class="stack-h"><a href="../source/q_source_id-tpex_daily_quotes_2026-05-28_table-source_status.html">tpex_daily_quotes_2026-05-28</a> <small class="muted">行情</small></td>
+      <td data-status="ok"><span class="badge st-ok">正常</span>
+          </td>
+      <td>2026-11-10 11:31</td><td>2026-11-10 11:31（HTTP 200）</td>
+      <td>2026-05-28</td><td class="wrap">—</td>
+      <td>—</td>
+    </tr><tr id="src-tpex_daily_quotes_2026-05-29">
+      <td class="stack-h"><a href="../source/q_source_id-tpex_daily_quotes_2026-05-29_table-source_status.html">tpex_daily_quotes_2026-05-29</a> <small class="muted">行情</small></td>
+      <td data-status="ok"><span class="badge st-ok">正常</span>
+          </td>
+      <td>2026-11-10 11:31</td><td>2026-11-10 11:31（HTTP 200）</td>
+      <td>2026-05-29</td><td class="wrap">—</td>
+      <td>—</td>
+    </tr><tr id="src-tpex_daily_quotes_2026-06-01">
+      <td class="stack-h"><a href="../source/q_source_id-tpex_daily_quotes_2026-06-01_table-source_status.html">tpex_daily_quotes_2026-06-01</a> <small class="muted">行情</small></td>
+      <td data-status="ok"><span class="badge st-ok">正常</span>
+          </td>
+      <td>2026-11-10 11:31</td><td>2026-11-10 11:31（HTTP 200）</td>
+      <td>2026-06-01</td><td class="wrap">—</td>
+      <td>—</td>
+    </tr><tr id="src-tpex_daily_quotes_2026-06-02">
+      <td class="stack-h"><a href="../source/q_source_id-tpex_daily_quotes_2026-06-02_table-source_status.html">tpex_daily_quotes_2026-06-02</a> <small class="muted">行情</small></td>
+      <td data-status="ok"><span class="badge st-ok">正常</span>
+          </td>
+      <td>2026-11-10 11:32</td><td>2026-11-10 11:32（HTTP 200）</td>
+      <td>2026-06-02</td><td class="wrap">—</td>
+      <td>—</td>
+    </tr><tr id="src-tpex_daily_quotes_2026-06-03">
+      <td class="stack-h"><a href="../source/q_source_id-tpex_daily_quotes_2026-06-03_table-source_status.html">tpex_daily_quotes_2026-06-03</a> <small class="muted">行情</small></td>
+      <td data-status="ok"><span class="badge st-ok">正常</span>
+          </td>
+      <td>2026-11-10 11:32</td><td>2026-11-10 11:32（HTTP 200）</td>
+      <td>2026-06-03</td><td class="wrap">—</td>
+      <td>—</td>
+    </tr><tr id="src-tpex_daily_quotes_2026-06-04">
+      <td class="stack-h"><a href="../source/q_source_id-tpex_daily_quotes_2026-06-04_table-source_status.html">tpex_daily_quotes_2026-06-04</a> <small class="muted">行情</small></td>
+      <td data-status="ok"><span class="badge st-ok">正常</span>
+          </td>
+      <td>2026-11-10 11:32</td><td>2026-11-10 11:32（HTTP 200）</td>
+      <td>2026-06-04</td><td class="wrap">—</td>
+      <td>—</td>
+    </tr><tr id="src-tpex_daily_quotes_2026-06-05">
+      <td class="stack-h"><a href="../source/q_source_id-tpex_daily_quotes_2026-06-05_table-source_status.html">tpex_daily_quotes_2026-06-05</a> <small class="muted">行情</small></td>
+      <td data-status="ok"><span class="badge st-ok">正常</span>
+          </td>
+      <td>2026-11-10 11:32</td><td>2026-11-10 11:32（HTTP 200）</td>
+      <td>2026-06-05</td><td class="wrap">—</td>
+      <td>—</td>
+    </tr><tr id="src-tpex_daily_quotes_2026-06-08">
+      <td class="stack-h"><a href="../source/q_source_id-tpex_daily_quotes_2026-06-08_table-source_status.html">tpex_daily_quotes_2026-06-08</a> <small class="muted">行情</small></td>
+      <td data-status="ok"><span class="badge st-ok">正常</span>
+          </td>
+      <td>2026-11-10 11:32</td><td>2026-11-10 11:32（HTTP 200）</td>
+      <td>2026-06-08</td><td class="wrap">—</td>
+      <td>—</td>
+    </tr><tr id="src-tpex_daily_quotes_2026-06-09">
+      <td class="stack-h"><a href="../source/q_source_id-tpex_daily_quotes_2026-06-09_table-source_status.html">tpex_daily_quotes_2026-06-09</a> <small class="muted">行情</small></td>
+      <td data-status="ok"><span class="badge st-ok">正常</span>
+          </td>
+      <td>2026-11-10 11:33</td><td>2026-11-10 11:33（HTTP 200）</td>
+      <td>2026-06-09</td><td class="wrap">—</td>
+      <td>—</td>
+    </tr><tr id="src-tpex_daily_quotes_2026-06-10">
+      <td class="stack-h"><a href="../source/q_source_id-tpex_daily_quotes_2026-06-10_table-source_status.html">tpex_daily_quotes_2026-06-10</a> <small class="muted">行情</small></td>
+      <td data-status="ok"><span class="badge st-ok">正常</span>
+          </td>
+      <td>2026-11-10 11:33</td><td>2026-11-10 11:33（HTTP 200）</td>
+      <td>2026-06-10</td><td class="wrap">—</td>
+      <td>—</td>
+    </tr><tr id="src-tpex_daily_quotes_2026-06-11">
+      <td class="stack-h"><a href="../source/q_source_id-tpex_daily_quotes_2026-06-11_table-source_status.html">tpex_daily_quotes_2026-06-11</a> <small class="muted">行情</small></td>
+      <td data-status="ok"><span class="badge st-ok">正常</span>
+          </td>
+      <td>2026-11-10 11:33</td><td>2026-11-10 11:33（HTTP 200）</td>
+      <td>2026-06-11</td><td class="wrap">—</td>
+      <td>—</td>
+    </tr><tr id="src-tpex_daily_quotes_2026-06-12">
+      <td class="stack-h"><a href="../source/q_source_id-tpex_daily_quotes_2026-06-12_table-source_status.html">tpex_daily_quotes_2026-06-12</a> <small class="muted">行情</small></td>
+      <td data-status="ok"><span class="badge st-ok">正常</span>
+          </td>
+      <td>2026-11-10 11:34</td><td>2026-11-10 11:34（HTTP 200）</td>
+      <td>2026-06-12</td><td class="wrap">—</td>
+      <td>—</td>
+    </tr><tr id="src-tpex_daily_quotes_2026-06-15">
+      <td class="stack-h"><a href="../source/q_source_id-tpex_daily_quotes_2026-06-15_table-source_status.html">tpex_daily_quotes_2026-06-15</a> <small class="muted">行情</small></td>
+      <td data-status="ok"><span class="badge st-ok">正常</span>
+          </td>
+      <td>2026-11-10 11:34</td><td>2026-11-10 11:34（HTTP 200）</td>
+      <td>2026-06-15</td><td class="wrap">—</td>
+      <td>—</td>
+    </tr><tr id="src-tpex_daily_quotes_2026-06-16">
+      <td class="stack-h"><a href="../source/q_source_id-tpex_daily_quotes_2026-06-16_table-source_status.html">tpex_daily_quotes_2026-06-16</a> <small class="muted">行情</small></td>
+      <td data-status="ok"><span class="badge st-ok">正常</span>
+          </td>
+      <td>2026-11-10 11:34</td><td>2026-11-10 11:34（HTTP 200）</td>
+      <td>2026-06-16</td><td class="wrap">—</td>
+      <td>—</td>
+    </tr><tr id="src-tpex_daily_quotes_2026-11-03">
+      <td class="stack-h"><a href="../source/q_source_id-tpex_daily_quotes_2026-11-03_table-source_status.html">tpex_daily_quotes_2026-11-03</a> <small class="muted">行情</small></td>
+      <td data-status="ok"><span class="badge st-ok">正常</span>
+          </td>
+      <td>2026-11-10 11:13</td><td>2026-11-10 11:13（HTTP 200）</td>
+      <td>2026-11-03</td><td class="wrap">—</td>
+      <td>—</td>
+    </tr><tr id="src-tpex_daily_quotes_2026-11-04">
+      <td class="stack-h"><a href="../source/q_source_id-tpex_daily_quotes_2026-11-04_table-source_status.html">tpex_daily_quotes_2026-11-04</a> <small class="muted">行情</small></td>
+      <td data-status="ok"><span class="badge st-ok">正常</span>
+          </td>
+      <td>2026-11-10 11:14</td><td>2026-11-10 11:14（HTTP 200）</td>
+      <td>2026-11-04</td><td class="wrap">—</td>
+      <td>—</td>
+    </tr><tr id="src-tpex_daily_quotes_2026-11-05">
+      <td class="stack-h"><a href="../source/q_source_id-tpex_daily_quotes_2026-11-05_table-source_status.html">tpex_daily_quotes_2026-11-05</a> <small class="muted">行情</small></td>
+      <td data-status="ok"><span class="badge st-ok">正常</span>
+          </td>
+      <td>2026-11-10 11:09</td><td>2026-11-10 11:09（HTTP 200）</td>
+      <td>2026-11-05</td><td class="wrap">—</td>
+      <td>—</td>
+    </tr><tr id="src-tpex_daily_quotes_2026-11-06">
+      <td class="stack-h"><a href="../source/q_source_id-tpex_daily_quotes_2026-11-06_table-source_status.html">tpex_daily_quotes_2026-11-06</a> <small class="muted">行情</small></td>
+      <td data-status="ok"><span class="badge st-ok">正常</span>
+          </td>
+      <td>2026-11-10 11:14</td><td>2026-11-10 11:14（HTTP 200）</td>
+      <td>2026-11-06</td><td class="wrap">—</td>
+      <td>—</td>
+    </tr><tr id="src-tpex_daily_quotes_2026-11-09">
+      <td class="stack-h"><a href="../source/q_source_id-tpex_daily_quotes_2026-11-09_table-source_status.html">tpex_daily_quotes_2026-11-09</a> <small class="muted">行情</small></td>
+      <td data-status="ok"><span class="badge st-ok">正常</span>
+          </td>
+      <td>2026-11-10 11:10</td><td>2026-11-10 11:10（HTTP 200）</td>
+      <td>2026-11-09</td><td class="wrap">—</td>
       <td>—</td>
     </tr><tr id="src-tpex_exright">
       <td class="stack-h"><a href="../source/q_source_id-tpex_exright_table-source_status.html">tpex_exright</a> <small class="muted">除權息／減資</small></td>
       <td data-status="ok"><span class="badge st-ok">正常</span>
           </td>
-      <td>2026-11-10 07:40</td><td>2026-11-10 07:40（HTTP 200）</td>
-      <td>—</td><td class="wrap">資料期間 20251006～20261110</td>
+      <td>2026-11-17 09:34</td><td>2026-11-17 09:34（HTTP 200）</td>
+      <td>—</td><td class="wrap">資料期間 20251013～20261117</td>
       <td>—</td>
     </tr><tr id="src-tpex_index_summary">
       <td class="stack-h"><a href="../source/q_source_id-tpex_index_summary_table-source_status.html">tpex_index_summary</a> <small class="muted">其他</small></td>
       <td data-status="ok"><span class="badge st-ok">正常</span>
           </td>
-      <td>2026-11-10 07:41</td><td>2026-11-10 07:41（HTTP 200）</td>
-      <td>2026-11-09</td><td class="wrap">—</td>
+      <td>2026-11-17 09:35</td><td>2026-11-17 09:35（HTTP 200）</td>
+      <td>2026-11-16</td><td class="wrap">—</td>
       <td>—</td>
     </tr><tr id="src-tpex_pvChgRslt">
       <td class="stack-h"><a href="../source/q_source_id-tpex_pvChgRslt_table-source_status.html">tpex_pvChgRslt</a> <small class="muted">除權息／減資</small></td>
       <td data-status="ok"><span class="badge st-ok">正常</span>
           </td>
-      <td>2026-11-10 07:40</td><td>2026-11-10 07:40（HTTP 200）</td>
-      <td>—</td><td class="wrap">資料期間 20251006～20261110，5 列</td>
+      <td>2026-11-17 09:34</td><td>2026-11-17 09:34（HTTP 200）</td>
+      <td>—</td><td class="wrap">資料期間 20251013～20261117，5 列</td>
       <td>—</td>
     </tr><tr id="src-tpex_revivt">
       <td class="stack-h"><a href="../source/q_source_id-tpex_revivt_table-source_status.html">tpex_revivt</a> <small class="muted">除權息／減資</small></td>
       <td data-status="ok"><span class="badge st-ok">正常</span>
           </td>
-      <td>2026-11-10 07:40</td><td>2026-11-10 07:40（HTTP 200）</td>
-      <td>—</td><td class="wrap">資料期間 20251006～20261110，28 列</td>
+      <td>2026-11-17 09:34</td><td>2026-11-17 09:34（HTTP 200）</td>
+      <td>—</td><td class="wrap">資料期間 20251013～20261117，29 列</td>
       <td>—</td>
     </tr><tr id="src-tpex_spendi_history">
       <td class="stack-h"><a href="../source/q_source_id-tpex_spendi_history_table-source_status.html">tpex_spendi_history</a> <small class="muted">除權息／減資</small></td>
       <td data-status="ok"><span class="badge st-ok">正常</span>
           </td>
-      <td>2026-11-10 07:40</td><td>2026-11-10 07:40（HTTP 200）</td>
+      <td>2026-11-17 09:34</td><td>2026-11-17 09:34（HTTP 200）</td>
       <td>—</td><td class="wrap">—</td>
       <td>—</td>
     </tr><tr id="src-tpex_st41">
       <td class="stack-h"><a href="../source/q_source_id-tpex_st41_table-source_status.html">tpex_st41</a> <small class="muted">行情</small></td>
       <td data-status="ok"><span class="badge st-ok">正常</span>
           </td>
-      <td>2026-11-10 07:41</td><td>2026-11-10 07:41（HTTP 200）</td>
-      <td>2026-11-09</td><td class="wrap">—</td>
+      <td>2026-11-17 09:35</td><td>2026-11-17 09:35（HTTP 200）</td>
+      <td>2026-11-16</td><td class="wrap">—</td>
       <td>—</td>
     </tr><tr id="src-tpex_st41_calendar_xref">
       <td class="stack-h"><a href="../source/q_source_id-tpex_st41_calendar_xref_table-source_status.html">tpex_st41_calendar_xref</a> <small class="muted">行情</small></td>
       <td data-status="ok"><span class="badge st-ok">正常</span>
           </td>
-      <td>2026-11-10 07:35</td><td>2026-11-10 07:35（HTTP 200）</td>
+      <td>2026-11-17 09:24</td><td>2026-11-17 09:24（HTTP 200）</td>
       <td>2025-12-31</td><td class="wrap">櫃買 ST41 交易日 243 日</td>
       <td>—</td>
     </tr><tr id="src-tpex_trading_stock">
       <td class="stack-h"><a href="../source/q_source_id-tpex_trading_stock_table-source_status.html">tpex_trading_stock</a> <small class="muted">行情</small></td>
       <td data-status="ok"><span class="badge st-ok">正常</span>
           </td>
-      <td>2026-11-10 07:39</td><td>2026-11-10 07:39（HTTP 200）</td>
-      <td>2026-11-09</td><td class="wrap">—</td>
+      <td>2026-11-17 09:34</td><td>2026-11-17 09:34（HTTP 200）</td>
+      <td>2026-11-16</td><td class="wrap">—</td>
       <td>—</td>
     </tr><tr id="src-twse_fmtqik">
       <td class="stack-h"><a href="../source/q_source_id-twse_fmtqik_table-source_status.html">twse_fmtqik</a> <small class="muted">行情</small></td>
       <td data-status="ok"><span class="badge st-ok">正常</span>
           </td>
-      <td>2026-11-10 07:40</td><td>2026-11-10 07:40（HTTP 200）</td>
-      <td>2026-11-09</td><td class="wrap">—</td>
+      <td>2026-11-17 09:35</td><td>2026-11-17 09:35（HTTP 200）</td>
+      <td>2026-11-16</td><td class="wrap">—</td>
       <td>—</td>
     </tr><tr id="src-twse_fmtqik_calendar_xref">
       <td class="stack-h"><a href="../source/q_source_id-twse_fmtqik_calendar_xref_table-source_status.html">twse_fmtqik_calendar_xref</a> <small class="muted">行情</small></td>
       <td data-status="ok"><span class="badge st-ok">正常</span>
           </td>
-      <td>2026-11-10 07:35</td><td>2026-11-10 07:35（HTTP 200）</td>
-      <td>2025-12-31</td><td class="wrap">證交所 FMTQIK 交易日 209 日</td>
+      <td>2026-11-17 09:24</td><td>2026-11-17 09:24（HTTP 200）</td>
+      <td>2025-12-31</td><td class="wrap">證交所 FMTQIK 交易日 243 日</td>
       <td>—</td>
     </tr><tr id="src-twse_holiday">
       <td class="stack-h"><a href="../source/q_source_id-twse_holiday_table-source_status.html">twse_holiday</a> <small class="muted">基本資料／行事曆</small></td>
       <td data-status="ok"><span class="badge st-ok">正常</span>
           </td>
-      <td>2026-11-10 07:32</td><td>2026-11-10 07:32（HTTP 200）</td>
+      <td>2026-11-17 09:22</td><td>2026-11-17 09:22（HTTP 200）</td>
       <td>2025-01-01</td><td class="wrap">—</td>
+      <td>—</td>
+    </tr><tr id="src-twse_mi_index">
+      <td class="stack-h"><a href="../source/q_source_id-twse_mi_index_table-source_status.html">twse_mi_index</a> <small class="muted">行情</small></td>
+      <td data-status="ok"><span class="badge st-ok">正常</span>
+          </td>
+      <td>2026-11-10 11:34</td><td>2026-11-10 11:34（HTTP 200）</td>
+      <td>2026-06-16</td><td class="wrap">—</td>
+      <td>—</td>
+    </tr><tr id="src-twse_mi_index_2026-03-31">
+      <td class="stack-h"><a href="../source/q_source_id-twse_mi_index_2026-03-31_table-source_status.html">twse_mi_index_2026-03-31</a> <small class="muted">行情</small></td>
+      <td data-status="ok"><span class="badge st-ok">正常</span>
+          </td>
+      <td>2026-11-10 11:23</td><td>2026-11-10 11:23（HTTP 200）</td>
+      <td>2026-03-31</td><td class="wrap">—</td>
+      <td>—</td>
+    </tr><tr id="src-twse_mi_index_2026-04-01">
+      <td class="stack-h"><a href="../source/q_source_id-twse_mi_index_2026-04-01_table-source_status.html">twse_mi_index_2026-04-01</a> <small class="muted">行情</small></td>
+      <td data-status="ok"><span class="badge st-ok">正常</span>
+          </td>
+      <td>2026-11-10 11:23</td><td>2026-11-10 11:23（HTTP 200）</td>
+      <td>2026-04-01</td><td class="wrap">—</td>
+      <td>—</td>
+    </tr><tr id="src-twse_mi_index_2026-04-02">
+      <td class="stack-h"><a href="../source/q_source_id-twse_mi_index_2026-04-02_table-source_status.html">twse_mi_index_2026-04-02</a> <small class="muted">行情</small></td>
+      <td data-status="ok"><span class="badge st-ok">正常</span>
+          </td>
+      <td>2026-11-10 11:24</td><td>2026-11-10 11:24（HTTP 200）</td>
+      <td>2026-04-02</td><td class="wrap">—</td>
+      <td>—</td>
+    </tr><tr id="src-twse_mi_index_2026-04-07">
+      <td class="stack-h"><a href="../source/q_source_id-twse_mi_index_2026-04-07_table-source_status.html">twse_mi_index_2026-04-07</a> <small class="muted">行情</small></td>
+      <td data-status="ok"><span class="badge st-ok">正常</span>
+          </td>
+      <td>2026-11-10 11:24</td><td>2026-11-10 11:24（HTTP 200）</td>
+      <td>2026-04-07</td><td class="wrap">—</td>
+      <td>—</td>
+    </tr><tr id="src-twse_mi_index_2026-04-08">
+      <td class="stack-h"><a href="../source/q_source_id-twse_mi_index_2026-04-08_table-source_status.html">twse_mi_index_2026-04-08</a> <small class="muted">行情</small></td>
+      <td data-status="ok"><span class="badge st-ok">正常</span>
+          </td>
+      <td>2026-11-10 11:24</td><td>2026-11-10 11:24（HTTP 200）</td>
+      <td>2026-04-08</td><td class="wrap">—</td>
+      <td>—</td>
+    </tr><tr id="src-twse_mi_index_2026-04-09">
+      <td class="stack-h"><a href="../source/q_source_id-twse_mi_index_2026-04-09_table-source_status.html">twse_mi_index_2026-04-09</a> <small class="muted">行情</small></td>
+      <td data-status="ok"><span class="badge st-ok">正常</span>
+          </td>
+      <td>2026-11-10 11:24</td><td>2026-11-10 11:24（HTTP 200）</td>
+      <td>2026-04-09</td><td class="wrap">—</td>
+      <td>—</td>
+    </tr><tr id="src-twse_mi_index_2026-04-10">
+      <td class="stack-h"><a href="../source/q_source_id-twse_mi_index_2026-04-10_table-source_status.html">twse_mi_index_2026-04-10</a> <small class="muted">行情</small></td>
+      <td data-status="ok"><span class="badge st-ok">正常</span>
+          </td>
+      <td>2026-11-10 11:24</td><td>2026-11-10 11:24（HTTP 200）</td>
+      <td>2026-04-10</td><td class="wrap">—</td>
+      <td>—</td>
+    </tr><tr id="src-twse_mi_index_2026-04-13">
+      <td class="stack-h"><a href="../source/q_source_id-twse_mi_index_2026-04-13_table-source_status.html">twse_mi_index_2026-04-13</a> <small class="muted">行情</small></td>
+      <td data-status="ok"><span class="badge st-ok">正常</span>
+          </td>
+      <td>2026-11-10 11:24</td><td>2026-11-10 11:24（HTTP 200）</td>
+      <td>2026-04-13</td><td class="wrap">—</td>
+      <td>—</td>
+    </tr><tr id="src-twse_mi_index_2026-04-14">
+      <td class="stack-h"><a href="../source/q_source_id-twse_mi_index_2026-04-14_table-source_status.html">twse_mi_index_2026-04-14</a> <small class="muted">行情</small></td>
+      <td data-status="ok"><span class="badge st-ok">正常</span>
+          </td>
+      <td>2026-11-10 11:24</td><td>2026-11-10 11:24（HTTP 200）</td>
+      <td>2026-04-14</td><td class="wrap">—</td>
+      <td>—</td>
+    </tr><tr id="src-twse_mi_index_2026-04-15">
+      <td class="stack-h"><a href="../source/q_source_id-twse_mi_index_2026-04-15_table-source_status.html">twse_mi_index_2026-04-15</a> <small class="muted">行情</small></td>
+      <td data-status="ok"><span class="badge st-ok">正常</span>
+          </td>
+      <td>2026-11-10 11:25</td><td>2026-11-10 11:25（HTTP 200）</td>
+      <td>2026-04-15</td><td class="wrap">—</td>
+      <td>—</td>
+    </tr><tr id="src-twse_mi_index_2026-04-16">
+      <td class="stack-h"><a href="../source/q_source_id-twse_mi_index_2026-04-16_table-source_status.html">twse_mi_index_2026-04-16</a> <small class="muted">行情</small></td>
+      <td data-status="ok"><span class="badge st-ok">正常</span>
+          </td>
+      <td>2026-11-10 11:25</td><td>2026-11-10 11:25（HTTP 200）</td>
+      <td>2026-04-16</td><td class="wrap">—</td>
+      <td>—</td>
+    </tr><tr id="src-twse_mi_index_2026-04-17">
+      <td class="stack-h"><a href="../source/q_source_id-twse_mi_index_2026-04-17_table-source_status.html">twse_mi_index_2026-04-17</a> <small class="muted">行情</small></td>
+      <td data-status="ok"><span class="badge st-ok">正常</span>
+          </td>
+      <td>2026-11-10 11:25</td><td>2026-11-10 11:25（HTTP 200）</td>
+      <td>2026-04-17</td><td class="wrap">—</td>
+      <td>—</td>
+    </tr><tr id="src-twse_mi_index_2026-04-20">
+      <td class="stack-h"><a href="../source/q_source_id-twse_mi_index_2026-04-20_table-source_status.html">twse_mi_index_2026-04-20</a> <small class="muted">行情</small></td>
+      <td data-status="ok"><span class="badge st-ok">正常</span>
+          </td>
+      <td>2026-11-10 11:26</td><td>2026-11-10 11:26（HTTP 200）</td>
+      <td>2026-04-20</td><td class="wrap">—</td>
+      <td>—</td>
+    </tr><tr id="src-twse_mi_index_2026-04-21">
+      <td class="stack-h"><a href="../source/q_source_id-twse_mi_index_2026-04-21_table-source_status.html">twse_mi_index_2026-04-21</a> <small class="muted">行情</small></td>
+      <td data-status="ok"><span class="badge st-ok">正常</span>
+          </td>
+      <td>2026-11-10 11:26</td><td>2026-11-10 11:26（HTTP 200）</td>
+      <td>2026-04-21</td><td class="wrap">—</td>
+      <td>—</td>
+    </tr><tr id="src-twse_mi_index_2026-04-22">
+      <td class="stack-h"><a href="../source/q_source_id-twse_mi_index_2026-04-22_table-source_status.html">twse_mi_index_2026-04-22</a> <small class="muted">行情</small></td>
+      <td data-status="ok"><span class="badge st-ok">正常</span>
+          </td>
+      <td>2026-11-10 11:26</td><td>2026-11-10 11:26（HTTP 200）</td>
+      <td>2026-04-22</td><td class="wrap">—</td>
+      <td>—</td>
+    </tr><tr id="src-twse_mi_index_2026-04-23">
+      <td class="stack-h"><a href="../source/q_source_id-twse_mi_index_2026-04-23_table-source_status.html">twse_mi_index_2026-04-23</a> <small class="muted">行情</small></td>
+      <td data-status="ok"><span class="badge st-ok">正常</span>
+          </td>
+      <td>2026-11-10 11:26</td><td>2026-11-10 11:26（HTTP 200）</td>
+      <td>2026-04-23</td><td class="wrap">—</td>
+      <td>—</td>
+    </tr><tr id="src-twse_mi_index_2026-04-24">
+      <td class="stack-h"><a href="../source/q_source_id-twse_mi_index_2026-04-24_table-source_status.html">twse_mi_index_2026-04-24</a> <small class="muted">行情</small></td>
+      <td data-status="ok"><span class="badge st-ok">正常</span>
+          </td>
+      <td>2026-11-10 11:26</td><td>2026-11-10 11:26（HTTP 200）</td>
+      <td>2026-04-24</td><td class="wrap">—</td>
+      <td>—</td>
+    </tr><tr id="src-twse_mi_index_2026-04-27">
+      <td class="stack-h"><a href="../source/q_source_id-twse_mi_index_2026-04-27_table-source_status.html">twse_mi_index_2026-04-27</a> <small class="muted">行情</small></td>
+      <td data-status="ok"><span class="badge st-ok">正常</span>
+          </td>
+      <td>2026-11-10 11:26</td><td>2026-11-10 11:26（HTTP 200）</td>
+      <td>2026-04-27</td><td class="wrap">—</td>
+      <td>—</td>
+    </tr><tr id="src-twse_mi_index_2026-04-28">
+      <td class="stack-h"><a href="../source/q_source_id-twse_mi_index_2026-04-28_table-source_status.html">twse_mi_index_2026-04-28</a> <small class="muted">行情</small></td>
+      <td data-status="ok"><span class="badge st-ok">正常</span>
+          </td>
+      <td>2026-11-10 11:26</td><td>2026-11-10 11:26（HTTP 200）</td>
+      <td>2026-04-28</td><td class="wrap">—</td>
+      <td>—</td>
+    </tr><tr id="src-twse_mi_index_2026-04-29">
+      <td class="stack-h"><a href="../source/q_source_id-twse_mi_index_2026-04-29_table-source_status.html">twse_mi_index_2026-04-29</a> <small class="muted">行情</small></td>
+      <td data-status="ok"><span class="badge st-ok">正常</span>
+          </td>
+      <td>2026-11-10 11:27</td><td>2026-11-10 11:27（HTTP 200）</td>
+      <td>2026-04-29</td><td class="wrap">—</td>
+      <td>—</td>
+    </tr><tr id="src-twse_mi_index_2026-04-30">
+      <td class="stack-h"><a href="../source/q_source_id-twse_mi_index_2026-04-30_table-source_status.html">twse_mi_index_2026-04-30</a> <small class="muted">行情</small></td>
+      <td data-status="ok"><span class="badge st-ok">正常</span>
+          </td>
+      <td>2026-11-10 11:27</td><td>2026-11-10 11:27（HTTP 200）</td>
+      <td>2026-04-30</td><td class="wrap">—</td>
+      <td>—</td>
+    </tr><tr id="src-twse_mi_index_2026-05-04">
+      <td class="stack-h"><a href="../source/q_source_id-twse_mi_index_2026-05-04_table-source_status.html">twse_mi_index_2026-05-04</a> <small class="muted">行情</small></td>
+      <td data-status="ok"><span class="badge st-ok">正常</span>
+          </td>
+      <td>2026-11-10 11:27</td><td>2026-11-10 11:27（HTTP 200）</td>
+      <td>2026-05-04</td><td class="wrap">—</td>
+      <td>—</td>
+    </tr><tr id="src-twse_mi_index_2026-05-05">
+      <td class="stack-h"><a href="../source/q_source_id-twse_mi_index_2026-05-05_table-source_status.html">twse_mi_index_2026-05-05</a> <small class="muted">行情</small></td>
+      <td data-status="ok"><span class="badge st-ok">正常</span>
+          </td>
+      <td>2026-11-10 11:27</td><td>2026-11-10 11:27（HTTP 200）</td>
+      <td>2026-05-05</td><td class="wrap">—</td>
+      <td>—</td>
+    </tr><tr id="src-twse_mi_index_2026-05-06">
+      <td class="stack-h"><a href="../source/q_source_id-twse_mi_index_2026-05-06_table-source_status.html">twse_mi_index_2026-05-06</a> <small class="muted">行情</small></td>
+      <td data-status="ok"><span class="badge st-ok">正常</span>
+          </td>
+      <td>2026-11-10 11:27</td><td>2026-11-10 11:27（HTTP 200）</td>
+      <td>2026-05-06</td><td class="wrap">—</td>
+      <td>—</td>
+    </tr><tr id="src-twse_mi_index_2026-05-07">
+      <td class="stack-h"><a href="../source/q_source_id-twse_mi_index_2026-05-07_table-source_status.html">twse_mi_index_2026-05-07</a> <small class="muted">行情</small></td>
+      <td data-status="ok"><span class="badge st-ok">正常</span>
+          </td>
+      <td>2026-11-10 11:27</td><td>2026-11-10 11:27（HTTP 200）</td>
+      <td>2026-05-07</td><td class="wrap">—</td>
+      <td>—</td>
+    </tr><tr id="src-twse_mi_index_2026-05-08">
+      <td class="stack-h"><a href="../source/q_source_id-twse_mi_index_2026-05-08_table-source_status.html">twse_mi_index_2026-05-08</a> <small class="muted">行情</small></td>
+      <td data-status="ok"><span class="badge st-ok">正常</span>
+          </td>
+      <td>2026-11-10 11:27</td><td>2026-11-10 11:27（HTTP 200）</td>
+      <td>2026-05-08</td><td class="wrap">—</td>
+      <td>—</td>
+    </tr><tr id="src-twse_mi_index_2026-05-11">
+      <td class="stack-h"><a href="../source/q_source_id-twse_mi_index_2026-05-11_table-source_status.html">twse_mi_index_2026-05-11</a> <small class="muted">行情</small></td>
+      <td data-status="ok"><span class="badge st-ok">正常</span>
+          </td>
+      <td>2026-11-10 11:28</td><td>2026-11-10 11:28（HTTP 200）</td>
+      <td>2026-05-11</td><td class="wrap">—</td>
+      <td>—</td>
+    </tr><tr id="src-twse_mi_index_2026-05-12">
+      <td class="stack-h"><a href="../source/q_source_id-twse_mi_index_2026-05-12_table-source_status.html">twse_mi_index_2026-05-12</a> <small class="muted">行情</small></td>
+      <td data-status="ok"><span class="badge st-ok">正常</span>
+          </td>
+      <td>2026-11-10 11:28</td><td>2026-11-10 11:28（HTTP 200）</td>
+      <td>2026-05-12</td><td class="wrap">—</td>
+      <td>—</td>
+    </tr><tr id="src-twse_mi_index_2026-05-13">
+      <td class="stack-h"><a href="../source/q_source_id-twse_mi_index_2026-05-13_table-source_status.html">twse_mi_index_2026-05-13</a> <small class="muted">行情</small></td>
+      <td data-status="ok"><span class="badge st-ok">正常</span>
+          </td>
+      <td>2026-11-10 11:28</td><td>2026-11-10 11:28（HTTP 200）</td>
+      <td>2026-05-13</td><td class="wrap">—</td>
+      <td>—</td>
+    </tr><tr id="src-twse_mi_index_2026-05-14">
+      <td class="stack-h"><a href="../source/q_source_id-twse_mi_index_2026-05-14_table-source_status.html">twse_mi_index_2026-05-14</a> <small class="muted">行情</small></td>
+      <td data-status="ok"><span class="badge st-ok">正常</span>
+          </td>
+      <td>2026-11-10 11:28</td><td>2026-11-10 11:28（HTTP 200）</td>
+      <td>2026-05-14</td><td class="wrap">—</td>
+      <td>—</td>
+    </tr><tr id="src-twse_mi_index_2026-05-15">
+      <td class="stack-h"><a href="../source/q_source_id-twse_mi_index_2026-05-15_table-source_status.html">twse_mi_index_2026-05-15</a> <small class="muted">行情</small></td>
+      <td data-status="ok"><span class="badge st-ok">正常</span>
+          </td>
+      <td>2026-11-10 11:28</td><td>2026-11-10 11:28（HTTP 200）</td>
+      <td>2026-05-15</td><td class="wrap">—</td>
+      <td>—</td>
+    </tr><tr id="src-twse_mi_index_2026-05-18">
+      <td class="stack-h"><a href="../source/q_source_id-twse_mi_index_2026-05-18_table-source_status.html">twse_mi_index_2026-05-18</a> <small class="muted">行情</small></td>
+      <td data-status="ok"><span class="badge st-ok">正常</span>
+          </td>
+      <td>2026-11-10 11:28</td><td>2026-11-10 11:28（HTTP 200）</td>
+      <td>2026-05-18</td><td class="wrap">—</td>
+      <td>—</td>
+    </tr><tr id="src-twse_mi_index_2026-05-19">
+      <td class="stack-h"><a href="../source/q_source_id-twse_mi_index_2026-05-19_table-source_status.html">twse_mi_index_2026-05-19</a> <small class="muted">行情</small></td>
+      <td data-status="ok"><span class="badge st-ok">正常</span>
+          </td>
+      <td>2026-11-10 11:29</td><td>2026-11-10 11:29（HTTP 200）</td>
+      <td>2026-05-19</td><td class="wrap">—</td>
+      <td>—</td>
+    </tr><tr id="src-twse_mi_index_2026-05-20">
+      <td class="stack-h"><a href="../source/q_source_id-twse_mi_index_2026-05-20_table-source_status.html">twse_mi_index_2026-05-20</a> <small class="muted">行情</small></td>
+      <td data-status="ok"><span class="badge st-ok">正常</span>
+          </td>
+      <td>2026-11-10 11:29</td><td>2026-11-10 11:29（HTTP 200）</td>
+      <td>2026-05-20</td><td class="wrap">—</td>
+      <td>—</td>
+    </tr><tr id="src-twse_mi_index_2026-05-21">
+      <td class="stack-h"><a href="../source/q_source_id-twse_mi_index_2026-05-21_table-source_status.html">twse_mi_index_2026-05-21</a> <small class="muted">行情</small></td>
+      <td data-status="ok"><span class="badge st-ok">正常</span>
+          </td>
+      <td>2026-11-10 11:29</td><td>2026-11-10 11:29（HTTP 200）</td>
+      <td>2026-05-21</td><td class="wrap">—</td>
+      <td>—</td>
+    </tr><tr id="src-twse_mi_index_2026-05-22">
+      <td class="stack-h"><a href="../source/q_source_id-twse_mi_index_2026-05-22_table-source_status.html">twse_mi_index_2026-05-22</a> <small class="muted">行情</small></td>
+      <td data-status="ok"><span class="badge st-ok">正常</span>
+          </td>
+      <td>2026-11-10 11:29</td><td>2026-11-10 11:29（HTTP 200）</td>
+      <td>2026-05-22</td><td class="wrap">—</td>
+      <td>—</td>
+    </tr><tr id="src-twse_mi_index_2026-05-25">
+      <td class="stack-h"><a href="../source/q_source_id-twse_mi_index_2026-05-25_table-source_status.html">twse_mi_index_2026-05-25</a> <small class="muted">行情</small></td>
+      <td data-status="ok"><span class="badge st-ok">正常</span>
+          </td>
+      <td>2026-11-10 11:29</td><td>2026-11-10 11:29（HTTP 200）</td>
+      <td>2026-05-25</td><td class="wrap">—</td>
+      <td>—</td>
+    </tr><tr id="src-twse_mi_index_2026-05-26">
+      <td class="stack-h"><a href="../source/q_source_id-twse_mi_index_2026-05-26_table-source_status.html">twse_mi_index_2026-05-26</a> <small class="muted">行情</small></td>
+      <td data-status="ok"><span class="badge st-ok">正常</span>
+          </td>
+      <td>2026-11-10 11:30</td><td>2026-11-10 11:30（HTTP 200）</td>
+      <td>2026-05-26</td><td class="wrap">—</td>
+      <td>—</td>
+    </tr><tr id="src-twse_mi_index_2026-05-27">
+      <td class="stack-h"><a href="../source/q_source_id-twse_mi_index_2026-05-27_table-source_status.html">twse_mi_index_2026-05-27</a> <small class="muted">行情</small></td>
+      <td data-status="ok"><span class="badge st-ok">正常</span>
+          </td>
+      <td>2026-11-10 11:31</td><td>2026-11-10 11:31（HTTP 200）</td>
+      <td>2026-05-27</td><td class="wrap">—</td>
+      <td>—</td>
+    </tr><tr id="src-twse_mi_index_2026-05-28">
+      <td class="stack-h"><a href="../source/q_source_id-twse_mi_index_2026-05-28_table-source_status.html">twse_mi_index_2026-05-28</a> <small class="muted">行情</small></td>
+      <td data-status="ok"><span class="badge st-ok">正常</span>
+          </td>
+      <td>2026-11-10 11:31</td><td>2026-11-10 11:31（HTTP 200）</td>
+      <td>2026-05-28</td><td class="wrap">—</td>
+      <td>—</td>
+    </tr><tr id="src-twse_mi_index_2026-05-29">
+      <td class="stack-h"><a href="../source/q_source_id-twse_mi_index_2026-05-29_table-source_status.html">twse_mi_index_2026-05-29</a> <small class="muted">行情</small></td>
+      <td data-status="ok"><span class="badge st-ok">正常</span>
+          </td>
+      <td>2026-11-10 11:31</td><td>2026-11-10 11:31（HTTP 200）</td>
+      <td>2026-05-29</td><td class="wrap">—</td>
+      <td>—</td>
+    </tr><tr id="src-twse_mi_index_2026-06-01">
+      <td class="stack-h"><a href="../source/q_source_id-twse_mi_index_2026-06-01_table-source_status.html">twse_mi_index_2026-06-01</a> <small class="muted">行情</small></td>
+      <td data-status="ok"><span class="badge st-ok">正常</span>
+          </td>
+      <td>2026-11-10 11:31</td><td>2026-11-10 11:31（HTTP 200）</td>
+      <td>2026-06-01</td><td class="wrap">—</td>
+      <td>—</td>
+    </tr><tr id="src-twse_mi_index_2026-06-02">
+      <td class="stack-h"><a href="../source/q_source_id-twse_mi_index_2026-06-02_table-source_status.html">twse_mi_index_2026-06-02</a> <small class="muted">行情</small></td>
+      <td data-status="ok"><span class="badge st-ok">正常</span>
+          </td>
+      <td>2026-11-10 11:31</td><td>2026-11-10 11:31（HTTP 200）</td>
+      <td>2026-06-02</td><td class="wrap">—</td>
+      <td>—</td>
+    </tr><tr id="src-twse_mi_index_2026-06-03">
+      <td class="stack-h"><a href="../source/q_source_id-twse_mi_index_2026-06-03_table-source_status.html">twse_mi_index_2026-06-03</a> <small class="muted">行情</small></td>
+      <td data-status="ok"><span class="badge st-ok">正常</span>
+          </td>
+      <td>2026-11-10 11:32</td><td>2026-11-10 11:32（HTTP 200）</td>
+      <td>2026-06-03</td><td class="wrap">—</td>
+      <td>—</td>
+    </tr><tr id="src-twse_mi_index_2026-06-04">
+      <td class="stack-h"><a href="../source/q_source_id-twse_mi_index_2026-06-04_table-source_status.html">twse_mi_index_2026-06-04</a> <small class="muted">行情</small></td>
+      <td data-status="ok"><span class="badge st-ok">正常</span>
+          </td>
+      <td>2026-11-10 11:32</td><td>2026-11-10 11:32（HTTP 200）</td>
+      <td>2026-06-04</td><td class="wrap">—</td>
+      <td>—</td>
+    </tr><tr id="src-twse_mi_index_2026-06-05">
+      <td class="stack-h"><a href="../source/q_source_id-twse_mi_index_2026-06-05_table-source_status.html">twse_mi_index_2026-06-05</a> <small class="muted">行情</small></td>
+      <td data-status="ok"><span class="badge st-ok">正常</span>
+          </td>
+      <td>2026-11-10 11:32</td><td>2026-11-10 11:32（HTTP 200）</td>
+      <td>2026-06-05</td><td class="wrap">—</td>
+      <td>—</td>
+    </tr><tr id="src-twse_mi_index_2026-06-08">
+      <td class="stack-h"><a href="../source/q_source_id-twse_mi_index_2026-06-08_table-source_status.html">twse_mi_index_2026-06-08</a> <small class="muted">行情</small></td>
+      <td data-status="ok"><span class="badge st-ok">正常</span>
+          </td>
+      <td>2026-11-10 11:32</td><td>2026-11-10 11:32（HTTP 200）</td>
+      <td>2026-06-08</td><td class="wrap">—</td>
+      <td>—</td>
+    </tr><tr id="src-twse_mi_index_2026-06-09">
+      <td class="stack-h"><a href="../source/q_source_id-twse_mi_index_2026-06-09_table-source_status.html">twse_mi_index_2026-06-09</a> <small class="muted">行情</small></td>
+      <td data-status="ok"><span class="badge st-ok">正常</span>
+          </td>
+      <td>2026-11-10 11:32</td><td>2026-11-10 11:32（HTTP 200）</td>
+      <td>2026-06-09</td><td class="wrap">—</td>
+      <td>—</td>
+    </tr><tr id="src-twse_mi_index_2026-06-10">
+      <td class="stack-h"><a href="../source/q_source_id-twse_mi_index_2026-06-10_table-source_status.html">twse_mi_index_2026-06-10</a> <small class="muted">行情</small></td>
+      <td data-status="ok"><span class="badge st-ok">正常</span>
+          </td>
+      <td>2026-11-10 11:33</td><td>2026-11-10 11:33（HTTP 200）</td>
+      <td>2026-06-10</td><td class="wrap">—</td>
+      <td>—</td>
+    </tr><tr id="src-twse_mi_index_2026-06-11">
+      <td class="stack-h"><a href="../source/q_source_id-twse_mi_index_2026-06-11_table-source_status.html">twse_mi_index_2026-06-11</a> <small class="muted">行情</small></td>
+      <td data-status="ok"><span class="badge st-ok">正常</span>
+          </td>
+      <td>2026-11-10 11:33</td><td>2026-11-10 11:33（HTTP 200）</td>
+      <td>2026-06-11</td><td class="wrap">—</td>
+      <td>—</td>
+    </tr><tr id="src-twse_mi_index_2026-06-12">
+      <td class="stack-h"><a href="../source/q_source_id-twse_mi_index_2026-06-12_table-source_status.html">twse_mi_index_2026-06-12</a> <small class="muted">行情</small></td>
+      <td data-status="ok"><span class="badge st-ok">正常</span>
+          </td>
+      <td>2026-11-10 11:33</td><td>2026-11-10 11:33（HTTP 200）</td>
+      <td>2026-06-12</td><td class="wrap">—</td>
+      <td>—</td>
+    </tr><tr id="src-twse_mi_index_2026-06-15">
+      <td class="stack-h"><a href="../source/q_source_id-twse_mi_index_2026-06-15_table-source_status.html">twse_mi_index_2026-06-15</a> <small class="muted">行情</small></td>
+      <td data-status="ok"><span class="badge st-ok">正常</span>
+          </td>
+      <td>2026-11-10 11:34</td><td>2026-11-10 11:34（HTTP 200）</td>
+      <td>2026-06-15</td><td class="wrap">—</td>
+      <td>—</td>
+    </tr><tr id="src-twse_mi_index_2026-06-16">
+      <td class="stack-h"><a href="../source/q_source_id-twse_mi_index_2026-06-16_table-source_status.html">twse_mi_index_2026-06-16</a> <small class="muted">行情</small></td>
+      <td data-status="ok"><span class="badge st-ok">正常</span>
+          </td>
+      <td>2026-11-10 11:34</td><td>2026-11-10 11:34（HTTP 200）</td>
+      <td>2026-06-16</td><td class="wrap">—</td>
+      <td>—</td>
+    </tr><tr id="src-twse_mi_index_2026-11-03">
+      <td class="stack-h"><a href="../source/q_source_id-twse_mi_index_2026-11-03_table-source_status.html">twse_mi_index_2026-11-03</a> <small class="muted">行情</small></td>
+      <td data-status="ok"><span class="badge st-ok">正常</span>
+          </td>
+      <td>2026-11-10 11:13</td><td>2026-11-10 11:13（HTTP 200）</td>
+      <td>2026-11-03</td><td class="wrap">—</td>
+      <td>—</td>
+    </tr><tr id="src-twse_mi_index_2026-11-04">
+      <td class="stack-h"><a href="../source/q_source_id-twse_mi_index_2026-11-04_table-source_status.html">twse_mi_index_2026-11-04</a> <small class="muted">行情</small></td>
+      <td data-status="ok"><span class="badge st-ok">正常</span>
+          </td>
+      <td>2026-11-10 11:14</td><td>2026-11-10 11:14（HTTP 200）</td>
+      <td>2026-11-04</td><td class="wrap">—</td>
+      <td>—</td>
+    </tr><tr id="src-twse_mi_index_2026-11-05">
+      <td class="stack-h"><a href="../source/q_source_id-twse_mi_index_2026-11-05_table-source_status.html">twse_mi_index_2026-11-05</a> <small class="muted">行情</small></td>
+      <td data-status="ok"><span class="badge st-ok">正常</span>
+          </td>
+      <td>2026-11-10 11:09</td><td>2026-11-10 11:09（HTTP 200）</td>
+      <td>2026-11-05</td><td class="wrap">—</td>
+      <td>—</td>
+    </tr><tr id="src-twse_mi_index_2026-11-06">
+      <td class="stack-h"><a href="../source/q_source_id-twse_mi_index_2026-11-06_table-source_status.html">twse_mi_index_2026-11-06</a> <small class="muted">行情</small></td>
+      <td data-status="ok"><span class="badge st-ok">正常</span>
+          </td>
+      <td>2026-11-10 11:14</td><td>2026-11-10 11:14（HTTP 200）</td>
+      <td>2026-11-06</td><td class="wrap">—</td>
+      <td>—</td>
+    </tr><tr id="src-twse_mi_index_2026-11-09">
+      <td class="stack-h"><a href="../source/q_source_id-twse_mi_index_2026-11-09_table-source_status.html">twse_mi_index_2026-11-09</a> <small class="muted">行情</small></td>
+      <td data-status="ok"><span class="badge st-ok">正常</span>
+          </td>
+      <td>2026-11-10 11:10</td><td>2026-11-10 11:10（HTTP 200）</td>
+      <td>2026-11-09</td><td class="wrap">—</td>
       <td>—</td>
     </tr><tr id="src-twse_mi_index_ind">
       <td class="stack-h"><a href="../source/q_source_id-twse_mi_index_ind_table-source_status.html">twse_mi_index_ind</a> <small class="muted">行情</small></td>
       <td data-status="ok"><span class="badge st-ok">正常</span>
           </td>
-      <td>2026-11-10 07:41</td><td>2026-11-10 07:41（HTTP 200）</td>
-      <td>2026-11-09</td><td class="wrap">—</td>
+      <td>2026-11-17 09:35</td><td>2026-11-17 09:35（HTTP 200）</td>
+      <td>2026-11-16</td><td class="wrap">—</td>
       <td>—</td>
     </tr><tr id="src-twse_stock_day">
       <td class="stack-h"><a href="../source/q_source_id-twse_stock_day_table-source_status.html">twse_stock_day</a> <small class="muted">行情</small></td>
       <td data-status="ok"><span class="badge st-ok">正常</span>
           </td>
-      <td>2026-11-10 07:38</td><td>2026-11-10 07:38（HTTP 200）</td>
-      <td>2026-11-09</td><td class="wrap">—</td>
+      <td>2026-11-17 09:32</td><td>2026-11-17 09:32（HTTP 200）</td>
+      <td>2026-11-16</td><td class="wrap">—</td>
       <td>—</td>
     </tr><tr id="src-twse_twt49u">
       <td class="stack-h"><a href="../source/q_source_id-twse_twt49u_table-source_status.html">twse_twt49u</a> <small class="muted">除權息／減資</small></td>
       <td data-status="ok"><span class="badge st-ok">正常</span>
           </td>
-      <td>2026-11-10 07:39</td><td>2026-11-10 07:39（HTTP 200）</td>
+      <td>2026-11-17 09:34</td><td>2026-11-17 09:34（HTTP 200）</td>
       <td>—</td><td class="wrap">—</td>
       <td>—</td>
     </tr><tr id="src-twse_twtauu">
       <td class="stack-h"><a href="../source/q_source_id-twse_twtauu_table-source_status.html">twse_twtauu</a> <small class="muted">除權息／減資</small></td>
       <td data-status="ok"><span class="badge st-ok">正常</span>
           </td>
-      <td>2026-11-10 07:39</td><td>2026-11-10 07:39（HTTP 200）</td>
-      <td>—</td><td class="wrap">114年10月06日 至 115年11月10日 股票減資恢復買賣參考價格</td>
+      <td>2026-11-17 09:34</td><td>2026-11-17 09:34（HTTP 200）</td>
+      <td>—</td><td class="wrap">114年10月13日 至 115年11月17日 股票減資恢復買賣參考價格</td>
       <td>—</td>
     </tr><tr id="src-twse_twtawu">
       <td class="stack-h"><a href="../source/q_source_id-twse_twtawu_table-source_status.html">twse_twtawu</a> <small class="muted">除權息／減資</small></td>
       <td data-status="ok"><span class="badge st-ok">正常</span>
           </td>
-      <td>2026-11-10 07:40</td><td>2026-11-10 07:40（HTTP 200）</td>
+      <td>2026-11-17 09:34</td><td>2026-11-17 09:34（HTTP 200）</td>
       <td>—</td><td class="wrap">—</td>
       <td>—</td>
     </tr><tr id="src-twse_twtb8u">
       <td class="stack-h"><a href="../source/q_source_id-twse_twtb8u_table-source_status.html">twse_twtb8u</a> <small class="muted">除權息／減資</small></td>
       <td data-status="ok"><span class="badge st-ok">正常</span>
           </td>
-      <td>2026-11-10 07:40</td><td>2026-11-10 07:40（HTTP 200）</td>
+      <td>2026-11-17 09:34</td><td>2026-11-17 09:34（HTTP 200）</td>
       <td>—</td><td class="wrap">變更股票面額恢復買賣參考價格</td>
       <td>—</td>
     </tr></tbody>
@@ -989,7 +1829,19 @@
   
   <div class="table-wrap stack-wrap" tabindex="0" role="region" aria-label="工作紀錄表"><table class="data stack">
     <thead><tr><th>#</th><th>工作</th><th>結果</th><th>開始</th><th>完成</th><th>資料日期</th><th>範圍</th><th>成功</th><th>失敗</th><th>重試</th><th>錯誤摘要</th></tr></thead>
-    <tbody><tr id="job-15">
+    <tbody><tr id="job-17">
+      <td class="stack-h"><a href="../source/q_run_id-17_table-job_runs.html">17</a></td><td>daily</td>
+      <td><span class="badge st-ok">成功</span></td>
+      <td>2026-11-17 09:20</td><td>2026-11-17 09:45</td><td>2026-11-17</td><td>sample30</td>
+      <td class="wrap"><details class="items-fold"><summary>11 項：calendar、securities、universes、prices、analysis、corp、halts、indices、revenue、financials、material</summary><ul class="errs"><li>calendar</li><li>securities:{&#39;twse_common&#39;: 1058, &#39;tpex_common&#39;: 898, &#39;excluded&#39;: 55203}</li><li>universes:{&#39;all:TPEx&#39;: 898, &#39;all:TWSE&#39;: 1058, &#39;sample30:TPEx&#39;: 10, &#39;sample30:TWSE&#39;: 20}</li><li>prices:[&#39;2330:5&#39;, &#39;2317:5&#39;, &#39;2454:5&#39;, &#39;2308:5&#39;, &#39;2412:5&#39;, &#39;2881:5&#39;, &#39;2882:5&#39;, &#39;2801:5&#39;, &#39;1301:5&#39;, &#39;6505:5&#39;, &#39;2002:5&#39;, &#39;1101:5&#39;, &#39;1216:5&#39;, &#39;2912:5&#39;, &#39;2207:5&#39;, &#39;2603:5&#39;, &#39;3008:5&#39;, &#39;2357:5&#39;, &#39;3711:5&#39;, &#39;9910:5&#39;, &#39;6488:5&#39;, &#39;5347:5&#39;, &#39;8299:5&#39;, &#39;3105:5&#39;, &#39;3293:5&#39;, &#39;8069:5&#39;, &#39;5483:5&#39;, &#39;5274:5&#39;, &#39;6547:5&#39;, &#39;4105:5&#39;]:days=5</li><li>analysis:{&#39;inserted&#39;: 30, &#39;versioned&#39;: 0, &#39;skipped&#39;: 0, &#39;dropped_columns&#39;: [], &#39;as_of&#39;: &#39;2026-11-16&#39;, &#39;n_pass&#39;: 0, &#39;screen_run_id&#39;: 17}</li><li>corp:{&#39;twse_ex&#39;: 25, &#39;twse_cr_restore&#39;: 0, &#39;twse_par_value&#39;: 0, &#39;tpex_ex&#39;: 13, &#39;tpex_cr_restore&#39;: 0, &#39;tpex_par_value&#39;: 0, &#39;mops_div_enrich&#39;: {&#39;filled&#39;: 0, &#39;failed&#39;: [], &#39;skipped&#39;: 0}}</li><li>halts:{&#39;twse&#39;: 478, &#39;tpex&#39;: 183}</li><li>indices:{&#39;twse&#39;: 154, &#39;tpex&#39;: 154, &#39;failed&#39;: [], &#39;derived&#39;: {&#39;TAIEX&#39;: 5, &#39;TPEX&#39;: 5}, &#39;official_pct&#39;: {&#39;twse&#39;: 1, &#39;tpex&#39;: 1, &#39;failed&#39;: []}}</li><li>revenue:months=2:target=2</li><li>financials:skipped_on_daily</li><li>material:rows=242:days=7</li></ul></details></td><td class="wrap">—</td>
+      <td>0</td><td class="wrap">—</td>
+    </tr><tr id="job-16">
+      <td class="stack-h"><a href="../source/q_run_id-16_table-job_runs.html">16</a></td><td>evening</td>
+      <td><span class="badge st-insufficient">interrupted</span></td>
+      <td>2026-11-10 11:15</td><td>2026-11-10 11:34</td><td>2026-11-10</td><td>all</td>
+      <td class="wrap">—</td><td class="wrap">—</td>
+      <td>0</td><td class="wrap">interrupted for priority fix (review-r1 §6-2/3)；prices checkpoint last=2026-06-16 done_days=58；resume via same command</td>
+    </tr><tr id="job-15">
       <td class="stack-h"><a href="../source/q_run_id-15_table-job_runs.html">15</a></td><td>daily</td>
       <td><span class="badge st-source_down">部分成功</span></td>
       <td>2026-11-10 07:30</td><td>2026-11-10 07:45</td><td>2026-11-10</td><td>sample30</td>
@@ -1007,7 +1859,12 @@
       <td>2026-11-10 06:56</td><td>2026-11-10 07:08</td><td>2026-11-10</td><td>sample30</td>
       <td class="wrap"><details class="items-fold"><summary>10 項：calendar、securities、prices、analysis、corp、halts、indices、revenue、financials、material</summary><ul class="errs"><li>calendar</li><li>securities:{&#39;twse_common&#39;: 1058, &#39;tpex_common&#39;: 897, &#39;excluded&#39;: 54235}</li><li>prices:[&#39;2330:5&#39;, &#39;2317:5&#39;, &#39;2454:5&#39;, &#39;2308:5&#39;, &#39;2412:5&#39;, &#39;2881:5&#39;, &#39;2882:5&#39;, &#39;2801:5&#39;, &#39;1301:5&#39;, &#39;6505:5&#39;, &#39;2002:5&#39;, &#39;1101:5&#39;, &#39;1216:5&#39;, &#39;2912:5&#39;, &#39;2207:5&#39;, &#39;2603:5&#39;, &#39;3008:5&#39;, &#39;2357:5&#39;, &#39;3711:5&#39;, &#39;9910:5&#39;, &#39;6488:5&#39;, &#39;5347:5&#39;, &#39;8299:5&#39;, &#39;3105:5&#39;, &#39;3293:5&#39;, &#39;8069:5&#39;, &#39;5483:5&#39;, &#39;5274:5&#39;, &#39;6547:5&#39;, &#39;4105:5&#39;]:days=5</li><li>analysis:{&#39;inserted&#39;: 0, &#39;versioned&#39;: 30, &#39;skipped&#39;: 0, &#39;dropped_columns&#39;: [], &#39;as_of&#39;: &#39;2026-11-09&#39;, &#39;n_pass&#39;: 0, &#39;screen_run_id&#39;: 13}</li><li>corp:{&#39;twse_ex&#39;: 25, &#39;twse_cr_restore&#39;: 0, &#39;twse_par_value&#39;: 0, &#39;tpex_ex&#39;: 13, &#39;tpex_cr_restore&#39;: 0, &#39;tpex_par_value&#39;: 0, &#39;mops_div_enrich&#39;: {&#39;filled&#39;: 0, &#39;failed&#39;: [], &#39;skipped&#39;: 0}}</li><li>halts:{&#39;twse&#39;: 477, &#39;tpex&#39;: 181}</li><li>indices:{&#39;twse&#39;: 149, &#39;tpex&#39;: 149, &#39;failed&#39;: [], &#39;derived&#39;: {&#39;TAIEX&#39;: 0, &#39;TPEX&#39;: 0}, &#39;official_pct&#39;: {&#39;twse&#39;: 1, &#39;tpex&#39;: 1, &#39;failed&#39;: []}}</li><li>revenue:months=2:target=2</li><li>financials:skipped_on_daily</li><li>material:rows=120:days=7</li></ul></details></td><td class="wrap">—</td>
       <td>0</td><td class="wrap">12 檔營收僅 35 月（目標&gt;=36）：2330、2454、2412、2881、2882、2002、1101、1216、2912、2207、3711、6547</td>
-    </tr><tr id="job-12">
+    </tr></tbody>
+  </table></div>
+  <details class="src-ok-fold" data-testid="jobs-fold"><summary>較早的 12 筆（其中 11 筆失敗或部分完成）</summary>
+  <div class="table-wrap stack-wrap" tabindex="0" role="region" aria-label="工作紀錄表（較早）"><table class="data stack">
+    <thead><tr><th>#</th><th>工作</th><th>結果</th><th>開始</th><th>完成</th><th>資料日期</th><th>範圍</th><th>成功</th><th>失敗</th><th>重試</th><th>錯誤摘要</th></tr></thead>
+    <tbody><tr id="job-12">
       <td class="stack-h"><a href="../source/q_run_id-12_table-job_runs.html">12</a></td><td>evening</td>
       <td><span class="badge st-source_down">部分成功</span></td>
       <td>2026-11-10 06:04</td><td>2026-11-10 06:44</td><td>2026-11-10</td><td>sample30</td>
@@ -1019,12 +1876,7 @@
       <td>2026-11-10 05:51</td><td>2026-11-10 06:03</td><td>2026-11-10</td><td>sample30</td>
       <td class="wrap"><details class="items-fold"><summary>10 項：calendar、securities、prices、analysis、corp、halts、indices、revenue、financials、material</summary><ul class="errs"><li>calendar</li><li>securities:{&#39;twse_common&#39;: 1058, &#39;tpex_common&#39;: 897, &#39;excluded&#39;: 54778}</li><li>prices:[&#39;2330:5&#39;, &#39;2317:5&#39;, &#39;2454:5&#39;, &#39;2308:5&#39;, &#39;2412:5&#39;, &#39;2881:5&#39;, &#39;2882:5&#39;, &#39;2801:5&#39;, &#39;1301:5&#39;, &#39;6505:5&#39;, &#39;2002:5&#39;, &#39;1101:5&#39;, &#39;1216:5&#39;, &#39;2912:5&#39;, &#39;2207:5&#39;, &#39;2603:5&#39;, &#39;3008:5&#39;, &#39;2357:5&#39;, &#39;3711:5&#39;, &#39;9910:5&#39;, &#39;6488:5&#39;, &#39;5347:5&#39;, &#39;8299:5&#39;, &#39;3105:5&#39;, &#39;3293:5&#39;, &#39;8069:5&#39;, &#39;5483:5&#39;, &#39;5274:5&#39;, &#39;6547:5&#39;, &#39;4105:5&#39;]:days=5</li><li>analysis:{&#39;inserted&#39;: 0, &#39;versioned&#39;: 0, &#39;skipped&#39;: 30, &#39;dropped_columns&#39;: [], &#39;as_of&#39;: &#39;2026-11-09&#39;, &#39;n_pass&#39;: 0, &#39;screen_run_id&#39;: 11}</li><li>corp:{&#39;twse_ex&#39;: 25, &#39;twse_cr_restore&#39;: 0, &#39;twse_par_value&#39;: 0, &#39;tpex_ex&#39;: 13, &#39;tpex_cr_restore&#39;: 0, &#39;tpex_par_value&#39;: 0, &#39;mops_div_enrich&#39;: {&#39;filled&#39;: 0, &#39;failed&#39;: [], &#39;skipped&#39;: 0}}</li><li>halts:{&#39;twse&#39;: 477, &#39;tpex&#39;: 181}</li><li>indices:{&#39;twse&#39;: 149, &#39;tpex&#39;: 149, &#39;failed&#39;: [], &#39;derived&#39;: {&#39;TAIEX&#39;: 0, &#39;TPEX&#39;: 0}, &#39;official_pct&#39;: {&#39;twse&#39;: 1, &#39;tpex&#39;: 1, &#39;failed&#39;: []}}</li><li>revenue:months=2:target=2</li><li>financials:skipped_on_daily</li><li>material:rows=120:days=7</li></ul></details></td><td class="wrap">—</td>
       <td>0</td><td class="wrap">12 檔營收僅 35 月（目標&gt;=36）：2330、2454、2412、2881、2882、2002、1101、1216、2912、2207、3711、6547</td>
-    </tr></tbody>
-  </table></div>
-  <details class="src-ok-fold" data-testid="jobs-fold"><summary>較早的 10 筆（其中 9 筆失敗或部分完成）</summary>
-  <div class="table-wrap stack-wrap" tabindex="0" role="region" aria-label="工作紀錄表（較早）"><table class="data stack">
-    <thead><tr><th>#</th><th>工作</th><th>結果</th><th>開始</th><th>完成</th><th>資料日期</th><th>範圍</th><th>成功</th><th>失敗</th><th>重試</th><th>錯誤摘要</th></tr></thead>
-    <tbody><tr id="job-10">
+    </tr><tr id="job-10">
       <td class="stack-h"><a href="../source/q_run_id-10_table-job_runs.html">10</a></td><td>daily</td>
       <td><span class="badge st-source_down">部分成功</span></td>
       <td>2026-11-10 05:40</td><td>2026-11-10 05:51</td><td>2026-11-10</td><td>sample30</td>
@@ -1091,14 +1943,14 @@
 <section class="card" id="excluded">
   <h2>排除名單 <small>securities_excluded（非普通股）</small></h2>
   
-  <p>清單日 2026-11-10，共 54,778 檔：</p>
-  <p class="excl-cats" data-testid="excl-cats"><span class="badge st-insufficient">權證／牛熊 54,313</span><span class="badge st-insufficient">ETF／ETN／主動式 386</span><span class="badge st-insufficient">創新板（第一版排除） 31</span><span class="badge st-insufficient">特別股 28</span><span class="badge st-insufficient">TDR 10</span><span class="badge st-insufficient">受益證券 6</span><span class="badge st-insufficient">非普通股 4</span></p>
+  <p>清單日 2026-11-17，共 55,203 檔：</p>
+  <p class="excl-cats" data-testid="excl-cats"><span class="badge st-insufficient">權證／牛熊 54,736</span><span class="badge st-insufficient">ETF／ETN／主動式 388</span><span class="badge st-insufficient">創新板（第一版排除） 31</span><span class="badge st-insufficient">特別股 28</span><span class="badge st-insufficient">TDR 10</span><span class="badge st-insufficient">受益證券 6</span><span class="badge st-insufficient">非普通股 4</span></p>
 <details class="excl-cfi"><summary>依 CFI 代碼細分（36 種）</summary>
-<p class="excl-cats"><span class="badge st-insufficient">CFI=CBCIXU 受益證券 6</span><span class="badge st-insufficient">CFI=CEOGBU ETF／ETN／主動式 10</span><span class="badge st-insufficient">CFI=CEOGCU ETF／ETN／主動式 2</span><span class="badge st-insufficient">CFI=CEOGDU ETF／ETN／主動式 33</span><span class="badge st-insufficient">CFI=CEOGEU ETF／ETN／主動式 80</span><span class="badge st-insufficient">CFI=CEOGMU ETF／ETN／主動式 3</span><span class="badge st-insufficient">CFI=CEOIBU ETF／ETN／主動式 84</span><span class="badge st-insufficient">CFI=CEOIEU ETF／ETN／主動式 109</span><span class="badge st-insufficient">CFI=CEOILU ETF／ETN／主動式 1</span><span class="badge st-insufficient">CFI=CEOIRU ETF／ETN／主動式 1</span><span class="badge st-insufficient">CFI=CEOJBU ETF／ETN／主動式 20</span><span class="badge st-insufficient">CFI=CEOJEU ETF／ETN／主動式 19</span><span class="badge st-insufficient">CFI=CEOJLU ETF／ETN／主動式 4</span><span class="badge st-insufficient">CFI=CMXXXU ETF／ETN／主動式 20</span><span class="badge st-insufficient">CFI=DAFUFR 非普通股 4</span><span class="badge st-insufficient">CFI=EDSDDR TDR 10</span><span class="badge st-insufficient">CFI=EFNRAR 特別股 1</span><span class="badge st-insufficient">CFI=EPNCAR 特別股 1</span><span class="badge st-insufficient">CFI=EPNNFB 特別股 1</span><span class="badge st-insufficient">CFI=EPNRAR 特別股 16</span><span class="badge st-insufficient">CFI=EPNRCR 特別股 1</span><span class="badge st-insufficient">CFI=EPNRFR 特別股 1</span><span class="badge st-insufficient">CFI=EPNRQR 特別股 1</span><span class="badge st-insufficient">CFI=EPNTAR 特別股 3</span><span class="badge st-insufficient">CFI=EPRNAR 特別股 1</span><span class="badge st-insufficient">CFI=EPRRAR 特別股 1</span><span class="badge st-insufficient">CFI=EPRRQR 特別股 1</span><span class="badge st-insufficient">CFI=RWBCCA 權證／牛熊 1,966</span><span class="badge st-insufficient">CFI=RWBCCE 權證／牛熊 452</span><span class="badge st-insufficient">CFI=RWBCPE 權證／牛熊 513</span><span class="badge st-insufficient">CFI=RWICCE 權證／牛熊 523</span><span class="badge st-insufficient">CFI=RWICPE 權證／牛熊 383</span><span class="badge st-insufficient">CFI=RWSCCA 權證／牛熊 43,948</span><span class="badge st-insufficient">CFI=RWSCCE 權證／牛熊 4,500</span><span class="badge st-insufficient">CFI=RWSCPE 權證／牛熊 2,028</span><span class="badge st-insufficient">創新板（第一版排除） 31</span></p></details>
+<p class="excl-cats"><span class="badge st-insufficient">CFI=CBCIXU 受益證券 6</span><span class="badge st-insufficient">CFI=CEOGBU ETF／ETN／主動式 10</span><span class="badge st-insufficient">CFI=CEOGCU ETF／ETN／主動式 2</span><span class="badge st-insufficient">CFI=CEOGDU ETF／ETN／主動式 33</span><span class="badge st-insufficient">CFI=CEOGEU ETF／ETN／主動式 80</span><span class="badge st-insufficient">CFI=CEOGMU ETF／ETN／主動式 3</span><span class="badge st-insufficient">CFI=CEOIBU ETF／ETN／主動式 84</span><span class="badge st-insufficient">CFI=CEOIEU ETF／ETN／主動式 111</span><span class="badge st-insufficient">CFI=CEOILU ETF／ETN／主動式 1</span><span class="badge st-insufficient">CFI=CEOIRU ETF／ETN／主動式 1</span><span class="badge st-insufficient">CFI=CEOJBU ETF／ETN／主動式 20</span><span class="badge st-insufficient">CFI=CEOJEU ETF／ETN／主動式 19</span><span class="badge st-insufficient">CFI=CEOJLU ETF／ETN／主動式 4</span><span class="badge st-insufficient">CFI=CMXXXU ETF／ETN／主動式 20</span><span class="badge st-insufficient">CFI=DAFUFR 非普通股 4</span><span class="badge st-insufficient">CFI=EDSDDR TDR 10</span><span class="badge st-insufficient">CFI=EFNRAR 特別股 1</span><span class="badge st-insufficient">CFI=EPNCAR 特別股 1</span><span class="badge st-insufficient">CFI=EPNNFB 特別股 1</span><span class="badge st-insufficient">CFI=EPNRAR 特別股 16</span><span class="badge st-insufficient">CFI=EPNRCR 特別股 1</span><span class="badge st-insufficient">CFI=EPNRFR 特別股 1</span><span class="badge st-insufficient">CFI=EPNRQR 特別股 1</span><span class="badge st-insufficient">CFI=EPNTAR 特別股 3</span><span class="badge st-insufficient">CFI=EPRNAR 特別股 1</span><span class="badge st-insufficient">CFI=EPRRAR 特別股 1</span><span class="badge st-insufficient">CFI=EPRRQR 特別股 1</span><span class="badge st-insufficient">CFI=RWBCCA 權證／牛熊 1,950</span><span class="badge st-insufficient">CFI=RWBCCE 權證／牛熊 467</span><span class="badge st-insufficient">CFI=RWBCPE 權證／牛熊 499</span><span class="badge st-insufficient">CFI=RWICCE 權證／牛熊 538</span><span class="badge st-insufficient">CFI=RWICPE 權證／牛熊 385</span><span class="badge st-insufficient">CFI=RWSCCA 權證／牛熊 44,266</span><span class="badge st-insufficient">CFI=RWSCCE 權證／牛熊 4,614</span><span class="badge st-insufficient">CFI=RWSCPE 權證／牛熊 2,017</span><span class="badge st-insufficient">創新板（第一版排除） 31</span></p></details>
   <details><summary>明細（前 100 檔）</summary>
   <div class="table-wrap stack-wrap"><table class="data stack">
     <thead><tr><th>代號</th><th>名稱</th><th>市場</th><th>CFI</th><th>排除原因</th><th>清單日</th></tr></thead>
-    <tbody><tr><td class="stack-h"><a href="../source/q_0b3882a90b53fc96.html">01001T</a></td><td>土銀富邦R1</td><td>TWSE</td><td>CBCIXU</td><td>CFI=CBCIXU 受益證券</td><td>2026-11-10</td></tr><tr><td class="stack-h"><a href="../source/q_4b718d4913050462.html">01002T</a></td><td>土銀國泰R1</td><td>TWSE</td><td>CBCIXU</td><td>CFI=CBCIXU 受益證券</td><td>2026-11-10</td></tr><tr><td class="stack-h"><a href="../source/q_a90029e1dc1aaaaf.html">01004T</a></td><td>土銀富邦R2</td><td>TWSE</td><td>CBCIXU</td><td>CFI=CBCIXU 受益證券</td><td>2026-11-10</td></tr><tr><td class="stack-h"><a href="../source/q_7f952ffcece9c613.html">01007T</a></td><td>兆豐國泰R2</td><td>TWSE</td><td>CBCIXU</td><td>CFI=CBCIXU 受益證券</td><td>2026-11-10</td></tr><tr><td class="stack-h"><a href="../source/q_610502cb70b524ac.html">01009T</a></td><td>王道圓滿R1</td><td>TWSE</td><td>CBCIXU</td><td>CFI=CBCIXU 受益證券</td><td>2026-11-10</td></tr><tr><td class="stack-h"><a href="../source/q_a9380bf78e72af84.html">01010T</a></td><td>京城樂富R1</td><td>TWSE</td><td>CBCIXU</td><td>CFI=CBCIXU 受益證券</td><td>2026-11-10</td></tr><tr><td class="stack-h"><a href="../source/q_a0fac4a03632cb79.html">00687C</a></td><td>國泰20年美債+櫃U</td><td>TPEx</td><td>CEOGBU</td><td>CFI=CEOGBU ETF／ETN／主動式</td><td>2026-11-10</td></tr><tr><td class="stack-h"><a href="../source/q_2a1c3792d1dd2e8f.html">00688L</a></td><td>國泰20年美債正2</td><td>TWSE</td><td>CEOGBU</td><td>CFI=CEOGBU ETF／ETN／主動式</td><td>2026-11-10</td></tr><tr><td class="stack-h"><a href="../source/q_68a24b46594838cb.html">00689R</a></td><td>國泰20年美債反1</td><td>TWSE</td><td>CEOGBU</td><td>CFI=CEOGBU ETF／ETN／主動式</td><td>2026-11-10</td></tr><tr><td class="stack-h"><a href="../source/q_7db0523e97248b4d.html">00694B</a></td><td>富邦美債1-3年</td><td>TPEx</td><td>CEOGBU</td><td>CFI=CEOGBU ETF／ETN／主動式</td><td>2026-11-10</td></tr><tr><td class="stack-h"><a href="../source/q_d96259458d50bf61.html">00695B</a></td><td>富邦美債7-10年</td><td>TPEx</td><td>CEOGBU</td><td>CFI=CEOGBU ETF／ETN／主動式</td><td>2026-11-10</td></tr><tr><td class="stack-h"><a href="../source/q_06d6b3c00b66d8a6.html">00696B</a></td><td>富邦美債20年</td><td>TPEx</td><td>CEOGBU</td><td>CFI=CEOGBU ETF／ETN／主動式</td><td>2026-11-10</td></tr><tr><td class="stack-h"><a href="../source/q_56a2ec7554055fcb.html">00697B</a></td><td>元大美債7-10</td><td>TPEx</td><td>CEOGBU</td><td>CFI=CEOGBU ETF／ETN／主動式</td><td>2026-11-10</td></tr><tr><td class="stack-h"><a href="../source/q_64b240cc79b9f8ca.html">00768B</a></td><td>復華20年美債</td><td>TPEx</td><td>CEOGBU</td><td>CFI=CEOGBU ETF／ETN／主動式</td><td>2026-11-10</td></tr><tr><td class="stack-h"><a href="../source/q_bb864ca98f369858.html">00864B</a></td><td>中信美國公債0-1</td><td>TPEx</td><td>CEOGBU</td><td>CFI=CEOGBU ETF／ETN／主動式</td><td>2026-11-10</td></tr><tr><td class="stack-h"><a href="../source/q_64848a54176a6ade.html">00865B</a></td><td>國泰US短期公債</td><td>TWSE</td><td>CEOGBU</td><td>CFI=CEOGBU ETF／ETN／主動式</td><td>2026-11-10</td></tr><tr><td class="stack-h"><a href="../source/q_82f33f13e98d97d6.html">00693U</a></td><td>期街口S&amp;P黃豆</td><td>TWSE</td><td>CEOGCU</td><td>CFI=CEOGCU ETF／ETN／主動式</td><td>2026-11-10</td></tr><tr><td class="stack-h"><a href="../source/q_2ca0eda41a37cef6.html">00738U</a></td><td>期元大道瓊白銀</td><td>TWSE</td><td>CEOGCU</td><td>CFI=CEOGCU ETF／ETN／主動式</td><td>2026-11-10</td></tr><tr><td class="stack-h"><a href="../source/q_641ccfd241de0558.html">00631L</a></td><td>元大台灣50正2</td><td>TWSE</td><td>CEOGDU</td><td>CFI=CEOGDU ETF／ETN／主動式</td><td>2026-11-10</td></tr><tr><td class="stack-h"><a href="../source/q_392bceb09adea240.html">00632R</a></td><td>元大台灣50反1</td><td>TWSE</td><td>CEOGDU</td><td>CFI=CEOGDU ETF／ETN／主動式</td><td>2026-11-10</td></tr><tr><td class="stack-h"><a href="../source/q_72505f55de004fed.html">00633L</a></td><td>富邦上証正2</td><td>TWSE</td><td>CEOGDU</td><td>CFI=CEOGDU ETF／ETN／主動式</td><td>2026-11-10</td></tr><tr><td class="stack-h"><a href="../source/q_f79b899bd834a541.html">00634R</a></td><td>富邦上証反1</td><td>TWSE</td><td>CEOGDU</td><td>CFI=CEOGDU ETF／ETN／主動式</td><td>2026-11-10</td></tr><tr><td class="stack-h"><a href="../source/q_61ef7bf770365c5f.html">00635U</a></td><td>期元大S&amp;P黃金</td><td>TWSE</td><td>CEOGDU</td><td>CFI=CEOGDU ETF／ETN／主動式</td><td>2026-11-10</td></tr><tr><td class="stack-h"><a href="../source/q_0a6208b8754e0cec.html">00637L</a></td><td>元大滬深300正2</td><td>TWSE</td><td>CEOGDU</td><td>CFI=CEOGDU ETF／ETN／主動式</td><td>2026-11-10</td></tr><tr><td class="stack-h"><a href="../source/q_71f130e68d61bc1d.html">00638R</a></td><td>元大滬深300反1</td><td>TWSE</td><td>CEOGDU</td><td>CFI=CEOGDU ETF／ETN／主動式</td><td>2026-11-10</td></tr><tr><td class="stack-h"><a href="../source/q_1f3bcdd484635990.html">00640L</a></td><td>富邦日本正2</td><td>TWSE</td><td>CEOGDU</td><td>CFI=CEOGDU ETF／ETN／主動式</td><td>2026-11-10</td></tr><tr><td class="stack-h"><a href="../source/q_35660ce973872398.html">00641R</a></td><td>富邦日本反1</td><td>TWSE</td><td>CEOGDU</td><td>CFI=CEOGDU ETF／ETN／主動式</td><td>2026-11-10</td></tr><tr><td class="stack-h"><a href="../source/q_f73a71cc558cf017.html">00642U</a></td><td>期元大S&amp;P石油</td><td>TWSE</td><td>CEOGDU</td><td>CFI=CEOGDU ETF／ETN／主動式</td><td>2026-11-10</td></tr><tr><td class="stack-h"><a href="../source/q_56ace6b2e08283a5.html">00647L</a></td><td>元大S&amp;P500正2</td><td>TWSE</td><td>CEOGDU</td><td>CFI=CEOGDU ETF／ETN／主動式</td><td>2026-11-10</td></tr><tr><td class="stack-h"><a href="../source/q_8d79b7af901f8a0e.html">00648R</a></td><td>元大S&amp;P500反1</td><td>TWSE</td><td>CEOGDU</td><td>CFI=CEOGDU ETF／ETN／主動式</td><td>2026-11-10</td></tr><tr><td class="stack-h"><a href="../source/q_4c8a255d3f1a4956.html">00650L</a></td><td>復華香港正2</td><td>TWSE</td><td>CEOGDU</td><td>CFI=CEOGDU ETF／ETN／主動式</td><td>2026-11-10</td></tr><tr><td class="stack-h"><a href="../source/q_464a973b5127270e.html">00651R</a></td><td>復華香港反1</td><td>TWSE</td><td>CEOGDU</td><td>CFI=CEOGDU ETF／ETN／主動式</td><td>2026-11-10</td></tr><tr><td class="stack-h"><a href="../source/q_2d3babb74634adc4.html">00655L</a></td><td>國泰中國A50正2</td><td>TWSE</td><td>CEOGDU</td><td>CFI=CEOGDU ETF／ETN／主動式</td><td>2026-11-10</td></tr><tr><td class="stack-h"><a href="../source/q_b9ac3b68aad3deb9.html">00656R</a></td><td>國泰中國A50反1</td><td>TWSE</td><td>CEOGDU</td><td>CFI=CEOGDU ETF／ETN／主動式</td><td>2026-11-10</td></tr><tr><td class="stack-h"><a href="../source/q_832401e7e04a0c2f.html">00663L</a></td><td>國泰臺灣加權正2</td><td>TWSE</td><td>CEOGDU</td><td>CFI=CEOGDU ETF／ETN／主動式</td><td>2026-11-10</td></tr><tr><td class="stack-h"><a href="../source/q_92150bbf5cca828b.html">00664R</a></td><td>國泰臺灣加權反1</td><td>TWSE</td><td>CEOGDU</td><td>CFI=CEOGDU ETF／ETN／主動式</td><td>2026-11-10</td></tr><tr><td class="stack-h"><a href="../source/q_23b4b0f38e29d0a5.html">00665L</a></td><td>富邦恒生國企正2</td><td>TWSE</td><td>CEOGDU</td><td>CFI=CEOGDU ETF／ETN／主動式</td><td>2026-11-10</td></tr><tr><td class="stack-h"><a href="../source/q_8077bb1b98d82a61.html">00666R</a></td><td>富邦恒生國企反1</td><td>TWSE</td><td>CEOGDU</td><td>CFI=CEOGDU ETF／ETN／主動式</td><td>2026-11-10</td></tr><tr><td class="stack-h"><a href="../source/q_ff440ecde6c3e5e9.html">00670L</a></td><td>富邦NASDAQ正2</td><td>TWSE</td><td>CEOGDU</td><td>CFI=CEOGDU ETF／ETN／主動式</td><td>2026-11-10</td></tr><tr><td class="stack-h"><a href="../source/q_321457ca2b6a47cb.html">00671R</a></td><td>富邦NASDAQ反1</td><td>TWSE</td><td>CEOGDU</td><td>CFI=CEOGDU ETF／ETN／主動式</td><td>2026-11-10</td></tr><tr><td class="stack-h"><a href="../source/q_161b65358d8e07f0.html">00673R</a></td><td>期元大S&amp;P原油反1</td><td>TWSE</td><td>CEOGDU</td><td>CFI=CEOGDU ETF／ETN／主動式</td><td>2026-11-10</td></tr><tr><td class="stack-h"><a href="../source/q_34146a40424d22ff.html">00674R</a></td><td>期元大S&amp;P黃金反1</td><td>TWSE</td><td>CEOGDU</td><td>CFI=CEOGDU ETF／ETN／主動式</td><td>2026-11-10</td></tr><tr><td class="stack-h"><a href="../source/q_0fd21ca1bc85fc97.html">00675L</a></td><td>富邦臺灣加權正2</td><td>TWSE</td><td>CEOGDU</td><td>CFI=CEOGDU ETF／ETN／主動式</td><td>2026-11-10</td></tr><tr><td class="stack-h"><a href="../source/q_e0101d3da010a38d.html">00676R</a></td><td>富邦臺灣加權反1</td><td>TWSE</td><td>CEOGDU</td><td>CFI=CEOGDU ETF／ETN／主動式</td><td>2026-11-10</td></tr><tr><td class="stack-h"><a href="../source/q_6ef12d77648f94b7.html">00680L</a></td><td>元大美債20正2</td><td>TWSE</td><td>CEOGDU</td><td>CFI=CEOGDU ETF／ETN／主動式</td><td>2026-11-10</td></tr><tr><td class="stack-h"><a href="../source/q_a162085e6b767186.html">00681R</a></td><td>元大美債20反1</td><td>TWSE</td><td>CEOGDU</td><td>CFI=CEOGDU ETF／ETN／主動式</td><td>2026-11-10</td></tr><tr><td class="stack-h"><a href="../source/q_32a87fa316831a0a.html">00706L</a></td><td>期元大S&amp;P日圓正2</td><td>TWSE</td><td>CEOGDU</td><td>CFI=CEOGDU ETF／ETN／主動式</td><td>2026-11-10</td></tr><tr><td class="stack-h"><a href="../source/q_8922e27d36dad45a.html">00707R</a></td><td>期元大S&amp;P日圓反1</td><td>TWSE</td><td>CEOGDU</td><td>CFI=CEOGDU ETF／ETN／主動式</td><td>2026-11-10</td></tr><tr><td class="stack-h"><a href="../source/q_461c6d4778f9cf24.html">00708L</a></td><td>期元大S&amp;P黃金正2</td><td>TWSE</td><td>CEOGDU</td><td>CFI=CEOGDU ETF／ETN／主動式</td><td>2026-11-10</td></tr><tr><td class="stack-h"><a href="../source/q_14295274232a70b8.html">00715L</a></td><td>期街口S&amp;P布蘭特油正2</td><td>TWSE</td><td>CEOGDU</td><td>CFI=CEOGDU ETF／ETN／主動式</td><td>2026-11-10</td></tr><tr><td class="stack-h"><a href="../source/q_3f8012649104eb9e.html">00763U</a></td><td>期街口道瓊銅</td><td>TWSE</td><td>CEOGDU</td><td>CFI=CEOGDU ETF／ETN／主動式</td><td>2026-11-10</td></tr><tr><td class="stack-h"><a href="../source/q_23983ce2c4d2358a.html">00407A</a></td><td>主動凱基台灣</td><td>TWSE</td><td>CEOGEU</td><td>CFI=CEOGEU ETF／ETN／主動式</td><td>2026-11-10</td></tr><tr><td class="stack-h"><a href="../source/q_1bddfbbc30112793.html">00412A</a></td><td>主動安聯亞半導體</td><td>TWSE</td><td>CEOGEU</td><td>CFI=CEOGEU ETF／ETN／主動式</td><td>2026-11-10</td></tr><tr><td class="stack-h"><a href="../source/q_6ca0d8a98837fa37.html">00418A</a></td><td>主動復華台灣新星</td><td>TWSE</td><td>CEOGEU</td><td>CFI=CEOGEU ETF／ETN／主動式</td><td>2026-11-10</td></tr><tr><td class="stack-h"><a href="../source/q_80fcf568455d499b.html">0050</a></td><td>元大台灣50</td><td>TWSE</td><td>CEOGEU</td><td>CFI=CEOGEU ETF／ETN／主動式</td><td>2026-11-10</td></tr><tr><td class="stack-h"><a href="../source/q_51f1414e998fbeb0.html">0051</a></td><td>元大中型100</td><td>TWSE</td><td>CEOGEU</td><td>CFI=CEOGEU ETF／ETN／主動式</td><td>2026-11-10</td></tr><tr><td class="stack-h"><a href="../source/q_2905442f6bcd2e81.html">0052</a></td><td>富邦科技</td><td>TWSE</td><td>CEOGEU</td><td>CFI=CEOGEU ETF／ETN／主動式</td><td>2026-11-10</td></tr><tr><td class="stack-h"><a href="../source/q_e20b53f1c9976398.html">0053</a></td><td>元大科技市值</td><td>TWSE</td><td>CEOGEU</td><td>CFI=CEOGEU ETF／ETN／主動式</td><td>2026-11-10</td></tr><tr><td class="stack-h"><a href="../source/q_9d81ba2f4da45fd7.html">0055</a></td><td>元大MSCI金融</td><td>TWSE</td><td>CEOGEU</td><td>CFI=CEOGEU ETF／ETN／主動式</td><td>2026-11-10</td></tr><tr><td class="stack-h"><a href="../source/q_bf5130e9f1eb407d.html">0056</a></td><td>元大高股息</td><td>TWSE</td><td>CEOGEU</td><td>CFI=CEOGEU ETF／ETN／主動式</td><td>2026-11-10</td></tr><tr><td class="stack-h"><a href="../source/q_c7f06426f3ad4150.html">0057</a></td><td>富邦摩台</td><td>TWSE</td><td>CEOGEU</td><td>CFI=CEOGEU ETF／ETN／主動式</td><td>2026-11-10</td></tr><tr><td class="stack-h"><a href="../source/q_34c08d40adbcc68b.html">0061</a></td><td>元大寶滬深</td><td>TWSE</td><td>CEOGEU</td><td>CFI=CEOGEU ETF／ETN／主動式</td><td>2026-11-10</td></tr><tr><td class="stack-h"><a href="../source/q_a45dd56e9397b542.html">006201</a></td><td>元大富櫃50</td><td>TPEx</td><td>CEOGEU</td><td>CFI=CEOGEU ETF／ETN／主動式</td><td>2026-11-10</td></tr><tr><td class="stack-h"><a href="../source/q_85b9529b67e7b18b.html">006203</a></td><td>元大MSCI台灣</td><td>TWSE</td><td>CEOGEU</td><td>CFI=CEOGEU ETF／ETN／主動式</td><td>2026-11-10</td></tr><tr><td class="stack-h"><a href="../source/q_40d55f9b19abcf51.html">006204</a></td><td>永豐臺灣加權</td><td>TWSE</td><td>CEOGEU</td><td>CFI=CEOGEU ETF／ETN／主動式</td><td>2026-11-10</td></tr><tr><td class="stack-h"><a href="../source/q_1b2ccd42369a9d9c.html">006205</a></td><td>富邦上証</td><td>TWSE</td><td>CEOGEU</td><td>CFI=CEOGEU ETF／ETN／主動式</td><td>2026-11-10</td></tr><tr><td class="stack-h"><a href="../source/q_8211657e3273ef34.html">006206</a></td><td>元大上證50</td><td>TWSE</td><td>CEOGEU</td><td>CFI=CEOGEU ETF／ETN／主動式</td><td>2026-11-10</td></tr><tr><td class="stack-h"><a href="../source/q_60b26c105f3c3b99.html">006207</a></td><td>復華滬深</td><td>TWSE</td><td>CEOGEU</td><td>CFI=CEOGEU ETF／ETN／主動式</td><td>2026-11-10</td></tr><tr><td class="stack-h"><a href="../source/q_e144d898362182c4.html">006208</a></td><td>富邦台50</td><td>TWSE</td><td>CEOGEU</td><td>CFI=CEOGEU ETF／ETN／主動式</td><td>2026-11-10</td></tr><tr><td class="stack-h"><a href="../source/q_cfb870bd5a7b3cfe.html">00625K</a></td><td>富邦上証+R</td><td>TWSE</td><td>CEOGEU</td><td>CFI=CEOGEU ETF／ETN／主動式</td><td>2026-11-10</td></tr><tr><td class="stack-h"><a href="../source/q_618f10ce6ad7109a.html">00636</a></td><td>國泰中國A50</td><td>TWSE</td><td>CEOGEU</td><td>CFI=CEOGEU ETF／ETN／主動式</td><td>2026-11-10</td></tr><tr><td class="stack-h"><a href="../source/q_26dbd77a340b9616.html">00636K</a></td><td>國泰中國A50+U</td><td>TWSE</td><td>CEOGEU</td><td>CFI=CEOGEU ETF／ETN／主動式</td><td>2026-11-10</td></tr><tr><td class="stack-h"><a href="../source/q_63857eec531c2927.html">00639</a></td><td>富邦深100</td><td>TWSE</td><td>CEOGEU</td><td>CFI=CEOGEU ETF／ETN／主動式</td><td>2026-11-10</td></tr><tr><td class="stack-h"><a href="../source/q_159d660d58ff939c.html">00643</a></td><td>群益深証中小</td><td>TWSE</td><td>CEOGEU</td><td>CFI=CEOGEU ETF／ETN／主動式</td><td>2026-11-10</td></tr><tr><td class="stack-h"><a href="../source/q_5871b0313ee875e1.html">00643K</a></td><td>群益深証中小+R</td><td>TWSE</td><td>CEOGEU</td><td>CFI=CEOGEU ETF／ETN／主動式</td><td>2026-11-10</td></tr><tr><td class="stack-h"><a href="../source/q_0cbcf41e606744b9.html">00645</a></td><td>富邦日本</td><td>TWSE</td><td>CEOGEU</td><td>CFI=CEOGEU ETF／ETN／主動式</td><td>2026-11-10</td></tr><tr><td class="stack-h"><a href="../source/q_c6b7fe4ec76a468d.html">00646</a></td><td>元大S&amp;P500</td><td>TWSE</td><td>CEOGEU</td><td>CFI=CEOGEU ETF／ETN／主動式</td><td>2026-11-10</td></tr><tr><td class="stack-h"><a href="../source/q_b37ceaf26b6c9c28.html">00652</a></td><td>富邦印度</td><td>TWSE</td><td>CEOGEU</td><td>CFI=CEOGEU ETF／ETN／主動式</td><td>2026-11-10</td></tr><tr><td class="stack-h"><a href="../source/q_457497f80c22c4ae.html">00653L</a></td><td>富邦印度正2</td><td>TWSE</td><td>CEOGEU</td><td>CFI=CEOGEU ETF／ETN／主動式</td><td>2026-11-10</td></tr><tr><td class="stack-h"><a href="../source/q_21f793ef2c791d1f.html">00654R</a></td><td>富邦印度反1</td><td>TWSE</td><td>CEOGEU</td><td>CFI=CEOGEU ETF／ETN／主動式</td><td>2026-11-10</td></tr><tr><td class="stack-h"><a href="../source/q_bdf83aa47fbafb49.html">00657</a></td><td>國泰日經225</td><td>TWSE</td><td>CEOGEU</td><td>CFI=CEOGEU ETF／ETN／主動式</td><td>2026-11-10</td></tr><tr><td class="stack-h"><a href="../source/q_f3effd37f697505f.html">00657K</a></td><td>國泰日經225+U</td><td>TWSE</td><td>CEOGEU</td><td>CFI=CEOGEU ETF／ETN／主動式</td><td>2026-11-10</td></tr><tr><td class="stack-h"><a href="../source/q_46669fa802a43e04.html">00660</a></td><td>元大歐洲50</td><td>TWSE</td><td>CEOGEU</td><td>CFI=CEOGEU ETF／ETN／主動式</td><td>2026-11-10</td></tr><tr><td class="stack-h"><a href="../source/q_81b3e4fc9c43d21b.html">00661</a></td><td>元大日經225</td><td>TWSE</td><td>CEOGEU</td><td>CFI=CEOGEU ETF／ETN／主動式</td><td>2026-11-10</td></tr><tr><td class="stack-h"><a href="../source/q_917e8c2c03cafad4.html">00662</a></td><td>富邦NASDAQ</td><td>TWSE</td><td>CEOGEU</td><td>CFI=CEOGEU ETF／ETN／主動式</td><td>2026-11-10</td></tr><tr><td class="stack-h"><a href="../source/q_0886ff188b2c5584.html">00668</a></td><td>國泰美國道瓊</td><td>TWSE</td><td>CEOGEU</td><td>CFI=CEOGEU ETF／ETN／主動式</td><td>2026-11-10</td></tr><tr><td class="stack-h"><a href="../source/q_d96efec5e48bbbeb.html">00668K</a></td><td>國泰美國道瓊+U</td><td>TWSE</td><td>CEOGEU</td><td>CFI=CEOGEU ETF／ETN／主動式</td><td>2026-11-10</td></tr><tr><td class="stack-h"><a href="../source/q_7824d166100377f1.html">00669R</a></td><td>國泰美國道瓊反1</td><td>TWSE</td><td>CEOGEU</td><td>CFI=CEOGEU ETF／ETN／主動式</td><td>2026-11-10</td></tr><tr><td class="stack-h"><a href="../source/q_133dae8d9ad50585.html">00678</a></td><td>群益那斯達克生技</td><td>TWSE</td><td>CEOGEU</td><td>CFI=CEOGEU ETF／ETN／主動式</td><td>2026-11-10</td></tr><tr><td class="stack-h"><a href="../source/q_8c15ef7a339f5096.html">00685L</a></td><td>群益臺灣加權正2</td><td>TWSE</td><td>CEOGEU</td><td>CFI=CEOGEU ETF／ETN／主動式</td><td>2026-11-10</td></tr><tr><td class="stack-h"><a href="../source/q_ce14e06cbaf79cdc.html">00686R</a></td><td>群益臺灣加權反1</td><td>TWSE</td><td>CEOGEU</td><td>CFI=CEOGEU ETF／ETN／主動式</td><td>2026-11-10</td></tr><tr><td class="stack-h"><a href="../source/q_f7c592a50090470b.html">00690</a></td><td>兆豐藍籌30</td><td>TWSE</td><td>CEOGEU</td><td>CFI=CEOGEU ETF／ETN／主動式</td><td>2026-11-10</td></tr><tr><td class="stack-h"><a href="../source/q_97fd8504cb9ad5ad.html">00692</a></td><td>富邦公司治理</td><td>TWSE</td><td>CEOGEU</td><td>CFI=CEOGEU ETF／ETN／主動式</td><td>2026-11-10</td></tr><tr><td class="stack-h"><a href="../source/q_7331fb5403fb7e27.html">00700</a></td><td>富邦恒生國企</td><td>TWSE</td><td>CEOGEU</td><td>CFI=CEOGEU ETF／ETN／主動式</td><td>2026-11-10</td></tr><tr><td class="stack-h"><a href="../source/q_0d003d0a620d7dcb.html">00703</a></td><td>台新MSCI中國</td><td>TWSE</td><td>CEOGEU</td><td>CFI=CEOGEU ETF／ETN／主動式</td><td>2026-11-10</td></tr><tr><td class="stack-h"><a href="../source/q_974d8a5e3edd49d9.html">00709</a></td><td>富邦歐洲</td><td>TWSE</td><td>CEOGEU</td><td>CFI=CEOGEU ETF／ETN／主動式</td><td>2026-11-10</td></tr><tr><td class="stack-h"><a href="../source/q_0431638a2bd0079c.html">00728</a></td><td>第一金工業30</td><td>TWSE</td><td>CEOGEU</td><td>CFI=CEOGEU ETF／ETN／主動式</td><td>2026-11-10</td></tr><tr><td class="stack-h"><a href="../source/q_7a69fbc993c1db91.html">00737</a></td><td>國泰AI機器人</td><td>TWSE</td><td>CEOGEU</td><td>CFI=CEOGEU ETF／ETN／主動式</td><td>2026-11-10</td></tr><tr><td class="stack-h"><a href="../source/q_4a3594e274d13c87.html">00752</a></td><td>中信中國50</td><td>TWSE</td><td>CEOGEU</td><td>CFI=CEOGEU ETF／ETN／主動式</td><td>2026-11-10</td></tr><tr><td class="stack-h"><a href="../source/q_231ec424410c12ad.html">00753L</a></td><td>中信中國50正2</td><td>TWSE</td><td>CEOGEU</td><td>CFI=CEOGEU ETF／ETN／主動式</td><td>2026-11-10</td></tr></tbody>
+    <tbody><tr><td class="stack-h"><a href="../source/q_bfca98a4175f5974.html">01001T</a></td><td>土銀富邦R1</td><td>TWSE</td><td>CBCIXU</td><td>CFI=CBCIXU 受益證券</td><td>2026-11-17</td></tr><tr><td class="stack-h"><a href="../source/q_71e296b32fe93813.html">01002T</a></td><td>土銀國泰R1</td><td>TWSE</td><td>CBCIXU</td><td>CFI=CBCIXU 受益證券</td><td>2026-11-17</td></tr><tr><td class="stack-h"><a href="../source/q_1414a2a99dcdf87a.html">01004T</a></td><td>土銀富邦R2</td><td>TWSE</td><td>CBCIXU</td><td>CFI=CBCIXU 受益證券</td><td>2026-11-17</td></tr><tr><td class="stack-h"><a href="../source/q_e69b4b3a4c901156.html">01007T</a></td><td>兆豐國泰R2</td><td>TWSE</td><td>CBCIXU</td><td>CFI=CBCIXU 受益證券</td><td>2026-11-17</td></tr><tr><td class="stack-h"><a href="../source/q_c5b60de4abb29899.html">01009T</a></td><td>王道圓滿R1</td><td>TWSE</td><td>CBCIXU</td><td>CFI=CBCIXU 受益證券</td><td>2026-11-17</td></tr><tr><td class="stack-h"><a href="../source/q_1232c72198d7a3fb.html">01010T</a></td><td>京城樂富R1</td><td>TWSE</td><td>CBCIXU</td><td>CFI=CBCIXU 受益證券</td><td>2026-11-17</td></tr><tr><td class="stack-h"><a href="../source/q_a0a5fb9f1099a1ad.html">00687C</a></td><td>國泰20年美債+櫃U</td><td>TPEx</td><td>CEOGBU</td><td>CFI=CEOGBU ETF／ETN／主動式</td><td>2026-11-17</td></tr><tr><td class="stack-h"><a href="../source/q_2e8dad417dcb2595.html">00688L</a></td><td>國泰20年美債正2</td><td>TWSE</td><td>CEOGBU</td><td>CFI=CEOGBU ETF／ETN／主動式</td><td>2026-11-17</td></tr><tr><td class="stack-h"><a href="../source/q_b005f52048526734.html">00689R</a></td><td>國泰20年美債反1</td><td>TWSE</td><td>CEOGBU</td><td>CFI=CEOGBU ETF／ETN／主動式</td><td>2026-11-17</td></tr><tr><td class="stack-h"><a href="../source/q_113e4c24cdc48887.html">00694B</a></td><td>富邦美債1-3年</td><td>TPEx</td><td>CEOGBU</td><td>CFI=CEOGBU ETF／ETN／主動式</td><td>2026-11-17</td></tr><tr><td class="stack-h"><a href="../source/q_4175c93d450fed5e.html">00695B</a></td><td>富邦美債7-10年</td><td>TPEx</td><td>CEOGBU</td><td>CFI=CEOGBU ETF／ETN／主動式</td><td>2026-11-17</td></tr><tr><td class="stack-h"><a href="../source/q_f351fa76235993ab.html">00696B</a></td><td>富邦美債20年</td><td>TPEx</td><td>CEOGBU</td><td>CFI=CEOGBU ETF／ETN／主動式</td><td>2026-11-17</td></tr><tr><td class="stack-h"><a href="../source/q_b05b7e94842aa2f9.html">00697B</a></td><td>元大美債7-10</td><td>TPEx</td><td>CEOGBU</td><td>CFI=CEOGBU ETF／ETN／主動式</td><td>2026-11-17</td></tr><tr><td class="stack-h"><a href="../source/q_a06452944e030392.html">00768B</a></td><td>復華20年美債</td><td>TPEx</td><td>CEOGBU</td><td>CFI=CEOGBU ETF／ETN／主動式</td><td>2026-11-17</td></tr><tr><td class="stack-h"><a href="../source/q_b5b50f56c16ae34f.html">00864B</a></td><td>中信美國公債0-1</td><td>TPEx</td><td>CEOGBU</td><td>CFI=CEOGBU ETF／ETN／主動式</td><td>2026-11-17</td></tr><tr><td class="stack-h"><a href="../source/q_639af29409205b40.html">00865B</a></td><td>國泰US短期公債</td><td>TWSE</td><td>CEOGBU</td><td>CFI=CEOGBU ETF／ETN／主動式</td><td>2026-11-17</td></tr><tr><td class="stack-h"><a href="../source/q_962fe68fb05a3255.html">00693U</a></td><td>期街口S&amp;P黃豆</td><td>TWSE</td><td>CEOGCU</td><td>CFI=CEOGCU ETF／ETN／主動式</td><td>2026-11-17</td></tr><tr><td class="stack-h"><a href="../source/q_4e2a9e58c9cab64e.html">00738U</a></td><td>期元大道瓊白銀</td><td>TWSE</td><td>CEOGCU</td><td>CFI=CEOGCU ETF／ETN／主動式</td><td>2026-11-17</td></tr><tr><td class="stack-h"><a href="../source/q_ebfc83bf73a31628.html">00631L</a></td><td>元大台灣50正2</td><td>TWSE</td><td>CEOGDU</td><td>CFI=CEOGDU ETF／ETN／主動式</td><td>2026-11-17</td></tr><tr><td class="stack-h"><a href="../source/q_80ffde6812947862.html">00632R</a></td><td>元大台灣50反1</td><td>TWSE</td><td>CEOGDU</td><td>CFI=CEOGDU ETF／ETN／主動式</td><td>2026-11-17</td></tr><tr><td class="stack-h"><a href="../source/q_144f63a9ff5b6976.html">00633L</a></td><td>富邦上証正2</td><td>TWSE</td><td>CEOGDU</td><td>CFI=CEOGDU ETF／ETN／主動式</td><td>2026-11-17</td></tr><tr><td class="stack-h"><a href="../source/q_717febe10a354a7c.html">00634R</a></td><td>富邦上証反1</td><td>TWSE</td><td>CEOGDU</td><td>CFI=CEOGDU ETF／ETN／主動式</td><td>2026-11-17</td></tr><tr><td class="stack-h"><a href="../source/q_2bbd0456dbc1090c.html">00635U</a></td><td>期元大S&amp;P黃金</td><td>TWSE</td><td>CEOGDU</td><td>CFI=CEOGDU ETF／ETN／主動式</td><td>2026-11-17</td></tr><tr><td class="stack-h"><a href="../source/q_8628b584ae46d223.html">00637L</a></td><td>元大滬深300正2</td><td>TWSE</td><td>CEOGDU</td><td>CFI=CEOGDU ETF／ETN／主動式</td><td>2026-11-17</td></tr><tr><td class="stack-h"><a href="../source/q_794cc5aaff1ef564.html">00638R</a></td><td>元大滬深300反1</td><td>TWSE</td><td>CEOGDU</td><td>CFI=CEOGDU ETF／ETN／主動式</td><td>2026-11-17</td></tr><tr><td class="stack-h"><a href="../source/q_50a7c92f5f358b18.html">00640L</a></td><td>富邦日本正2</td><td>TWSE</td><td>CEOGDU</td><td>CFI=CEOGDU ETF／ETN／主動式</td><td>2026-11-17</td></tr><tr><td class="stack-h"><a href="../source/q_b15eb27e136bc3a9.html">00641R</a></td><td>富邦日本反1</td><td>TWSE</td><td>CEOGDU</td><td>CFI=CEOGDU ETF／ETN／主動式</td><td>2026-11-17</td></tr><tr><td class="stack-h"><a href="../source/q_7f658678a84c554d.html">00642U</a></td><td>期元大S&amp;P石油</td><td>TWSE</td><td>CEOGDU</td><td>CFI=CEOGDU ETF／ETN／主動式</td><td>2026-11-17</td></tr><tr><td class="stack-h"><a href="../source/q_96930dc27b8a0305.html">00647L</a></td><td>元大S&amp;P500正2</td><td>TWSE</td><td>CEOGDU</td><td>CFI=CEOGDU ETF／ETN／主動式</td><td>2026-11-17</td></tr><tr><td class="stack-h"><a href="../source/q_1d0652484ae03957.html">00648R</a></td><td>元大S&amp;P500反1</td><td>TWSE</td><td>CEOGDU</td><td>CFI=CEOGDU ETF／ETN／主動式</td><td>2026-11-17</td></tr><tr><td class="stack-h"><a href="../source/q_8dc845c9f959d3d0.html">00650L</a></td><td>復華香港正2</td><td>TWSE</td><td>CEOGDU</td><td>CFI=CEOGDU ETF／ETN／主動式</td><td>2026-11-17</td></tr><tr><td class="stack-h"><a href="../source/q_85eb2002ca9a120a.html">00651R</a></td><td>復華香港反1</td><td>TWSE</td><td>CEOGDU</td><td>CFI=CEOGDU ETF／ETN／主動式</td><td>2026-11-17</td></tr><tr><td class="stack-h"><a href="../source/q_b0f0a240db09b507.html">00655L</a></td><td>國泰中國A50正2</td><td>TWSE</td><td>CEOGDU</td><td>CFI=CEOGDU ETF／ETN／主動式</td><td>2026-11-17</td></tr><tr><td class="stack-h"><a href="../source/q_f8e0e3c63b31af01.html">00656R</a></td><td>國泰中國A50反1</td><td>TWSE</td><td>CEOGDU</td><td>CFI=CEOGDU ETF／ETN／主動式</td><td>2026-11-17</td></tr><tr><td class="stack-h"><a href="../source/q_9100248c63f680af.html">00663L</a></td><td>國泰臺灣加權正2</td><td>TWSE</td><td>CEOGDU</td><td>CFI=CEOGDU ETF／ETN／主動式</td><td>2026-11-17</td></tr><tr><td class="stack-h"><a href="../source/q_93e66ffa1836bb0b.html">00664R</a></td><td>國泰臺灣加權反1</td><td>TWSE</td><td>CEOGDU</td><td>CFI=CEOGDU ETF／ETN／主動式</td><td>2026-11-17</td></tr><tr><td class="stack-h"><a href="../source/q_3cd3162e50f64b82.html">00665L</a></td><td>富邦恒生國企正2</td><td>TWSE</td><td>CEOGDU</td><td>CFI=CEOGDU ETF／ETN／主動式</td><td>2026-11-17</td></tr><tr><td class="stack-h"><a href="../source/q_b592d5b71ba06bd6.html">00666R</a></td><td>富邦恒生國企反1</td><td>TWSE</td><td>CEOGDU</td><td>CFI=CEOGDU ETF／ETN／主動式</td><td>2026-11-17</td></tr><tr><td class="stack-h"><a href="../source/q_535f9c12e235aadf.html">00670L</a></td><td>富邦NASDAQ正2</td><td>TWSE</td><td>CEOGDU</td><td>CFI=CEOGDU ETF／ETN／主動式</td><td>2026-11-17</td></tr><tr><td class="stack-h"><a href="../source/q_dc1b5c20b1c6f07d.html">00671R</a></td><td>富邦NASDAQ反1</td><td>TWSE</td><td>CEOGDU</td><td>CFI=CEOGDU ETF／ETN／主動式</td><td>2026-11-17</td></tr><tr><td class="stack-h"><a href="../source/q_822e81c40d9e7942.html">00673R</a></td><td>期元大S&amp;P原油反1</td><td>TWSE</td><td>CEOGDU</td><td>CFI=CEOGDU ETF／ETN／主動式</td><td>2026-11-17</td></tr><tr><td class="stack-h"><a href="../source/q_617e293b50c1fce1.html">00674R</a></td><td>期元大S&amp;P黃金反1</td><td>TWSE</td><td>CEOGDU</td><td>CFI=CEOGDU ETF／ETN／主動式</td><td>2026-11-17</td></tr><tr><td class="stack-h"><a href="../source/q_6f97dcf6082e039f.html">00675L</a></td><td>富邦臺灣加權正2</td><td>TWSE</td><td>CEOGDU</td><td>CFI=CEOGDU ETF／ETN／主動式</td><td>2026-11-17</td></tr><tr><td class="stack-h"><a href="../source/q_1c00a0ea013c73df.html">00676R</a></td><td>富邦臺灣加權反1</td><td>TWSE</td><td>CEOGDU</td><td>CFI=CEOGDU ETF／ETN／主動式</td><td>2026-11-17</td></tr><tr><td class="stack-h"><a href="../source/q_6e3bd41501c13bc5.html">00680L</a></td><td>元大美債20正2</td><td>TWSE</td><td>CEOGDU</td><td>CFI=CEOGDU ETF／ETN／主動式</td><td>2026-11-17</td></tr><tr><td class="stack-h"><a href="../source/q_62f1d34ccf6f10b7.html">00681R</a></td><td>元大美債20反1</td><td>TWSE</td><td>CEOGDU</td><td>CFI=CEOGDU ETF／ETN／主動式</td><td>2026-11-17</td></tr><tr><td class="stack-h"><a href="../source/q_5e1b6ca9ce7f470f.html">00706L</a></td><td>期元大S&amp;P日圓正2</td><td>TWSE</td><td>CEOGDU</td><td>CFI=CEOGDU ETF／ETN／主動式</td><td>2026-11-17</td></tr><tr><td class="stack-h"><a href="../source/q_ac9b660e2df1a793.html">00707R</a></td><td>期元大S&amp;P日圓反1</td><td>TWSE</td><td>CEOGDU</td><td>CFI=CEOGDU ETF／ETN／主動式</td><td>2026-11-17</td></tr><tr><td class="stack-h"><a href="../source/q_53c7fccf64e9ad78.html">00708L</a></td><td>期元大S&amp;P黃金正2</td><td>TWSE</td><td>CEOGDU</td><td>CFI=CEOGDU ETF／ETN／主動式</td><td>2026-11-17</td></tr><tr><td class="stack-h"><a href="../source/q_d38d7ddc896d58f3.html">00715L</a></td><td>期街口S&amp;P布蘭特油正2</td><td>TWSE</td><td>CEOGDU</td><td>CFI=CEOGDU ETF／ETN／主動式</td><td>2026-11-17</td></tr><tr><td class="stack-h"><a href="../source/q_c01af2f757e5a83b.html">00763U</a></td><td>期街口道瓊銅</td><td>TWSE</td><td>CEOGDU</td><td>CFI=CEOGDU ETF／ETN／主動式</td><td>2026-11-17</td></tr><tr><td class="stack-h"><a href="../source/q_dbdf3577925ba0b2.html">00407A</a></td><td>主動凱基台灣</td><td>TWSE</td><td>CEOGEU</td><td>CFI=CEOGEU ETF／ETN／主動式</td><td>2026-11-17</td></tr><tr><td class="stack-h"><a href="../source/q_da81ebafa6b53609.html">00412A</a></td><td>主動安聯亞半導體</td><td>TWSE</td><td>CEOGEU</td><td>CFI=CEOGEU ETF／ETN／主動式</td><td>2026-11-17</td></tr><tr><td class="stack-h"><a href="../source/q_c52f9e5b5b95418c.html">00418A</a></td><td>主動復華台灣新星</td><td>TWSE</td><td>CEOGEU</td><td>CFI=CEOGEU ETF／ETN／主動式</td><td>2026-11-17</td></tr><tr><td class="stack-h"><a href="../source/q_89a5876ed9714d05.html">0050</a></td><td>元大台灣50</td><td>TWSE</td><td>CEOGEU</td><td>CFI=CEOGEU ETF／ETN／主動式</td><td>2026-11-17</td></tr><tr><td class="stack-h"><a href="../source/q_8ad6dcff6847e253.html">0051</a></td><td>元大中型100</td><td>TWSE</td><td>CEOGEU</td><td>CFI=CEOGEU ETF／ETN／主動式</td><td>2026-11-17</td></tr><tr><td class="stack-h"><a href="../source/q_7f07cd6f7cbc4d68.html">0052</a></td><td>富邦科技</td><td>TWSE</td><td>CEOGEU</td><td>CFI=CEOGEU ETF／ETN／主動式</td><td>2026-11-17</td></tr><tr><td class="stack-h"><a href="../source/q_7d37c32bf6dfb9b0.html">0053</a></td><td>元大科技市值</td><td>TWSE</td><td>CEOGEU</td><td>CFI=CEOGEU ETF／ETN／主動式</td><td>2026-11-17</td></tr><tr><td class="stack-h"><a href="../source/q_c4dc5ca49a8a6cc1.html">0055</a></td><td>元大MSCI金融</td><td>TWSE</td><td>CEOGEU</td><td>CFI=CEOGEU ETF／ETN／主動式</td><td>2026-11-17</td></tr><tr><td class="stack-h"><a href="../source/q_b82f3502a07f2a8f.html">0056</a></td><td>元大高股息</td><td>TWSE</td><td>CEOGEU</td><td>CFI=CEOGEU ETF／ETN／主動式</td><td>2026-11-17</td></tr><tr><td class="stack-h"><a href="../source/q_bdbad1ecd4ad752b.html">0057</a></td><td>富邦摩台</td><td>TWSE</td><td>CEOGEU</td><td>CFI=CEOGEU ETF／ETN／主動式</td><td>2026-11-17</td></tr><tr><td class="stack-h"><a href="../source/q_de32548b3d5071bf.html">0061</a></td><td>元大寶滬深</td><td>TWSE</td><td>CEOGEU</td><td>CFI=CEOGEU ETF／ETN／主動式</td><td>2026-11-17</td></tr><tr><td class="stack-h"><a href="../source/q_84e1913a74bc4887.html">006201</a></td><td>元大富櫃50</td><td>TPEx</td><td>CEOGEU</td><td>CFI=CEOGEU ETF／ETN／主動式</td><td>2026-11-17</td></tr><tr><td class="stack-h"><a href="../source/q_5f067b93448566eb.html">006203</a></td><td>元大MSCI台灣</td><td>TWSE</td><td>CEOGEU</td><td>CFI=CEOGEU ETF／ETN／主動式</td><td>2026-11-17</td></tr><tr><td class="stack-h"><a href="../source/q_abcd5a959ee012b4.html">006204</a></td><td>永豐臺灣加權</td><td>TWSE</td><td>CEOGEU</td><td>CFI=CEOGEU ETF／ETN／主動式</td><td>2026-11-17</td></tr><tr><td class="stack-h"><a href="../source/q_8c976dc5f3e886fc.html">006205</a></td><td>富邦上証</td><td>TWSE</td><td>CEOGEU</td><td>CFI=CEOGEU ETF／ETN／主動式</td><td>2026-11-17</td></tr><tr><td class="stack-h"><a href="../source/q_2a0d0d678e341522.html">006206</a></td><td>元大上證50</td><td>TWSE</td><td>CEOGEU</td><td>CFI=CEOGEU ETF／ETN／主動式</td><td>2026-11-17</td></tr><tr><td class="stack-h"><a href="../source/q_a205f562d2ed25c9.html">006207</a></td><td>復華滬深</td><td>TWSE</td><td>CEOGEU</td><td>CFI=CEOGEU ETF／ETN／主動式</td><td>2026-11-17</td></tr><tr><td class="stack-h"><a href="../source/q_7effc700f20f920e.html">006208</a></td><td>富邦台50</td><td>TWSE</td><td>CEOGEU</td><td>CFI=CEOGEU ETF／ETN／主動式</td><td>2026-11-17</td></tr><tr><td class="stack-h"><a href="../source/q_0eaa5f9fba3ea0f9.html">00625K</a></td><td>富邦上証+R</td><td>TWSE</td><td>CEOGEU</td><td>CFI=CEOGEU ETF／ETN／主動式</td><td>2026-11-17</td></tr><tr><td class="stack-h"><a href="../source/q_30cc3ea13adae3b5.html">00636</a></td><td>國泰中國A50</td><td>TWSE</td><td>CEOGEU</td><td>CFI=CEOGEU ETF／ETN／主動式</td><td>2026-11-17</td></tr><tr><td class="stack-h"><a href="../source/q_a67f7af62bf09bd5.html">00636K</a></td><td>國泰中國A50+U</td><td>TWSE</td><td>CEOGEU</td><td>CFI=CEOGEU ETF／ETN／主動式</td><td>2026-11-17</td></tr><tr><td class="stack-h"><a href="../source/q_10442183846ae26c.html">00639</a></td><td>富邦深100</td><td>TWSE</td><td>CEOGEU</td><td>CFI=CEOGEU ETF／ETN／主動式</td><td>2026-11-17</td></tr><tr><td class="stack-h"><a href="../source/q_9b8f5f91e2604448.html">00643</a></td><td>群益深証中小</td><td>TWSE</td><td>CEOGEU</td><td>CFI=CEOGEU ETF／ETN／主動式</td><td>2026-11-17</td></tr><tr><td class="stack-h"><a href="../source/q_a2a0456570d44a3f.html">00643K</a></td><td>群益深証中小+R</td><td>TWSE</td><td>CEOGEU</td><td>CFI=CEOGEU ETF／ETN／主動式</td><td>2026-11-17</td></tr><tr><td class="stack-h"><a href="../source/q_c0eeca40f78b3e22.html">00645</a></td><td>富邦日本</td><td>TWSE</td><td>CEOGEU</td><td>CFI=CEOGEU ETF／ETN／主動式</td><td>2026-11-17</td></tr><tr><td class="stack-h"><a href="../source/q_01fdc68bab4281dd.html">00646</a></td><td>元大S&amp;P500</td><td>TWSE</td><td>CEOGEU</td><td>CFI=CEOGEU ETF／ETN／主動式</td><td>2026-11-17</td></tr><tr><td class="stack-h"><a href="../source/q_8edd7888a850b6fd.html">00652</a></td><td>富邦印度</td><td>TWSE</td><td>CEOGEU</td><td>CFI=CEOGEU ETF／ETN／主動式</td><td>2026-11-17</td></tr><tr><td class="stack-h"><a href="../source/q_58e98b2981f36b07.html">00653L</a></td><td>富邦印度正2</td><td>TWSE</td><td>CEOGEU</td><td>CFI=CEOGEU ETF／ETN／主動式</td><td>2026-11-17</td></tr><tr><td class="stack-h"><a href="../source/q_c46f0ab598191a67.html">00654R</a></td><td>富邦印度反1</td><td>TWSE</td><td>CEOGEU</td><td>CFI=CEOGEU ETF／ETN／主動式</td><td>2026-11-17</td></tr><tr><td class="stack-h"><a href="../source/q_9b1a437639f451ad.html">00657</a></td><td>國泰日經225</td><td>TWSE</td><td>CEOGEU</td><td>CFI=CEOGEU ETF／ETN／主動式</td><td>2026-11-17</td></tr><tr><td class="stack-h"><a href="../source/q_e7832ae87498956d.html">00657K</a></td><td>國泰日經225+U</td><td>TWSE</td><td>CEOGEU</td><td>CFI=CEOGEU ETF／ETN／主動式</td><td>2026-11-17</td></tr><tr><td class="stack-h"><a href="../source/q_e2be70a6415027e1.html">00660</a></td><td>元大歐洲50</td><td>TWSE</td><td>CEOGEU</td><td>CFI=CEOGEU ETF／ETN／主動式</td><td>2026-11-17</td></tr><tr><td class="stack-h"><a href="../source/q_2089d66d94f4cb8a.html">00661</a></td><td>元大日經225</td><td>TWSE</td><td>CEOGEU</td><td>CFI=CEOGEU ETF／ETN／主動式</td><td>2026-11-17</td></tr><tr><td class="stack-h"><a href="../source/q_c4e3c66523c3bd7c.html">00662</a></td><td>富邦NASDAQ</td><td>TWSE</td><td>CEOGEU</td><td>CFI=CEOGEU ETF／ETN／主動式</td><td>2026-11-17</td></tr><tr><td class="stack-h"><a href="../source/q_21d84f7de3d2db7e.html">00668</a></td><td>國泰美國道瓊</td><td>TWSE</td><td>CEOGEU</td><td>CFI=CEOGEU ETF／ETN／主動式</td><td>2026-11-17</td></tr><tr><td class="stack-h"><a href="../source/q_b96783176cb9920a.html">00668K</a></td><td>國泰美國道瓊+U</td><td>TWSE</td><td>CEOGEU</td><td>CFI=CEOGEU ETF／ETN／主動式</td><td>2026-11-17</td></tr><tr><td class="stack-h"><a href="../source/q_f77e142470cc654d.html">00669R</a></td><td>國泰美國道瓊反1</td><td>TWSE</td><td>CEOGEU</td><td>CFI=CEOGEU ETF／ETN／主動式</td><td>2026-11-17</td></tr><tr><td class="stack-h"><a href="../source/q_818e72e22caa383c.html">00678</a></td><td>群益那斯達克生技</td><td>TWSE</td><td>CEOGEU</td><td>CFI=CEOGEU ETF／ETN／主動式</td><td>2026-11-17</td></tr><tr><td class="stack-h"><a href="../source/q_dc58d6f1854a8bc4.html">00685L</a></td><td>群益臺灣加權正2</td><td>TWSE</td><td>CEOGEU</td><td>CFI=CEOGEU ETF／ETN／主動式</td><td>2026-11-17</td></tr><tr><td class="stack-h"><a href="../source/q_05dd753689c32a61.html">00686R</a></td><td>群益臺灣加權反1</td><td>TWSE</td><td>CEOGEU</td><td>CFI=CEOGEU ETF／ETN／主動式</td><td>2026-11-17</td></tr><tr><td class="stack-h"><a href="../source/q_c600317e9b187e9a.html">00690</a></td><td>兆豐藍籌30</td><td>TWSE</td><td>CEOGEU</td><td>CFI=CEOGEU ETF／ETN／主動式</td><td>2026-11-17</td></tr><tr><td class="stack-h"><a href="../source/q_d3ce72ad8341d601.html">00692</a></td><td>富邦公司治理</td><td>TWSE</td><td>CEOGEU</td><td>CFI=CEOGEU ETF／ETN／主動式</td><td>2026-11-17</td></tr><tr><td class="stack-h"><a href="../source/q_e5563d4645de2ab5.html">00700</a></td><td>富邦恒生國企</td><td>TWSE</td><td>CEOGEU</td><td>CFI=CEOGEU ETF／ETN／主動式</td><td>2026-11-17</td></tr><tr><td class="stack-h"><a href="../source/q_7390f527e458ceb7.html">00703</a></td><td>台新MSCI中國</td><td>TWSE</td><td>CEOGEU</td><td>CFI=CEOGEU ETF／ETN／主動式</td><td>2026-11-17</td></tr><tr><td class="stack-h"><a href="../source/q_dcb82971021c1a67.html">00709</a></td><td>富邦歐洲</td><td>TWSE</td><td>CEOGEU</td><td>CFI=CEOGEU ETF／ETN／主動式</td><td>2026-11-17</td></tr><tr><td class="stack-h"><a href="../source/q_f9b4dc1a5e9f3e5b.html">00728</a></td><td>第一金工業30</td><td>TWSE</td><td>CEOGEU</td><td>CFI=CEOGEU ETF／ETN／主動式</td><td>2026-11-17</td></tr><tr><td class="stack-h"><a href="../source/q_6b59061e58f58960.html">00737</a></td><td>國泰AI機器人</td><td>TWSE</td><td>CEOGEU</td><td>CFI=CEOGEU ETF／ETN／主動式</td><td>2026-11-17</td></tr><tr><td class="stack-h"><a href="../source/q_0e826867a36df42d.html">00752</a></td><td>中信中國50</td><td>TWSE</td><td>CEOGEU</td><td>CFI=CEOGEU ETF／ETN／主動式</td><td>2026-11-17</td></tr><tr><td class="stack-h"><a href="../source/q_b80c9b72e55b8597.html">00753L</a></td><td>中信中國50正2</td><td>TWSE</td><td>CEOGEU</td><td>CFI=CEOGEU ETF／ETN／主動式</td><td>2026-11-17</td></tr></tbody>
   </table></div></details>
   
 </section>
@@ -1107,12 +1959,12 @@
   
   <div class="table-wrap stack-wrap"><table class="data stack">
     <thead><tr><th>市場</th><th>類別</th><th>覆蓋起日</th></tr></thead>
-    <tbody><tr><td class="stack-h">TWSE</td><td>cash_dividend</td><td>2025-10-06</td></tr><tr><td class="stack-h">TWSE</td><td>stock_dividend</td><td>2025-10-06</td></tr><tr><td class="stack-h">TWSE</td><td>ex_both</td><td>2025-10-06</td></tr><tr><td class="stack-h">TWSE</td><td>capital_reduction</td><td>2025-10-06</td></tr><tr><td class="stack-h">TPEx</td><td>cash_dividend</td><td>2025-10-06</td></tr><tr><td class="stack-h">TPEx</td><td>stock_dividend</td><td>2025-10-06</td></tr><tr><td class="stack-h">TPEx</td><td>ex_both</td><td>2025-10-06</td></tr><tr><td class="stack-h">TWSE</td><td>par_value_change</td><td>2025-10-06</td></tr><tr><td class="stack-h">TPEx</td><td>capital_reduction</td><td>2025-10-06</td></tr><tr><td class="stack-h">TPEx</td><td>par_value_change</td><td>2025-10-06</td></tr><tr><td class="stack-h">TWSE</td><td>stock_split</td><td>2025-10-06</td></tr><tr><td class="stack-h">TPEx</td><td>stock_split</td><td>2025-10-06</td></tr></tbody>
+    <tbody><tr><td class="stack-h">TWSE</td><td>cash_dividend</td><td>2025-10-06</td></tr><tr><td class="stack-h">TWSE</td><td>stock_dividend</td><td>2025-10-06</td></tr><tr><td class="stack-h">TWSE</td><td>ex_both</td><td>2025-10-06</td></tr><tr><td class="stack-h">TWSE</td><td>capital_reduction</td><td>2025-10-06</td></tr><tr><td class="stack-h">TPEx</td><td>cash_dividend</td><td>2025-10-06</td></tr><tr><td class="stack-h">TPEx</td><td>stock_dividend</td><td>2025-10-06</td></tr><tr><td class="stack-h">TPEx</td><td>ex_both</td><td>2025-10-06</td></tr><tr><td class="stack-h">TWSE</td><td>par_value_change</td><td>2025-10-06</td></tr><tr><td class="stack-h">TPEx</td><td>capital_reduction</td><td>2025-10-06</td></tr><tr><td class="stack-h">TPEx</td><td>par_value_change</td><td>2025-10-06</td></tr><tr><td class="stack-h">TWSE</td><td>stock_split</td><td>2025-10-06</td></tr><tr><td class="stack-h">TPEx</td><td>stock_split</td><td>2025-10-06</td></tr><tr><td class="stack-h">TWSE</td><td>cash_dividend</td><td>2025-10-13</td></tr><tr><td class="stack-h">TWSE</td><td>stock_dividend</td><td>2025-10-13</td></tr><tr><td class="stack-h">TWSE</td><td>ex_both</td><td>2025-10-13</td></tr><tr><td class="stack-h">TWSE</td><td>capital_reduction</td><td>2025-10-13</td></tr><tr><td class="stack-h">TWSE</td><td>par_value_change</td><td>2025-10-13</td></tr><tr><td class="stack-h">TWSE</td><td>stock_split</td><td>2025-10-13</td></tr><tr><td class="stack-h">TPEx</td><td>cash_dividend</td><td>2025-10-13</td></tr><tr><td class="stack-h">TPEx</td><td>stock_dividend</td><td>2025-10-13</td></tr><tr><td class="stack-h">TPEx</td><td>ex_both</td><td>2025-10-13</td></tr><tr><td class="stack-h">TPEx</td><td>capital_reduction</td><td>2025-10-13</td></tr><tr><td class="stack-h">TPEx</td><td>par_value_change</td><td>2025-10-13</td></tr><tr><td class="stack-h">TPEx</td><td>stock_split</td><td>2025-10-13</td></tr></tbody>
   </table></div>
   
 </section>
 <section class="card" id="exclusion-codes" data-testid="exclusion-codes">
-  <h2>選股排除代碼說明 <small>今日預設條件（2026-11-09）的檔數</small></h2>
+  <h2>選股排除代碼說明 <small>今日預設條件（2026-11-16）的檔數</small></h2>
   <div class="table-wrap stack-wrap"><table class="data excl-legend stack">
     <thead><tr><th>代碼</th><th>說明</th><th class="r">今日檔數</th><th>說明來源</th></tr></thead>
     <tbody><tr id="code-EXCL_NOT_COMMON_STOCK">

@@ -55,3 +55,28 @@
     });
   }
 })();
+// 本版是否落後：依台北時間與 build-info.json 的交易日清單（與網站 freshness.expected_for 同規則：交易日 18:30 後才算當日）
+(function(){
+  'use strict';
+  var meta=document.querySelector('meta[name="site-root"]'); if(!meta) return;
+  var root=meta.getAttribute('content')||'./';
+  function expected(days, ready, nowMs){
+    var t=new Date(nowMs+8*3600e3), today=t.toISOString().slice(0,10), hm=t.getUTCHours()*60+t.getUTCMinutes();
+    var r=(ready||'18:30').split(':'), rm=(+r[0])*60+(+r[1]);
+    if(!days||!days.length||days[days.length-1]<today) return null;   // 交易日清單不夠新：不判斷
+    var past=days.filter(function(d){return d<=today}).sort();
+    if(past.length&&past[past.length-1]===today&&hm<rm) past.pop();
+    return past.length?past[past.length-1]:null;
+  }
+  window.__twsiteExpected=expected;
+  fetch(root+'build-info.json',{cache:'no-store'}).then(function(r){return r.json()}).then(function(b){
+    var g=document.querySelector('[data-build-generated]'); if(g) g.textContent=b.generated_at_taipei||'—';
+    var exp=expected(b.trade_days,b.quotes_ready,Date.now());
+    if(!exp||!b.data_date||b.data_date>=exp) return;
+    var msg='本版資料日期 '+b.data_date+' 落後預期資料日 '+exp+'：最近一次發布可能未通過自檢或尚未完成，公開站停在上一版；請以官方資料為準。';
+    var ban=document.querySelector('.static-banner');
+    if(ban){var s=document.createElement('span');s.className='pill pill-warn static-stale';s.setAttribute('data-state','static-stale');s.setAttribute('role','alert');s.textContent='⚠ '+msg;ban.appendChild(s)}
+    var line=document.querySelector('[data-build-stale-line]');
+    if(line){line.hidden=false;line.setAttribute('data-state','static-stale');line.textContent='⚠ '+msg}
+  }).catch(function(){});
+})();
