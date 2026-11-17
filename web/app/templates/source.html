@@ -1,0 +1,39 @@
+{% extends "base.html" %}
+{% from "_macros.html" import test_badge, status_badge %}
+{% block title %}來源明細 {{ table }}｜台股盤後研究{% endblock %}
+{% block content %}
+<h1>來源明細 <small>{{ spec.label }}</small></h1>
+<section class="card source-panel" data-testid="source-panel">
+  <dl class="kv">
+    <dt>來源資料表</dt><dd><code>{{ table }}</code>{% if is_test %} {{ test_badge() }}（FakeSource 模擬列，欄位依 docs/schema.md）{% endif %}</dd>
+    <dt>{{ '主鍵' if full else '查詢條件' }}</dt><dd>{% for k, v in filters.items() %}<code>{{ k }}={{ v }}</code> {% endfor %}{% if not full %}<small class="muted">（主鍵欄位：{{ spec['keys']|join(', ') }}）</small>{% endif %}</dd>
+    {% if spec.current %}<dt>版本</dt><dd>只顯示現行列（is_current=1）</dd>{% endif %}
+    <dt>單位</dt><dd>{{ spec.units }}</dd>
+    {% if rows %}
+    <dt>資料日期</dt><dd>{{ rows[0][spec.date_col] if spec.date_col in rows[0] else '—' }}{% if rows|length > 1 %} 等 {{ rows|length }} 列{% endif %}</dd>
+    {% if rows[0].source %}<dt>來源</dt><dd class="wrap">{{ rows[0].source }}</dd>{% endif %}
+    {% if rows[0].fetched_at %}<dt>抓取時間</dt><dd>{{ rows[0].fetched_at }}</dd>{% endif %}
+    {% if 'source_unit' in rows[0] %}<dt>原始單位</dt><dd>{{ rows[0].source_unit or '—' }}{% if rows[0].unit_conversion %}（換算：{{ rows[0].unit_conversion }}）{% endif %}；入庫單位：{{ rows[0].unit }}</dd>{% endif %}
+    {% endif %}
+    {% if agg %}<dt>彙總算式</dt><dd><code>{{ agg_expr }}</code> ＝ <strong data-agg>{{ agg_value|num(0) }}</strong>{% if agg == 'sum:amount_twd' %} 新台幣元（{{ agg_value|big }}）{% endif %}</dd>{% endif %}
+  </dl>
+  {% if related %}<p class="related">相關頁面：{% for text, href in related %}<a class="btn" href="{{ href }}">{{ text }} →</a> {% endfor %}</p>{% endif %}
+</section>
+
+{% if not rows %}
+<div class="empty" data-state="no-source-rows">{{ status_badge('insufficient', '查無符合的現行列') }} 查無符合的來源列。</div>
+{% elif rows|length == 1 %}
+<section class="card"><h2>原始列</h2>
+  <div class="table-wrap"><table class="data kvtable"><tbody>
+  {% for k, v in rows[0].items() %}<tr><th>{{ k }}</th><td class="wrap">{{ '—' if v is none else v }}</td></tr>{% endfor %}
+  </tbody></table></div>
+</section>
+{% else %}
+<section class="card"><h2>原始列 <small>{{ rows|length }} 列{% if rows|length >= 500 %}（只顯示前 500 列）{% endif %}</small></h2>
+  <div class="table-wrap"><table class="data">
+    <thead><tr>{% for k in rows[0].keys() %}<th>{{ k }}</th>{% endfor %}</tr></thead>
+    <tbody>{% for r in rows %}<tr>{% for k, v in r.items() %}<td>{% if k == 'symbol' %}<a href="/source?table={{ table }}&{% for kk in spec['keys'] if kk in r %}{{ kk }}={{ r[kk]|urlencode }}{{ '&' if not loop.last }}{% endfor %}">{{ v }}</a>{% else %}{{ '—' if v is none else v }}{% endif %}</td>{% endfor %}</tr>{% endfor %}</tbody>
+  </table></div>
+</section>
+{% endif %}
+{% endblock %}

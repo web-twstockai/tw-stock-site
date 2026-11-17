@@ -1,0 +1,4 @@
+{% extends "base.html" %}
+{% block content %}<h1>{{ '資料暫時無法讀取' if state else '找不到' }}</h1>
+<div class="empty" data-state="{{ state|default('not-found') }}">{{ message }}{% if hint %}<br>{{ hint }}{% endif %}</div>
+<p><a href="/">回首頁</a>｜<a href="/status">資料狀態</a></p>{% endblock %}

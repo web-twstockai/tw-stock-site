@@ -1,0 +1,88 @@
+{% extends "base.html" %}
+{% from "_macros.html" import val, chg, status_badge, test_badge, srcline, dt, neg_note %}
+{% block title %}月營收追蹤｜台股盤後研究{% endblock %}
+{# F-001 月營收追蹤表：網站工程最小可用版（HANDOFF §13），版面由設計端收尾 #}
+{% block content %}
+<h1>月營收追蹤 <small>{{ v.month }}</small></h1>
+<p class="basis-note" data-testid="revenue-universe">{{ v.universe_text }}{% if not (v.universe_all is defined and v.universe_all) %}｜目前僅收錄 {{ v.universe_label }}，數字不代表全市場{% endif %}。{% if v.is_test %} {{ test_badge() }}{% endif %}</p>
+
+<form class="rev-filter" method="get" action="/revenue" data-testid="revenue-filter">
+  <label class="f-field"><span>營收月份</span> <select name="month">{% for m in v.months %}<option value="{{ m }}"{% if m == v.month %} selected{% endif %}>{{ m }}{% if m == v.default_month %}（預設）{% endif %}</option>{% endfor %}</select></label>
+  <label class="f-field"><span>市場</span> <select name="market"><option value="all"{% if v.market == 'all' %} selected{% endif %}>全部</option><option value="TWSE"{% if v.market == 'TWSE' %} selected{% endif %}>上市</option><option value="TPEx"{% if v.market == 'TPEx' %} selected{% endif %}>上櫃</option></select></label>
+  <label class="f-check"><input type="checkbox" name="high" value="1"{% if v.high_only %} checked{% endif %}> 只看近 12 個月新高</label>
+  <input type="hidden" name="sort" value="{{ v.sort }}">{% if v.desc %}<input type="hidden" name="desc" value="1">{% endif %}
+  <button type="submit" class="primary">套用</button>
+  <a class="btn" href="/revenue.csv?{{ rqs() }}" data-testid="revenue-csv">匯出 CSV<span class="f-sub">（目前篩選與排序）</span></a>
+</form>
+
+{% if v.status == 'error' %}
+<div class="empty" data-state="revenue-error">{{ status_badge('error', v.error) }} {{ v.error }}</div>
+{% else %}
+<p class="rev-count" data-testid="revenue-count">{{ v.month }} 已有營收 <span class="nw"><a href="{{ v.have_href }}"><b>{{ v.have }}</b></a>／{{ v.universe_count }} 檔</span><span class="sep" aria-hidden="true">｜</span><span class="nw">近 12 個月新高 <a href="/revenue?{{ rqs(high='1') }}"><b>{{ v.highs }}</b></a> 檔</span>{% if v.insufficient %}<span class="sep" aria-hidden="true">｜</span><span class="nw">資料不足 {{ v.insufficient }} 檔</span>{% endif %}</p>
+
+{% if v.high_only or v.market != 'all' %}
+<p class="state state-nondefault rev-filtered" data-state="revenue-filtered"><span aria-hidden="true">⚑</span> 篩選中：{% if v.market != 'all' %}市場＝{{ '上市' if v.market == 'TWSE' else '上櫃' }}{% endif %}{% if v.market != 'all' and v.high_only %}、{% endif %}{% if v.high_only %}只看近 12 個月新高{% endif %}，共 {{ v.total }} 列。<a href="/revenue?month={{ v.month }}">清除篩選</a></p>
+{% endif %}
+{% for m in v.source_down %}
+<p class="note" data-state="source-down" data-market="{{ m.market }}">{{ status_badge('source_down', m.error, m.last_success) }} {{ m.label }}：來源故障，顯示上次成功版本（{{ dt(m.last_success) if m.last_success else '從未成功' }}）；該市場未入庫的公司不列入下方名單。<a href="{{ m.status_href }}">資料狀態</a></p>
+{% endfor %}
+
+<section class="card" id="have" aria-labelledby="have-h">
+  <h2 id="have-h">已有營收（{{ v.total }} 列{% if v.pages > 1 %}，第 {{ v.page }}／{{ v.pages }} 頁{% endif %}）</h2>
+  {% if v.have == 0 %}
+  <div class="empty" data-state="revenue-zero">{{ status_badge('revenue_missing', '追蹤範圍內沒有 ' ~ v.month ~ ' 的現行月營收列') }} {{ v.month }}：0 檔。{{ v.missing_label }}（{{ v.not_announce_note }}）。</div>
+  {% elif not v.rows %}
+  <div class="empty" data-state="revenue-filtered-empty">目前篩選條件下 0 列。</div>
+  {% else %}
+  <div class="table-wrap sticky-first rev-wrap" tabindex="0" role="region" aria-label="已有營收表，可左右捲動"><table class="data rev-table" data-testid="revenue-table">
+    <thead><tr>
+      {% macro th(k, cls='') -%}<th{% if cls %} class="{{ cls }}"{% endif %}{% if v.sort == k %} aria-sort="{{ 'descending' if v.desc else 'ascending' }}"{% endif %}><a href="/revenue?{{ rqs(sort=k, desc=('' if v.sort == k and v.desc else ('1' if v.sort == k else ''))) }}">{{ v.sort_keys[k] }}{% if v.sort == k %}{{ ' ↓' if v.desc else ' ↑' }}{% endif %}</a></th>{%- endmacro %}
+      {{ th('symbol') }}<th>名稱</th>{{ th('market') }}{{ th('revenue', 'r') }}{{ th('prev_year', 'r') }}{{ th('mom', 'r') }}{{ th('yoy', 'r') }}{{ th('cum', 'r') }}{{ th('cum_yoy', 'r') }}{{ th('high') }}<th>公司差異說明</th>
+    </tr></thead>
+    <tbody>
+    {% for r in v.rows %}
+    <tr id="row-{{ r.symbol }}" data-high="{{ r.high_status }}">
+      <td class="stock-cell rev-code"><a href="{{ r.href }}" title="{{ r.symbol }} {{ r.name }}"><span class="cd">{{ r.symbol }}</span></a></td>
+      <td class="rev-name">{{ r.name }}{% if r.is_fin %}<a class="fn" href="#fin-note" title="金融業註記">※</a>{% endif %}</td>
+      <td>{{ r.market_label }}</td>
+      <td class="r">{{ val(r.revenue, big=True) }}</td>
+      <td class="r">{{ val(r.prev_year, big=True) }}</td>
+      <td class="r">{{ chg(r.mom) }}</td>
+      <td class="r" data-yoy="{{ r.yoy_status }}">{% if r.yoy.status == 'not_applicable' %}{{ status_badge('not_applicable', r.yoy.note) }}{% if r.yoy_text.startswith('不適用') and r.yoy_text[3:] %}<small class="na-why">{{ r.yoy_text[3:] }}</small>{% endif %}{% else %}{{ chg(r.yoy) }}{% endif %}{% if r.yoy_neg_note is defined and r.yoy_neg_note %}{{ neg_note(r.yoy_neg_note, r.yoy.note, r.symbol, 's' ~ r.symbol) }}{% endif %}</td>
+      <td class="r">{{ val(r.cum, big=True) }}</td>
+      <td class="r">{% if r.cum_yoy.status == 'not_applicable' %}{{ status_badge('not_applicable', r.cum_yoy.note) }}{% else %}{{ chg(r.cum_yoy) }}{% endif %}</td>
+      <td data-testid="high-{{ r.symbol }}">{% if r.high_status == 'true' %}<span class="badge st-high" tabindex="0"><span aria-hidden="true">★</span> 近 12 個月新高<span class="tip" role="tooltip">高於前 12 個月（{{ r.prior_window }}）最高值 {{ r.prior_max|num(0) }} 元</span></span>{% elif r.high_status == 'insufficient' %}{{ status_badge('insufficient', r.high_reason ~ '：' ~ r.high_reason_text) }}{% else %}<span class="muted" title="{{ r.high_reason_text }}">—<span class="sr">（未創新高：{{ r.high_reason_text }}）</span></span>{% endif %}</td>
+      <td class="rev-remark">{% if r.remark %}<details><summary>展開</summary>{{ r.remark }}</details>{% else %}—{% endif %}</td>
+    </tr>
+    {% endfor %}
+    </tbody>
+  </table></div>
+  <p class="scroll-hint" aria-hidden="true">← 左右滑動看更多欄 →</p>
+  {% if v.pages > 1 %}<nav class="pager" aria-label="分頁" data-testid="revenue-pager">{% for i in range(1, v.pages + 1) %}{% if i == v.page %}<b>{{ i }}</b>{% else %}<a href="/revenue?{{ rqs(page=i) }}">{{ i }}</a>{% endif %} {% endfor %}</nav>{% endif %}
+  {% endif %}
+</section>
+
+{% if v.missing %}
+<section class="card" id="missing" aria-labelledby="missing-h" data-testid="revenue-missing">
+  <h2 id="missing-h">{{ v.missing_label }}（{{ v.missing|length }} 檔）</h2>
+  <p class="note">{{ v.not_announce_note }}；本站只反映已入庫資料。可至<a href="{{ v.mops_url }}" rel="noopener" target="_blank">公開資訊觀測站</a>查詢公司是否已申報。</p>
+  {% for mk in v.markets if v.missing_by_market.get(mk.market) %}
+  <h3>{{ mk.label }}（{{ v.missing_by_market[mk.market]|length }} 檔）</h3>
+  <p class="srcline" data-testid="fetched-{{ mk.market }}">本站最近成功抓取（MAX(fetched_at)）：{{ dt(mk.max_fetched_at) if mk.max_fetched_at else '—' }}{% if mk.has_record %}｜彙總頁最近成功讀取：{{ dt(mk.last_success) if mk.last_success else '—' }}（<a href="{{ mk.row_href }}">source_status</a>）{% endif %}｜<a href="{{ mk.url }}" rel="noopener" target="_blank">官方彙總表</a></p>
+  <ul class="missing-list chips">{% for x in v.missing_by_market[mk.market] %}<li><a href="{{ x.href }}">{{ x.symbol }} {{ x.name }}</a></li>{% endfor %}</ul>
+  {% endfor %}
+</section>
+{% endif %}
+{% endif %}
+
+<section class="card fine" id="explain" aria-labelledby="explain-h">
+  <h2 id="explain-h">說明</h2>
+  <p data-testid="revenue-fixed-note">{{ v.fixed_note }}{{ v.not_advice }}</p>
+  <p class="srcline">近 12 個月新高與年增率：{{ v.engine }}（{{ v.versions.get('rev_12m_high', '—') }}／{{ v.versions.get('yoy', '—') }}）；月增率、累計營收、累計年增率為來源值。金額單位：新台幣元。</p>
+  {% if v.has_fin %}
+  <div id="fin-note" class="fin-note" data-testid="fin-note"><p>※ 金融業：{{ v.fin_note.summary }}</p>
+    <ul>{% for q in v.fin_note.quotes %}<li>「{{ q.text }}」——{{ q.source }}，<a href="{{ q.url }}" rel="noopener" target="_blank">{{ q.url }}</a>（查閱 {{ q.checked }}）</li>{% endfor %}</ul></div>
+  {% endif %}
+</section>
+{{ srcline('monthly_revenues', v.month, v.is_test, v.universe_text) }}
+{% endblock %}

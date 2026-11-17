@@ -1,0 +1,135 @@
+{# 數值顯示：數字旁可 hover / 點一下（focus）看來源、資料日期、單位；非 ok 狀態顯示明確標籤 #}
+{% macro val(v, big=False, signed=False) -%}
+{%- if v.status == 'ok' and v.value is not none -%}
+{%- set tag = 'a' if v.href else 'span' -%}
+{%- set n = v.value -%}
+{%- if signed -%}{%- set shown = ('+' if n > 0 else '−' if n < 0 else '') ~ (((n|abs)|big) if big else ((n|abs)|num(v.digits))) -%}
+{%- else -%}{%- set shown = ('−' if n < 0 else '') ~ (((n|abs)|big) if big else ((n|abs)|num(v.digits))) -%}{%- endif -%}
+<{{ tag }} class="v{{ ' vlink' if v.href }}"{% if v.href %} href="{{ v.href }}" data-src-link="1"{% else %} tabindex="0"{% endif %}>{{ shown }}{% if v.unit == '%' %}%{% endif %}<span class="tip" role="tooltip">來源：{{ v.source }}<br>資料日期：{{ v.as_of }}{% if v.ref %}<br>來源表：{{ v.ref.table }}<br>主鍵：{{ v.ref.key }}{% endif %}{% if v.unit %}<br>單位：{{ v.unit }}{% endif %}{% if big %}<br>原值：{{ v.value|num(0) }}{% endif %}{% if v.note %}<br>註：{{ v.note }}{% endif %}{% if v.href %}<br>點擊開啟來源列 →{% endif %}</span></{{ tag }}>
+{%- else -%}
+{{ status_badge(v.status, v.note, v.last_success, v.source, v.as_of) }}
+{%- endif -%}
+{%- endmacro %}
+
+{# 漲跌類數值：顏色＋▲▼■＋正負號（+／−），帶連結時保留漲跌色（TOKENS.md §1、§4） #}
+{% macro chg(v, big=False) -%}
+{%- if v.status == 'ok' and v.value is not none -%}
+{%- set d = 'up' if v.value > 0 else 'down' if v.value < 0 else 'flat' -%}
+<span class="chg {{ d }}"><span class="arr" aria-hidden="true">{{ '▲' if d == 'up' else '▼' if d == 'down' else '■' }}</span><span class="sr">{{ '上漲' if d == 'up' else '下跌' if d == 'down' else '平盤' }}</span>{{ val(v, big=big, signed=True) }}</span>
+{%- else -%}{{ val(v, big=big) }}{%- endif -%}
+{%- endmacro %}
+
+{# 時間統一格式：ISO 8601（含 T 與時區）→「YYYY-MM-DD HH:MM」（台北時間；資料皆為 +08:00） #}
+{% macro dt(t) -%}{%- if t and t is string and t|length >= 16 and t[10] == 'T' -%}{{ t[:10] }} {{ t[11:16] }}{%- else -%}{{ t if t else '—' }}{%- endif -%}{%- endmacro %}
+
+{% macro status_badge(status, note='', last_success='', source='', as_of='') -%}
+{%- set nodata = status in ('revenue_missing', 'financials_missing') -%}
+<span class="badge st-{{ status }}{% if nodata %} badge-nodata{% endif %}" tabindex="0">{% if nodata %}<span class="bi" aria-hidden="true">∅</span>{% endif %}{{ STATUS_LABELS.get(status, STATUS_LABELS.get('insufficient', '資料不足')) }}{% if status == 'source_down' and last_success %}（上次成功 {{ dt(last_success) }}）{% endif %}<span class="tip" role="tooltip">{% if note %}{{ note }}<br>{% endif %}{% if source %}來源：{{ source }}<br>{% endif %}{% if as_of %}所屬期間：{{ as_of }}{% endif %}</span></span>
+{%- endmacro %}
+
+{% macro test_badge() -%}<span class="badge st-test">測試資料</span>{%- endmacro %}
+
+{% macro srcline(source, as_of, is_test=False, extra='') -%}
+<p class="srcline">來源：{{ source }}｜資料日期：{{ as_of }}{% if extra %}｜{{ extra }}{% endif %}{% if is_test %} {{ test_badge() }}{% endif %}</p>
+{%- endmacro %}
+
+{% macro screen_table(result, compact=False) %}
+{% if result.error %}
+<div class="empty param-error" data-state="screen-error"><strong>無法篩選</strong>：{{ result.error }}<br>這不是「零檔」；請修正參數或等資料入庫。</div>
+{% elif not result.rows and result.extra.zero_kind == 'coverage' %}
+<div class="empty zero zero-coverage" data-state="zero-coverage">
+  <strong>0 檔</strong>：0 檔是因為資料覆蓋不足，不是沒有股票符合條件。<br>
+  檢查 {{ result.universe_count }} 檔中有 {{ result.extra.coverage_excluded }} 檔因資料覆蓋不足（如除權息／減資資料未涵蓋、資料不足、停牌）被排除。
+  <a href="/status#coverage">查看資料狀態頁的覆蓋起日 →</a>
+</div>
+{% elif result.rows %}
+<div class="table-wrap{{ ' sticky-first' if compact else ' cards-m' }}" tabindex="0" role="region" aria-label="{{ '今日選股結果表，可左右捲動' if compact else '選股結果表' }}">
+<table class="data{{ ' sortable' if compact else ' result-cards' }}"{% if compact %} data-sortable{% endif %}>
+  {% if compact %}<caption class="sr">今日選股結果；點欄名可排序</caption>{% endif %}
+  <thead><tr>
+    {% if compact %}<th scope="col" data-key="code" data-type="text">股票</th>{% else %}<th>代號</th><th>名稱</th><th>市場</th><th>交易日期</th>{% endif %}
+    <th class="r" scope="col" data-key="close">收盤（元）</th><th class="r" scope="col" data-key="chg">漲跌幅</th><th class="r" scope="col" data-key="turnover"{% if compact %} aria-sort="descending" data-default{% endif %}>成交金額</th>
+    {% if not compact %}<th class="r">MA{{ result.extra.params.ma_short|default(20) }}（元）</th><th class="r">MA{{ result.extra.params.ma_long|default(60) }}（元）</th>{% endif %}
+    <th class="r" scope="col" data-key="vr">量比（倍）</th>{% if not compact %}<th>符合原因</th>{% endif %}
+  </tr></thead>
+  <tbody>
+  {% for r in result.rows %}
+  <tr id="row-{{ r.code }}">
+    {% if compact %}<td class="stock-cell" data-sort="{{ r.code }}"><a href="/stock/{{ r.code }}" title="{{ r.name }}"><span class="nm">{{ r.name }}</span> <span class="cd">{{ r.code }}</span></a><small>{{ r.market }}</small></td>
+    {% else %}<td class="c-code"><a href="/stock/{{ r.code }}">{{ r.code }}</a></td><td class="c-name"><a href="/stock/{{ r.code }}">{{ r.name }}</a><button type="button" class="more-toggle" aria-expanded="false" aria-controls="row-{{ r.code }}" data-more>更多欄位</button></td><td class="c-sec c-mkt">{{ r.market }}</td><td class="c-sec c-date">{{ r.trade_date }}</td>{% endif %}
+    <td class="r{{ ' c-key c-close' if not compact }}" data-sort="{{ r.close.value if r.close.value is not none else '' }}">{{ val(r.close) }}</td>
+    <td class="r{{ ' c-key c-chg' if not compact }}" data-sort="{{ r.change_pct.value if r.change_pct.value is not none else '' }}">{{ chg(r.change_pct) }}{% if r.change_check in ('mismatch', 'source_sign_conflict') %}<br><span class="badge st-mismatch" data-state="change-check-{{ r.change_check }}">{{ CHANGE_CHECK_LABELS[r.change_check] }}</span>{% endif %}</td>
+    <td class="r{{ ' c-sec' if not compact }}" data-sort="{{ r.turnover.value if r.turnover.value is not none else '' }}">{{ val(r.turnover, big=True) }}</td>
+    {% if not compact %}<td class="r c-sec">{{ val(r.ma_short) }}</td><td class="r c-sec">{{ val(r.ma_long) }}</td>{% endif %}
+    <td class="r{{ ' c-sec' if not compact }}" data-sort="{{ r.vol_ratio.value if r.vol_ratio.value is not none else '' }}">{{ val(r.vol_ratio) }}</td>
+    {% if not compact %}<td class="reasons c-key"><details><summary>{{ r.conditions|selectattr('enabled')|list|length }} 條全部通過</summary>
+      <ol>{% for c in r.conditions %}<li class="{{ 'pass' if c.passed else 'fail' }}{{ ' off' if not c.enabled }}">
+        {% if not c.enabled %}⚪ 未啟用{% elif c.passed %}✅{% elif c.passed is none %}⚠️ 資料不足{% else %}❌{% endif %}
+        {{ c.label }}：<span class="actual">{{ c.actual }}</span></li>{% endfor %}</ol></details></td>{% endif %}
+  </tr>
+  {% endfor %}
+  </tbody>
+</table>
+</div>
+{% if compact %}<p class="scroll-hint" aria-hidden="true">← 左右滑動看更多欄 →</p>{% endif %}
+{% else %}
+<div class="empty zero" data-state="zero">
+  <strong>零檔</strong>：條件下無符合標的。{{ result.trade_date }} 資料完整的股票中，沒有同時符合所有啟用條件者（共檢查 {{ result.universe_count }} 檔）。
+  <br>依規格不自動放寬條件；如需比較，請手動調整參數。
+</div>
+{% endif %}
+{% endmacro %}
+
+
+{# 指數小走勢圖：只畫 data_source.index_series() 回傳的點（不補值、不內插）；橫軸依交易日序等距，縱軸依該序列高低縮放 #}
+{% macro spark(s, label='', unit='點') -%}
+{%- set nm = label or (s.name if s else '指數') -%}
+{%- set pts = (s.points if s and s.points else []) -%}
+{%- set n = pts|length -%}
+<figure class="spark" data-testid="spark-{{ s.index_id if s else 'none' }}" data-state="{{ 'spark-error' if s and s.status not in ('ok', 'insufficient') else 'spark-empty' if n == 0 else 'spark-single' if n == 1 else 'spark-partial' if s.status != 'ok' else 'spark-ok' }}">
+  <figcaption class="spark-h"><b>{{ nm }}</b> <small>近 {{ n }} 個交易日收盤（{{ unit }}）</small></figcaption>
+  {%- if not s or (s.status not in ('ok', 'insufficient')) %}
+  <p class="spark-msg is-error"><span class="badge st-source_down">{{ STATUS_LABELS.get('error', '讀取失敗') }}</span> {{ (s.note if s and s.note else '指數序列讀取失敗') }}，不畫走勢。</p>
+  {%- elif n == 0 %}
+  <p class="spark-msg">{{ status_badge(s.status if s.status != 'ok' else 'insufficient', s.note) }} 沒有指數序列資料{% if s.note %}（{{ s.note }}）{% endif %}，不畫走勢。</p>
+  {%- elif n == 1 %}
+  <p class="spark-msg">{{ status_badge(s.status if s.status != 'ok' else 'insufficient', s.note) }} 只有 1 個交易日（<a href="{{ pts[0].href }}">{{ pts[0].date }} {{ pts[0].close|num(2) }} {{ unit }}</a>），無法畫走勢。</p>
+  {%- else %}
+  {%- set cs = pts|map(attribute='close')|list -%}
+  {%- set hi = cs|max %}{% set lo = cs|min %}{% set rng = (hi - lo) if hi != lo else 1 -%}
+  {%- set hi_i = cs.index(hi) %}{% set lo_i = cs.index(lo) -%}
+  {%- set W = 240 %}{% set H = 64 %}{% set PX = 4 %}{% set PY = 6 -%}
+  {%- set coords = [] -%}
+  {%- for p in pts -%}{%- set _ = coords.append(((PX + loop.index0 * (W - 2 * PX) / (n - 1))|round(1)) ~ ',' ~ ((PY + (hi - p.close) / rng * (H - 2 * PY))|round(1))) -%}{%- endfor -%}
+  {%- set last_xy = coords[-1].split(',') -%}
+  <svg class="spark-svg" viewBox="0 0 {{ W }} {{ H }}" preserveAspectRatio="none" role="img" aria-labelledby="sp-{{ s.index_id }}-t">
+    <title id="sp-{{ s.index_id }}-t">{{ nm }}近 {{ n }} 個交易日收盤走勢：{{ pts[0].date }} {{ pts[0].close|num(2) }} {{ unit }}，至 {{ pts[-1].date }} {{ pts[-1].close|num(2) }} {{ unit }}；期間最高 {{ hi|num(2) }} {{ unit }}（{{ pts[hi_i].date }}），最低 {{ lo|num(2) }} {{ unit }}（{{ pts[lo_i].date }}）。</title>
+    <line class="spark-base" x1="{{ PX }}" x2="{{ W - PX }}" y1="{{ H - PY }}" y2="{{ H - PY }}"/>
+    <polyline class="spark-line" points="{{ coords|join(' ') }}" vector-effect="non-scaling-stroke"/>
+    <circle class="spark-dot" cx="{{ last_xy[0] }}" cy="{{ last_xy[1] }}" r="2.6" vector-effect="non-scaling-stroke"/>
+  </svg>
+  <div class="spark-ax"><span><span>{{ pts[0].date[5:] }}</span> {{ pts[0].close|num(2) }}</span><span class="spark-hl">高 {{ hi|num(2) }}／低 {{ lo|num(2) }}</span><span><span>{{ pts[-1].date[5:] }}</span> {{ pts[-1].close|num(2) }}</span></div>
+  {%- if s.status != 'ok' %}<p class="spark-msg">{{ status_badge(s.status, s.note) }} {{ s.note }}</p>{% endif %}
+  <p class="spark-src"><a href="{{ pts[-1].href }}">最新一點來源列 →</a></p>
+  {%- endif %}
+</figure>
+{%- endmacro %}
+
+{#- 非普通股排除原因：先依類別（exclude_reason 空白後的文字，如「權證／牛熊」）彙總，CFI 細項收合；正式資料有 36 種 CFI、5 萬多檔 -#}
+{% macro excl_summary(rows) -%}
+{%- set groups = rows|groupby('exclude_reason') -%}
+{%- set cats = {} -%}
+{%- for g in groups %}{% set k = g.grouper.split(' ', 1)[1] if (g.grouper and ' ' in g.grouper) else (g.grouper or '—') %}{% set _ = cats.update({k: cats.get(k, 0) + g.list|length}) %}{% endfor -%}
+<p class="excl-cats" data-testid="excl-cats">{% for k, n in cats|dictsort(by='value', reverse=true) %}<span class="badge st-insufficient">{{ k }} {{ '{:,}'.format(n) }}</span>{% endfor %}</p>
+{%- if groups|length > cats|length %}
+<details class="excl-cfi"><summary>依 CFI 代碼細分（{{ groups|length }} 種）</summary>
+<p class="excl-cats">{% for g in groups %}<span class="badge st-insufficient">{{ g.grouper }} {{ '{:,}'.format(g.list|length) }}</span>{% endfor %}</p></details>
+{%- endif %}
+{%- endmacro %}
+
+{#- 年增率附註（第十三批「當月營收為負」）：按鈕＋展開說明，不靠 title；設計 §19。detail 取 note 第一段（後端 REVENUE_NEGATIVE_DETAIL）。
+    無 JS 時說明直接顯示；有 JS 時預設收合，按鈕 aria-expanded 切換。 -#}
+{% macro neg_note(text, note, key, uid) -%}
+{%- set detail = (note or '').split('｜')[0] -%}
+<span class="neg-note" data-testid="yoy-neg-{{ key }}"><button type="button" class="neg-btn" aria-expanded="false" aria-controls="nn-{{ uid }}" title="{{ detail }}"><span aria-hidden="true">!</span> {{ text }}<span class="sr">（說明）</span></button><span class="neg-detail" id="nn-{{ uid }}" role="note">{{ detail or text }}</span></span>
+{%- endmacro %}

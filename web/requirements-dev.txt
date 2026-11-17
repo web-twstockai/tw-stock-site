@@ -1,0 +1,2 @@
+# 選用：截圖工具 tools/screenshots.py（使用系統 /usr/bin/google-chrome，不另下載瀏覽器）
+playwright==1.64.1

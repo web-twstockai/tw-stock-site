@@ -1,0 +1,176 @@
+{% extends "base.html" %}
+{% from "_macros.html" import val, chg, status_badge, test_badge, srcline, dt, neg_note %}
+{% block title %}{{ s.code }} {{ s.name }}｜台股盤後研究{% endblock %}
+{% block content %}
+<header class="stock-head">
+  <h1><span class="sh-name">{{ s.name }}</span> <span class="sh-code">{{ s.code }}</span> <small>{{ s.market }}｜{{ s.industry }}</small></h1>
+  <nav class="jump" aria-label="本頁段落"><a href="#quote">行情</a><a href="#revenue">月營收</a><a href="#fin">財報</a><a href="#events">事件</a></nav>
+</header>
+
+<section class="card" id="quote" aria-labelledby="quote-h">
+  <h2 id="quote-h">行情 <small>近 {{ ph.rows|length if ph.rows else 0 }} 個交易日</small></h2>
+  {% if quote %}
+  <div class="quote-hero">
+    <div class="qh-main">
+      <p class="qh-date"><span data-date="{{ quote.close.as_of }}">{{ quote.close.as_of }}</span> 收盤{% if ph.is_test %} {{ test_badge() }}{% endif %}</p>
+      <p class="qh-price"><span class="qh-num">{{ val(quote.close) }}</span>{% if quote.close.ok %}<span class="unit">元</span>{% endif %}</p>
+      <div class="qh-chg">
+        <div><span class="k">漲跌幅 <small>（analysis 自算，正式值）</small></span><span class="n big">{{ chg(quote.change_pct) }}</span></div>
+        <div><span class="k">官方漲跌（元）</span><span class="n">{{ chg(quote.change) }}</span></div>
+      </div>
+      {% if chk %}<div class="chk"><span class="badge chk-{{ chk.check }} st-{{ chk.state }}" data-state="change-check-{{ chk.check }}" tabindex="0">{{ chk.label }}<span class="tip" role="tooltip">{{ chk.note }}{% if chk.source_twd is not none %}<br>自算 {{ '%+.2f'|format(chk.calc_twd) if chk.calc_twd is not none else '—' }} 元／官方 {{ '%+.2f'|format(chk.source_twd) }} 元{% endif %}{% if chk.diff_twd is not none %}<br>差 {{ '%+.3f'|format(chk.diff_twd) }} 元（容許 {{ '%.3f'|format(chk.tol_twd) }}）{% endif %}<br>來源：analysis/series.py change_series() change_check</span></span></div>{% endif %}
+    </div>
+    <dl class="qh-sub">
+      <div><dt>成交量（股）</dt><dd>{{ val(quote.volume) }}</dd></div>
+      <div><dt>MA20（元）</dt><dd>{{ val(quote.ma20) }}</dd></div>
+      <div><dt>MA60（元）</dt><dd>{{ val(quote.ma60) }}</dd></div>
+    </dl>
+  </div>
+  {% endif %}
+  {% if basis_segs|length == 1 %}{% set g = basis_segs[0] %}
+  <p class="basis-note" data-testid="volume-basis" data-market="{{ s.market_code }}" data-sources="1">{{ basis_title }}：{{ g.label }}：{% if not g.known %}<span data-state="basis-unknown">{{ g.basis }}</span>{% else %}{{ g.basis }}{% endif %}。</p>
+  {% elif basis_segs %}
+  <div class="basis-note" data-testid="volume-basis" data-market="{{ s.market_code }}" data-sources="{{ basis_segs|length }}">{{ basis_title }}（觀察期間混有 {{ basis_segs|length }} 段來源）：
+    <ul>{% for g in basis_segs %}<li data-basis-seg>{{ g.start }}～{{ g.end }}（{{ g.days }} 日）｜{{ g.label }}：{% if not g.known %}<span data-state="basis-unknown">{{ g.basis }}</span>{% else %}{{ g.basis }}{% endif %}</li>{% endfor %}</ul></div>
+  {% else %}
+  <p class="basis-note" data-testid="volume-basis" data-market="{{ s.market_code }}">{{ volume_basis_note(s.market_code) }}</p>
+  {% endif %}
+  {% if screen_status %}
+  <p class="screen-status" data-testid="screen-status" data-status="{{ screen_status.status }}">
+    選股狀態（預設條件{% if screen_status.trade_date %}，{{ screen_status.trade_date }}{% endif %}）：<strong>{{ screen_status.label }}</strong>
+    {% if screen_status.code %}｜<code>{{ screen_status.code }}</code> <span data-excl-label>{{ screen_status.code_label }}</span>
+      <small class="muted">（說明來源：{{ screen_status.code_label_src }}）</small>
+      {% if screen_status.detail %}<br><small>analysis 原因：{{ screen_status.detail }}</small>{% endif %}
+    {% elif screen_status.detail %}｜{{ screen_status.detail }}{% endif %}
+    <a href="/screener#exclusion-stats">選股頁 →</a></p>
+  {% endif %}
+  {% if ph.change_mismatch %}
+  <details class="mismatch-list" data-testid="change-mismatch" open>
+    <summary>{{ check_labels['mismatch'] }}：近 {{ ph.rows|length }} 個交易日中 {{ ph.change_mismatch|length }} 日（漲跌幅仍為自算正式值，僅標記、不修正）</summary>
+    <div class="table-wrap stack-wrap"><table class="data stack"><thead><tr><th>日期</th><th>標記</th><th class="r">自算漲跌（元）</th><th class="r">官方漲跌（元）</th><th class="r">差（元）</th><th class="r">容許</th><th>來源列</th></tr></thead>
+    <tbody>{% for c in ph.change_mismatch|reverse %}<tr><td class="stack-h">{{ c.date }}</td><td>{{ check_labels.get(c.check, c.check) }}</td>
+      <td class="r">{{ '%+.2f'|format(c.calc_twd) if c.calc_twd is not none else '—' }}</td>
+      <td class="r">{{ '%+.2f'|format(c.source_twd) if c.source_twd is not none else '—' }}</td>
+      <td class="r">{{ '%+.3f'|format(c.diff_twd) if c.diff_twd is not none else '—' }}</td>
+      <td class="r">{{ '%.3f'|format(c.tol_twd) if c.tol_twd is not none else '—' }}</td>
+      <td><a href="/source?table=daily_prices&symbol={{ s.code }}&price_date={{ c.date }}">daily_prices</a></td></tr>{% endfor %}</tbody></table></div>
+  </details>
+  {% endif %}
+  {% for n in ph.notes %}<p class="note">{{ n }}</p>{% endfor %}
+  {% if ph.rows %}
+  {% if kline %}
+  {#- K 線價格切換（設計 §17）：分段控制，選中＝實心底＋✓＋粗體＋aria-current，未選＝外框連結；不只靠顏色 -#}
+  <div class="kline-mode" data-testid="kline-mode" data-mode="{{ kline.mode }}">
+    <span class="seg-l" id="kline-mode-l">K 線價格</span>
+    <span class="seg" role="group" aria-labelledby="kline-mode-l">
+    {%- for m, lb in [('adj', '還原價（前復權）'), ('raw', '原始價')] %}
+      {%- if kline.mode == m %}<span class="seg-b is-on" aria-current="true"><span aria-hidden="true">✓ </span>{{ lb }}<span class="sr">（目前顯示）</span></span>
+      {%- elif m == 'adj' and kline.fallback_note %}<span class="seg-b is-off" aria-disabled="true"><span aria-hidden="true">✕ </span>{{ lb }}<small>不可用</small></span>
+      {%- else %}<a class="seg-b" href="?price={{ m }}#quote">{{ lb }}<span class="sr">（切換）</span></a>{% endif %}
+    {%- endfor %}</span>
+    {% if kline.mode == 'adj' and kline.boundary_date %}<span class="muted">還原價可用範圍起日 {{ kline.boundary_date }}{% if kline.skipped %}，之前 {{ kline.skipped }} 個交易日不畫（不以原始價補）{% endif %}</span>{% elif kline.mode == 'adj' and kline.skipped %}<span class="muted">{{ kline.skipped }} 個交易日無還原價（停牌／無成交），圖上不畫</span>{% endif %}</div>
+  {% if kline.fallback_note %}<div class="state state-fallback" data-state="kline-fallback" role="note">
+    <p class="fb-h"><span aria-hidden="true">⚠</span> <b>本圖顯示原始價，不是還原價（前復權）</b> {{ status_badge('insufficient' if kline.status != 'error' else 'error', kline.fallback_note) }}</p>
+    <p class="fb-why"{% if kline.fallback_raw is defined and kline.fallback_raw %} title="{{ kline.fallback_raw }}" data-raw="{{ kline.fallback_raw }}"{% endif %}>原因：{{ kline.fallback_note }}</p>
+    <p class="fb-hint">原始價沒有扣除除權息、減資的影響，這些日期前後的價格跳動不代表實際漲跌。</p></div>
+  {% elif kline.status == 'error' %}<p class="note" data-state="kline-error">{{ status_badge('error', kline.note) }} {{ kline.note }}</p>{% endif %}
+  {% endif %}
+  <figure class="chart-fig" aria-labelledby="chart-cap">
+    <div class="chart-top">
+      <div class="legend"><span class="lg c">K 線（紅漲綠跌）</span><span class="lg ma20">MA20</span><span class="lg ma60">MA60</span><span class="lg vol">成交量</span>{% if kline and kline.events %}{% set ev_na = kline.events|rejectattr('status', 'equalto', 'applied')|list %}{% if ev_na|length < kline.events|length %}<span class="lg evt"><span aria-hidden="true">▼</span> 除權息／減資日{% if kline.mode == 'adj' %}（已還原）{% endif %}</span>{% endif %}{% if ev_na %}<span class="lg evt-na"><span aria-hidden="true">●</span> {{ '未還原事件' if kline.mode == 'adj' else '未用於還原的事件' }}</span>{% endif %}{% endif %}</div>
+      <span class="axis-unit">價格：{{ '元' if ph.price_unit == '新台幣元' else ph.price_unit }}｜成交量：{{ ph.volume_unit }}</span>
+    </div>
+    <div id="chart" class="chart" role="img" aria-label="{% if kline and kline.drawn_days is defined and kline.drawn_days %}{{ s.name }} {{ kline.drawn_days }} 個交易日 K 線、均線與成交量圖，{{ kline.drawn_start }} 至 {{ kline.drawn_end }}{% else %}{{ s.name }} 近 {{ ph.rows|length }} 個交易日 K 線、均線與成交量圖，{{ ph.rows[0].date }} 至 {{ ph.rows[-1].date }}{% endif %}" data-price-unit="{{ '元' if ph.price_unit == '新台幣元' else ph.price_unit }}" data-volume-unit="{{ ph.volume_unit }}"><p class="chart-msg" data-state="loading"><span class="skeleton" style="width:60%"></span>圖表載入中…</p></div>
+    <script type="application/json" id="chart-data">{{ chart_json|safe }}</script>
+    <figcaption id="chart-cap" class="chart-cap">{% set pu = '元' if ph.price_unit == '新台幣元' else ph.price_unit %}{% if kline and kline.caption_period is defined %}{{ kline.caption_period }}{% else %}{{ ph.rows[0].date }}～{{ ph.rows[-1].date }} 共 {{ ph.rows|length }} 個交易日{% endif %}：K 線為每日開盤、最高、最低、收盤（{{ pu }}；收盤高於開盤為紅、低於為綠），橘線 MA20、藍線 MA60，下方灰柱為每日成交量（{{ ph.volume_unit }}）；橫軸為交易日，休市與停牌日不佔位置。<span class="muted">{{ ph.adjustment }}。</span>{% if kline and kline.ma_ranges is defined and kline.ma_ranges %}<span class="ma-range" data-testid="ma-ranges">均線期間：{{ kline.ma_ranges }}。</span>{% endif %}</figcaption>
+  </figure>
+  {% if kline and kline.events %}
+  <details class="kline-events" data-testid="kline-events"><summary>此期間除權息／減資事件 {{ kline.events|length }} 筆（圖上 ▼ 標示{% if ev_na %}、● 為未還原{% endif %}；展開看日期、還原狀態與因子）</summary>
+    <div class="table-wrap stack-wrap" tabindex="0" role="region" aria-label="除權息／減資事件表"><table class="data stack kline-ev"><thead><tr><th>日期</th><th>類型</th><th>還原狀態</th><th class="r">價格因子</th><th class="r">股數因子</th><th>說明</th><th>來源</th></tr></thead><tbody>
+    {% for e in kline.events %}<tr data-status="{{ e.status }}"><td class="stack-h">{{ e.date }}</td><td>{{ e.short }}</td><td><span class="ev-st ev-{{ e.status }}"><span aria-hidden="true">{{ '▼' if e.status == 'applied' else '●' }}</span> {{ e.status_label }}</span>{% if e.code %}<small class="ev-code" title="{{ e.code }}" data-raw="{{ e.code }}">{{ e.code_label if (e.code_label is defined and e.code_label) else e.code }}</small>{% endif %}</td>
+      <td class="r">{{ '%.6f'|format(e.price_factor) if e.price_factor is not none else '—' }}</td><td class="r">{{ '%.6f'|format(e.share_factor) if e.share_factor is not none else '—' }}</td>
+      <td class="ev-desc"{% if e.desc_raw is defined and e.desc_raw %} title="{{ e.desc_raw }}"{% endif %}>{{ e.desc_zh if (e.desc_zh is defined and e.desc_zh) else (e.desc or e.detail) }}</td><td><a href="/source?table=corporate_actions&symbol={{ s.code }}&action_date={{ e.date }}">corporate_actions</a></td></tr>{% endfor %}
+    </tbody></table></div><p class="srcline">事件與因子：{{ kline.engine }}（網站不重算）</p></details>
+  {% endif %}
+  {% if ph.ma_engine %}<p class="srcline">均線：{{ ph.ma_engine }} ma_series()（還原價）｜漲跌幅：analysis change_series()</p>{% endif %}
+  {% if ph.ma_note and not ph.is_test %}<p class="note">均線：{{ status_badge('insufficient', ph.ma_note) }} {{ ph.ma_note }}（圖上不畫 MA）</p>{% endif %}
+  {% else %}
+  <div class="empty" data-state="no-prices">{{ status_badge('insufficient', '沒有行情列') }} 沒有此股的行情資料。</div>
+  {% endif %}
+  {{ srcline(ph.source, ph.as_of, ph.is_test, '價格單位 ' ~ ph.price_unit ~ '、成交量單位 ' ~ ph.volume_unit ~ '｜' ~ ph.adjustment) }}
+</section>
+
+<section class="card" id="revenue">
+  <h2>月營收 <small>最近 24 個月</small></h2>
+  {% if rev.source_down %}
+  <div class="alert st-source_down-box" data-state="source_down">{{ status_badge('source_down', rev.source_note, rev.last_success) }} {{ rev.source_note }}</div>
+  {% endif %}
+  <div class="table-wrap sticky-first" tabindex="0" role="region" aria-label="月營收表，可左右捲動"><table class="data">
+    <thead><tr><th>月份</th><th class="r">營收</th><th class="r">月增率</th><th class="r">年增率</th><th class="r">累計營收</th><th class="r">累計年增率</th></tr></thead>
+    <tbody>{% for r in rev.rows %}<tr>
+      <td>{{ r.month }}</td>
+      {%- set rst = [r.revenue.status, r.mom.status, r.yoy.status, r.cum.status, r.cum_yoy.status]|unique|list %}
+      {%- if rst|length == 1 and rst[0] != 'ok' %}{# 整列同一狀態（例如本站尚無此月營收）只顯示一個徽章，不重複五次 #}
+      <td colspan="5" data-state="row-{{ rst[0] }}">{{ val(r.revenue, big=True) }}</td>
+      {%- else %}<td class="r">{{ val(r.revenue, big=True) }}</td><td class="r">{{ chg(r.mom) }}</td>
+      <td class="r">{{ chg(r.yoy) }}{% if r.yoy_neg_note is defined and r.yoy_neg_note %}{{ neg_note(r.yoy_neg_note, r.yoy.note, r.month, 'm' ~ r.month) }}{% endif %}</td><td class="r">{{ val(r.cum, big=True) }}</td><td class="r">{{ chg(r.cum_yoy) }}</td>{% endif %}
+    </tr>{% endfor %}</tbody>
+  </table></div>
+  <p class="scroll-hint" aria-hidden="true">← 左右滑動看更多欄 →</p>
+  {{ srcline(rev.source, rev.rows[0].month if rev.rows else '—', rev.is_test, '單位 ' ~ rev.unit) }}
+</section>
+
+<section class="card" id="fin">
+  <h2>財報</h2>
+  <div class="tabs" role="tablist">
+    <span>期間：</span>
+    <a class="{{ 'on' if period == 'quarter' }}" href="?period=quarter&scope={{ scope }}&basis={{ basis }}#fin">季度</a>
+    <a class="{{ 'on' if period == 'annual' }}" href="?period=annual&scope={{ scope }}#fin">年度</a>
+    <span>報表：</span>
+    <a class="{{ 'on' if scope == 'consolidated' }}" href="?period={{ period }}&scope=consolidated&basis={{ basis }}#fin">合併</a>
+    <a class="{{ 'on' if scope == 'individual' }}" href="?period={{ period }}&scope=individual&basis={{ basis }}#fin">個別</a>
+    {% if period == 'quarter' %}<span>口徑：</span>
+    <a class="{{ 'on' if basis == 'single' }}" href="?period=quarter&scope={{ scope }}&basis=single#fin">單季</a>
+    <a class="{{ 'on' if basis == 'cumulative' }}" href="?period=quarter&scope={{ scope }}&basis=cumulative#fin">累計</a>{% endif %}
+  </div>
+  {% if not fin.has_basis or not fin.has_period_type %}<p class="note">口徑欄位：{% if not fin.has_basis %}{{ status_badge('insufficient', 'report_basis 欄位尚未建立') }} 合併／個別未標示　{% endif %}{% if not fin.has_period_type %}{{ status_badge('insufficient', 'period_type 欄位尚未建立') }} 單季／累計未標示{% endif %}</p>{% endif %}
+  <p class="fin-label">
+    <span class="badge st-scope">{{ '合併' if fin.scope == 'consolidated' else '個別' }}報表</span>
+    <span class="badge st-basis">{{ '年度' if fin.basis == 'annual' else ('單季' if fin.basis == 'single' else '累計（年初至該季）') }}</span>
+    <span class="muted">（同一張表只呈現一種口徑，不混用）</span>
+  </p>
+  {% for n in fin.notes %}<p class="note">{{ n }}</p>{% endfor %}
+  {% if fin.rows %}
+  <div class="table-wrap sticky-first" tabindex="0" role="region" aria-label="財報表，可左右捲動"><table class="data">
+    <thead><tr><th>期間</th><th class="r">營收</th><th class="r">毛利率</th><th class="r">營業利益率</th><th class="r">稅後淨利</th><th class="r">EPS（元）</th><th class="r">營業現金流</th></tr></thead>
+    <tbody>{% for r in fin.rows %}<tr>
+      <td>{{ r.period }}{% if r.derived %} <span class="badge st-derived" tabindex="0" data-state="derived">推算<span class="tip" role="tooltip">{{ r.derived_note }}</span></span>{% endif %}</td><td class="r">{{ val(r.revenue, big=True) }}</td><td class="r">{{ val(r.gross_margin) }}</td>
+      <td class="r">{{ val(r.op_margin) }}</td><td class="r">{{ val(r.net_income, big=True) }}</td><td class="r">{{ val(r.eps) }}</td>
+      <td class="r">{{ val(r.ocf, big=True) }}</td>
+    </tr>{% endfor %}</tbody>
+  </table></div>
+  <p class="scroll-hint" aria-hidden="true">← 左右滑動看更多欄 →</p>
+  {% else %}
+  {#- 依資料層 fin.empty_status 顯示對應徽章（financials_missing／insufficient／error…）；沒有此欄位時才退回 insufficient -#}
+  {%- set fes = fin.empty_status or 'insufficient' %}{% set flab = STATUS_LABELS.get(fes, '') -%}
+  <div class="empty" data-state="no-financials" data-status="{{ fes }}">{{ status_badge(fes, fin.empty_reason) }} {{ fin.empty_reason[flab|length:] if (flab and fin.empty_reason and fin.empty_reason.startswith(flab) and fin.empty_reason[flab|length:][:1] == '（') else fin.empty_reason }}</div>
+  {% endif %}
+  {% if fin.is_financial %}<p class="note">金融業：毛利率、營業利益率不適用（損益結構不同），以「不適用」標示。</p>{% endif %}
+  {% if fin.basis == 'single' and fin.is_test %}<p class="note">營業現金流：現金流量表僅公告累計數，單季值為推算（本期累計－上期累計）。</p>{% endif %}
+  {{ srcline(fin.source, fin.rows[0].period if fin.rows else '—', fin.is_test, '版本 ' ~ fin.version) }}
+</section>
+
+<section class="card" id="events">
+  <h2>事件時間軸 <small>近 30 天</small></h2>
+  <div class="tabs">
+    <a class="{{ 'on' if not cat }}" href="?#events">全部</a>
+    {% for k, label in EVENT_CATEGORIES.items() %}<a class="tag tag-{{ k }} {{ 'on' if cat == k }}" href="?cat={{ k }}#events">{{ label }}</a>{% endfor %}
+  </div>
+  <p class="muted">社群（含 X）訊息只當線索；AI 分析推論為推測，非事實。</p>
+  {% include "_events.html" %}
+</section>
+{% endblock %}
+{% block scripts %}
+<script src="/static/vendor/lightweight-charts-4.2.3/lightweight-charts.standalone.production.js" defer></script>
+<script src="/static/js/stock-chart.js" defer></script>
+{% endblock %}

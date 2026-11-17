@@ -1,0 +1,129 @@
+{% extends "base.html" %}
+{% from "_macros.html" import val, test_badge, srcline, screen_table, excl_summary, status_badge %}
+{% block title %}選股｜台股盤後研究{% endblock %}
+{% block content %}
+<h1>技術條件選股 <small>趨勢＋突破＋量能</small></h1>
+<p class="basis-note" data-testid="volume-basis">{{ VOLUME_BASIS_NOTE }}</p>
+
+{% set ep = result.extra.error_param|default('') %}
+{% macro numfield(name, aria, unit='') -%}
+<input type="text" inputmode="decimal" name="{{ 'min_turnover_yi' if name == 'min_turnover' else name }}" value="{{ fv(name) }}"
+  aria-label="{{ aria }}（{{ name }}）" class="{{ 'invalid' if ep == name }}"{% if ep == name %} aria-invalid="true"{% endif %}>{{ unit }}
+{%- endmacro %}
+{#- 實際套用的參數（analysis 驗證後的 ScreenParams）；參數錯誤時退回 analysis 預設值 -#}
+{%- set P = result.extra.params if result.extra.params else defaults -%}
+{%- set p_err = not result.extra.params -%}
+{%- macro g(v) -%}{{ '%g'|format(v) if v is number else v }}{%- endmacro -%}
+{#- 條件白話說明：analysis/explain.py（網站不自寫）-#}
+{%- macro exp(key) -%}{%- set x = explain.conditions.get(key) -%}
+{%- if x %}{% if not x.enabled %}<b>未啟用，不檢查。</b>{{ x.text[('未啟用，不檢查。')|length:] if x.text.startswith('未啟用，不檢查。') else x.text }}{% else %}{{ x.title }}：{{ x.text }}{% endif %}
+{%- else %}<span data-state="explain-error">{{ status_badge('error', explain.error) }} 條件說明無法載入</span>{% endif -%}
+{%- endmacro -%}
+{%- set changed = [] -%}
+{%- for n in ['ma_short', 'ma_long', 'breakout_lookback', 'volume_lookback', 'volume_multiplier', 'min_turnover', 'enable_trend', 'enable_breakout', 'enable_volume', 'enable_turnover'] -%}
+  {%- if not p_err and n in defaults and P[n] != defaults[n] %}{% set _ = changed.append(labels.get(n, n) ~ ('（已關閉）' if n.startswith('enable_') else '')) %}{% endif -%}
+{%- endfor %}
+<form class="card params" method="get" action="/screener" novalidate>
+  <input type="hidden" name="f" value="1">
+  <fieldset>
+    <legend>條件（全部同時成立；期間以交易日計）</legend>
+    {% if changed %}<p class="state state-nondefault" data-state="non-default" role="note">⚠ 目前條件<b>不是預設</b>：已調整 {{ changed|join('、') }}。預設為收盤 &gt; MA{{ defaults.ma_short }} &gt; MA{{ defaults.ma_long }}、前 {{ defaults.breakout_lookback }} 日最高、前 {{ defaults.volume_lookback }} 日均量 × {{ g(defaults.volume_multiplier) }}、成交金額 ≥ {{ g(defaults.min_turnover / 100000000) }} 億元，四條件全開。<a href="/screener">回預設 →</a></p>{% endif %}
+    <div class="cond{{ ' off' if not P.enable_trend }}">
+    <label class="cond-main"><input type="checkbox" name="enable_trend" value="1" {{ 'checked' if p.values.get('enable_trend', True) }} aria-label="enable_trend" aria-describedby="exp-trend">
+      <span>1. 收盤 &gt; MA{{ numfield('ma_short', '短均線') }} &gt; MA{{ numfield('ma_long', '長均線') }}</span></label>
+    <p class="cond-exp" id="exp-trend" data-testid="plain-trend">{{ exp('trend') }}</p>
+    </div>
+    <div class="cond{{ ' off' if not P.enable_breakout }}">
+    <label class="cond-main"><input type="checkbox" name="enable_breakout" value="1" {{ 'checked' if p.values.get('enable_breakout', True) }} aria-label="enable_breakout" aria-describedby="exp-breakout">
+      <span>2. 收盤 &gt; 前{{ numfield('breakout_lookback', '突破回看日數') }}日最高（不含當日）</span></label>
+    <p class="cond-exp" id="exp-breakout" data-testid="plain-breakout">{{ exp('breakout') }}</p>
+    </div>
+    <div class="cond{{ ' off' if not P.enable_volume }}">
+    <label class="cond-main"><input type="checkbox" name="enable_volume" value="1" {{ 'checked' if p.values.get('enable_volume', True) }} aria-label="enable_volume" aria-describedby="exp-volume">
+      <span>3. 成交量 ≥ 前{{ numfield('volume_lookback', '均量回看日數') }}日均量 × {{ numfield('volume_multiplier', '量能倍數') }}</span></label>
+    <p class="cond-exp" id="exp-volume" data-testid="plain-volume">{{ exp('volume') }}</p>
+    </div>
+    <div class="cond{{ ' off' if not P.enable_turnover }}">
+    <label class="cond-main"><input type="checkbox" name="enable_turnover" value="1" {{ 'checked' if p.values.get('enable_turnover', True) }} aria-label="enable_turnover" aria-describedby="exp-turnover">
+      <span>4. 成交金額 ≥ {{ numfield('min_turnover', '金額門檻（億元）', ' 億元') }}</span></label>
+    <p class="cond-exp" id="exp-turnover" data-testid="plain-turnover">{{ exp('turnover') }}</p>
+    </div>
+    <p class="cond-common" data-testid="plain-common">{% if explain.status == 'ok' %}{{ explain.common }}{% else %}<span data-state="explain-error">{{ status_badge('error', explain.error) }} {{ explain.error }}</span>{% endif %}{% if p_err %}<br><b>參數有誤，以上說明以 analysis 預設值撰寫。</b>{% else %}以上數字為目前已套用的參數，改參數後按「重新篩選」才會更新。{% endif %}
+      <small class="muted">說明文字來源：analysis/explain.py；算法依據：analysis/screener.py、docs/indicators.md。</small></p>
+  </fieldset>
+  <details class="advanced" id="advanced" data-testid="advanced" {{ 'open' if (ep in adv_num or ep in adv_bool) }}>
+    <summary>進階設定（資料品質；一般不需調整）</summary>
+    <input type="hidden" name="adv" value="1">
+    <p class="muted">以下為 analysis/screener.py 的資料品質參數，預設值取自 analysis。正式結果採 strict 覆蓋政策。</p>
+    <div class="adv-grid">
+    {% for name in adv_num %}
+      <label>{{ labels[name] }} <code>{{ name }}</code>{{ numfield(name, labels[name]) }}</label>
+    {% endfor %}
+      <p class="fixed-policy" data-testid="coverage-policy">{{ labels['coverage_policy'] }}：<strong>{{ defaults.get('coverage_policy', 'strict') }}</strong>（固定；依 analysis/USAGE.md 不開放調整，正式結果一律 strict）</p>
+    {% for name in adv_bool %}
+      <label><input type="checkbox" name="{{ name }}" value="1" {{ 'checked' if p.values.get(name, defaults.get(name, True)) }}> {{ labels[name] }} <code>{{ name }}</code></label>
+    {% endfor %}
+    </div>
+  </details>
+  <div class="row">
+    <label>排序 <select name="sort">{% for k, (label, _) in sort_keys.items() %}<option value="{{ k }}" {{ 'selected' if p.sort == k }}>{{ label }}</option>{% endfor %}</select></label>
+    <label><select name="order"><option value="desc" {{ 'selected' if p.order == 'desc' }}>大到小</option><option value="asc" {{ 'selected' if p.order == 'asc' }}>小到大</option></select></label>
+    <button type="submit" class="primary">重新篩選</button>
+    <span class="params-dirty" data-testid="params-dirty" role="status" aria-live="polite"></span>
+    <a class="btn" href="/screener">回預設</a>
+    <a class="btn" href="/screener.csv?{{ qs }}" download>匯出 CSV</a>
+  </div>
+</form>
+
+{% if result.extra.error_type %}
+<div class="alert param-error-box" data-state="param-error" role="alert">
+  <strong>參數錯誤（{{ result.extra.error_type }}）</strong>
+  {% if ep %}｜欄位：{{ labels.get(ep, ep) }}（<code>{{ ep }}</code>）{% endif %}<br>
+  <span data-error-message>{{ result.extra.error_message }}</span><br>
+  <small>網站不會自動修正或夾住數值；請修改上方標紅的欄位後重新篩選。</small>
+</div>
+{% endif %}
+
+{% if result.extra.exclusion_stats is defined %}
+<section class="card exclusion-stats" id="exclusion-stats" data-testid="exclusion-stats">
+  <h2>排除原因統計 <small>檢查 {{ result.universe_count }} 檔｜排除 {{ result.excluded|length }} 檔{% if result.extra.coverage_excluded %}（其中資料覆蓋不足 {{ result.extra.coverage_excluded }} 檔）{% endif %}</small></h2>
+  {% if result.extra.exclusion_stats %}
+  <div class="table-wrap stack-wrap"><table class="data stack">
+    <thead><tr><th>代碼</th><th>說明</th><th class="r">檔數</th><th>類型</th></tr></thead>
+    <tbody>{% for e in result.extra.exclusion_stats %}<tr class="{{ 'cov' if e.coverage }}">
+      <td class="stack-h"><code>{{ e.code }}</code></td><td class="wrap">{{ e.label }}</td><td class="r">{{ e.count }}</td>
+      <td>{% if e.coverage %}<a href="/status#coverage">資料覆蓋不足</a>{% elif e.code == 'EXCL_SUSPENDED' %}<span data-type="suspended">確認停牌</span>{% else %}資料品質／其他{% endif %}</td>
+    </tr>{% endfor %}</tbody>
+  </table></div>
+  {% else %}<p class="muted">無排除。</p>{% endif %}
+  <p class="muted"><a href="#excluded">逐檔排除明細 ↓</a></p>
+</section>
+{% endif %}
+
+{% for n in result.notes %}<p class="note">{{ n }}</p>{% endfor %}
+
+<section class="card" id="results">
+  <h2>結果 <small>{{ result.rows|length }} 檔／檢查 {{ result.universe_count }} 檔｜交易日 {{ result.trade_date }}{% if pg is defined and pg.pages > 1 %}｜第 {{ pg.page }}／{{ pg.pages }} 頁（每頁 {{ pg.size }} 檔）{% endif %}</small></h2>
+  {% if result.rows %}
+  <p class="sortbar">排序：{% for k, (label, _) in sort_keys.items() %}<a href="/screener?{{ params_query(p, sort=k, order=('asc' if p.sort == k and p.order == 'desc' else 'desc')) }}" class="{{ 'on' if p.sort == k }}">{{ label }}{% if p.sort == k %}{{ '↓' if p.order == 'desc' else '↑' }}{% endif %}</a> {% endfor %}</p>
+  {% endif %}
+  {{ screen_table(page_result if page_result is defined else result) }}
+  {% if pg is defined and pg.pages > 1 %}<nav class="pager" aria-label="分頁" data-testid="screener-pager">{% for i in range(1, pg.pages + 1) %}{% if i == pg.page %}<b>{{ i }}</b>{% else %}<a href="{{ pg.href(i) }}">{{ i }}</a>{% endif %} {% endfor %}</nav>{% endif %}
+  {{ srcline(result.engine, result.trade_date, result.is_test, '價格調整方式待 docs/indicators.md 定案') }}
+</section>
+
+<section class="card" id="excluded">
+  <h2>排除名單 <small>篩選時排除 {{ result.excluded|length }} 檔</small></h2>
+  {% if result.excluded %}
+  {% if result.extra.exclusion_counts %}<p>{% for code, n in result.extra.exclusion_counts.items() %}<span class="badge st-insufficient">{{ code }} {{ n }}</span> {% endfor %}</p>{% endif %}
+  <details {{ 'open' if result.excluded|length <= 20 }}><summary>明細 {{ result.excluded|length }} 檔{% if result.excluded|length > 200 %}（顯示前 200）{% endif %}</summary>
+  <ul class="excluded">{% for e in result.excluded[:200] %}<li><a href="/stock/{{ e.code }}">{{ e.code }} {{ e.name }}</a>：{{ e.reason }}</li>{% endfor %}</ul></details>
+  {% else %}<p class="muted">無。</p>{% endif %}
+  <h3>非普通股（不列入範圍）<small>securities_excluded {{ result.non_common|length }} 檔</small></h3>
+  {% if result.non_common %}
+  {{ excl_summary(result.non_common) }}
+  <details><summary>明細（前 50 檔）</summary>
+  <ul class="excluded">{% for e in result.non_common[:50] %}<li>{{ e.symbol }} {{ e.name or '' }}（{{ e.market }}）：{{ e.exclude_reason }} <small class="muted">清單日 {{ e.data_date }}</small></li>{% endfor %}</ul></details>
+  {% else %}<p class="muted">資料不足：securities_excluded 沒有資料。</p>{% endif %}
+</section>
+{% endblock %}

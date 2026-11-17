@@ -1,0 +1,12 @@
+{% extends "base.html" %}
+{% block title %}搜尋｜台股盤後研究{% endblock %}
+{% block content %}
+<h1>搜尋{% if q %}「{{ q }}」{% endif %}</h1>
+{% if results %}
+<ul class="results">{% for s in results %}<li><a href="/stock/{{ s.code }}">{{ s.code }} {{ s.name }}</a> <small>{{ s.market }}｜{{ s.industry }}</small></li>{% endfor %}</ul>
+{% elif q %}
+<div class="empty" data-state="no-results">找不到符合「{{ q }}」的股票{% if universe_label is defined and universe_label %}（本站追蹤範圍：{{ universe_label }}）{% endif %}。</div>
+{% else %}
+<p>請輸入股票代號或名稱。</p>
+{% endif %}
+{% endblock %}

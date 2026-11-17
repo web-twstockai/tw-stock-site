@@ -1,0 +1,807 @@
+diff -ruN -x __pycache__ -x .pytest_cache base/analysis/USAGE.md work/analysis/USAGE.md
+--- base/analysis/USAGE.md	2026-11-10 12:02:15.000000000 +0800
++++ work/analysis/USAGE.md	2026-11-10 12:18:13.437435567 +0800
+@@ -6,6 +6,7 @@
+ 
+ | 版本 | 日期 | 變更 |
+ |---|---|---|
++| 待合入（未升版；合入時由負責人定版號） | 2026-11-10 | **DECISIONS 2026-11-10 12:05 核可三項**：① 有收盤價但成交量 NULL 的列一律為資料錯誤——評估日 `EXCL_BAD_DATA`；視窗內計入缺口合計（門檻口徑不變），另拆成新欄 `window_bad_data_days`，缺口未超過門檻時 `EXCL_BAD_DATA`（過去算成 `window_no_trade_days`）；`ma_series`／`ohlc_series` 該日仍為 `no_trade`，另標 `unavailable_code=EXCL_BAD_DATA`。② 前一交易日有列但整股無成交時，`change_check` 改為新狀態 `after_no_trade`（不算 mismatch）：來源 X 或 `change_note=無比價` 顯示「無比價」；有官方參考價（選用欄 `daily_prices.next_ref_price_twd`，TPEx 次日參考價）時以「收盤−參考價」比對，超過容許值才標 `mismatch`；無參考價則不比對。自算漲跌幅與基準不變。③ `is_no_trade` 只做交叉檢查，寫入新說明欄 `data_note`，不改結果碼。`writer` 寫入前檢查 `screen_results.change_check` 的 CHECK，未允許 `after_no_trade` 時整批不寫並報錯；`tables_draft.md` 新增 `window_bad_data_days`、`data_note` 並擴充 CHECK（需資料工程遷移）。`verify_independent` 同步。選股條件與門檻不變 |
+ | analysis-0.8.0 | 2026-11-10 | **預設評估日改規則**（as_of 未傳入時）：由「整張 daily_prices 最新交易日」改為「追蹤範圍內有現行行情列的最新交易日」（`scope_latest_trade_day-v1`），範圍外股票的較新日期不再影響；統一由 `adjust.resolve_as_of()` 決定，SQLite 入口 `io_sqlite.default_as_of()`，`load_screen_inputs`／`load_symbol_inputs`／`screener.screen`／`series.*`／`verify_independent` 全部改用同一規則；`ScreenInputs.as_of_resolution` 記錄規則、範圍檔數與落後代號。docs/indicators.md 新增第 8 節整股無成交日規格（程式行為未變）。測試：新增 tests/test_as_of.py（6 項）；test_io_sqlite 改為明確傳入市場最新日；schema 比對容許 pipeline 新增而 analysis 不讀的 `change_note`、`is_no_trade`。選股條件與門檻未變 |
+ | analysis-0.7.0 | 2026-11-10 | 新增 `explain.py`：`condition_explanations(params)`（四條件白話說明，網站唯一文字來源，數字取自參數）、`common_explanation(params)`；`series.ohlc_series()`（個股 K 線前復權 OHLC＋還原量＋除權息事件清單，口徑與 screener／ma_series 相同）；`revenue.py` 模組說明改為與 indicators.md §7.3 一致的中性措辭；篩選邏輯與門檻未變（sample30 真實資料檢查未發現程式錯誤） |
+ | analysis-0.6.0 | 2026-11-10 | `writer.write_screen_results`／`write_daily_summary` 新增 `screen_run_id` 參數（產生該批 screen_results 的 `job_runs.run_id`，由 pipeline.run 傳入；不納入 checksum；表上有欄才寫，目前只有 daily_summaries 有）；新增 `revenue.py`（F-001 近 12 個月新高 `rev_12m_high-v1`、年增率 `rev_yoy-v1`）與獨立核對 `verify_revenue.py`；`tests/synthetic_data.schema_ddl()` 在 schema.md DDL 區塊不完整時改用 `pipeline/schema.sql`；`verify_independent.py` 改寫報告時保留「三、」之後的節 |
+@@ -214,14 +215,15 @@
+ | status | `PASS`／`FAIL`／`EXCLUDED` |
+ | exclusion_code, exclusion_reason | 排除代碼與中文原因（含日期、數值），只有 EXCLUDED 有值 |
+ | close_twd, change_pct | 收盤（元）、漲跌幅（%，相對前一有效交易日；除權息日以參考價為基準） |
+-| change_base_twd, source_change_twd, change_check, change_check_diff_twd | 漲跌幅基準價、來源帶號漲跌、交叉檢查結果與差值 |
++| change_base_twd, source_change_twd, change_check, change_check_diff_twd | 漲跌幅基準價、來源帶號漲跌、交叉檢查結果與差值。change_check：ok／mismatch／no_source／source_not_comparable／source_sign_conflict／**after_no_trade**（前一交易日整股無成交：不算 mismatch；有官方參考價時才比對，見 docs/indicators.md §8） |
+ | volume_shares, amount_twd | 成交量（股）、成交金額（元）；**暫定口徑＝官方公布總量，兩市場目前不同**：上市（STOCK_DAY／MI_INDEX）含零股、盤後定價、鉅額；上櫃（tradingStock）不含鉅額，零股／盤後未聲明。跨市場比較要留意，網站須標示（docs/indicators.md 第 0 節） |
+ | ma_short, ma_long | MA20、MA60（還原後，元） |
+ | prior_high_twd, prior_avg_volume_shares, volume_ratio | 前 20 日最高（還原）、前 20 日均量（股，股數因子還原）、量比 |
+ | pass_trend, pass_breakout, pass_volume, pass_turnover | 各條件是否成立（EXCLUDED 為空） |
+ | price_version | 讀取當時 `daily_prices.version` |
+ | n_valid_days, window_start, window_gap_days | 有效交易日數、視窗起日、視窗內非有效交易日數（合計，與 max_gap_days 比較） |
+-| window_halt_days, window_missing_days, window_no_trade_days | 上一欄拆解：確認停牌／無資料列且無停牌紀錄／有列無成交 |
++| window_halt_days, window_missing_days, window_no_trade_days, window_bad_data_days | 上一欄拆解：確認停牌／無資料列且無停牌紀錄／有列無成交／有收盤價但成交量 NULL（資料錯誤；有值即 `EXCL_BAD_DATA`） |
++| data_note | 說明欄（只標註，不改結果碼）：無成交次日的漲跌核對說明（含「無比價」）、`is_no_trade` 交叉檢查不一致 |
+ | n_adj_events, adj_events | 視窗內套用的調整事件數與說明（例：`2026-09-24 ex_dividend f=0.920016 s=1.000000`） |
+ | coverage_note | 覆蓋問題代碼（見第 6 節）；strict 排除時也填 |
+ | price_source, price_fetched_at | 當日行情的 source、fetched_at（追溯用） |
+@@ -253,7 +255,7 @@
+ | 本股有列但無成交，非確認停牌 | `EXCL_NO_TRADE` |
+ 
+ 網站顯示：`EXCL_SUSPENDED` 可直接寫「停牌」；`EXCL_NO_ROW_SUSPENDED_OR_MISSING` 必須寫「停牌或資料缺漏，待確認」，不要寫成停牌。
+-視窗缺口：`window_gap_days` ＝ `window_halt_days`（確認停牌）＋ `window_missing_days`（無列且無停牌紀錄）＋ `window_no_trade_days`（有列無成交），合計與 `max_gap_days` 比較（超過即 `EXCL_WINDOW_GAPS`）。
++視窗缺口：`window_gap_days` ＝ `window_halt_days`（確認停牌）＋ `window_missing_days`（無列且無停牌紀錄）＋ `window_no_trade_days`（有列無成交）＋ `window_bad_data_days`（有收盤價但成交量 NULL），合計與 `max_gap_days` 比較（超過即 `EXCL_WINDOW_GAPS`）；未超過但 `window_bad_data_days` > 0 → `EXCL_BAD_DATA`。整股無成交的判定只看價量，`is_no_trade` 只做交叉檢查（`data_note`）。
+ `ma_series`／`change_series` 不讀停牌表，停牌日在序列中仍標為無成交（`no_trade`）。
+ 
+ ## 6. 覆蓋表 `corporate_actions_coverage`（資料工程建立）
+diff -ruN -x __pycache__ -x .pytest_cache base/analysis/adjust.py work/analysis/adjust.py
+--- base/analysis/adjust.py	2026-11-10 11:56:00.000000000 +0800
++++ work/analysis/adjust.py	2026-11-10 12:18:05.085486819 +0800
+@@ -136,6 +136,11 @@
+         "change_sign": sign if sign is not None else None,
+         # daily_prices.is_halted（資料庫已遷移、schema.md DDL 尚未列）：1＝來源標示停牌；缺欄或 NULL＝未知
+         "is_halted": (_numeric(df, "is_halted").fillna(0) == 1) if "is_halted" in df.columns else False,
++        # 2026-11-10 12:05 核可 ③：is_no_trade 只做交叉檢查（說明欄），不參與判定；缺欄或 NULL＝未知
++        "is_no_trade": _numeric(df, "is_no_trade") if "is_no_trade" in df.columns else math.nan,
++        "change_note": df["change_note"].map(clean_str) if "change_note" in df.columns else None,
++        # 官方次日參考價（TPEx dailyQuotes「次日參考價」，記在該日列，供下一交易日比對）；缺欄＝無官方參考價
++        "next_ref_twd": _numeric(df, NEXT_REF_COLUMN) if NEXT_REF_COLUMN in df.columns else math.nan,
+         "source": df["source"] if "source" in df.columns else None,
+         "fetched_at": df["fetched_at"] if "fetched_at" in df.columns else None,
+         "version": _numeric(df, "version") if "version" in df.columns else math.nan,
+@@ -564,6 +569,75 @@
+     return v, "ok"
+ 
+ 
++# ---------------- 整股無成交日相關（DECISIONS 2026-11-10 12:05 核可三項）----------------
++
++NEXT_REF_COLUMN = "next_ref_price_twd"   # daily_prices 選用欄：官方次日參考價（TPEx dailyQuotes「次日參考價」；資料工程 2026-11-10 12:08 新增）
++NO_COMPARE_NOTE = "無比價"              # TWSE 漲跌符號 X（不比價）的顯示文字，與 daily_prices.change_note 同字
++CHANGE_CHECK_STATUSES = ("ok", "mismatch", "no_source", "source_not_comparable", "source_sign_conflict",
++                         "after_no_trade")
++
++
++def row_kind(close: Any, volume: Any) -> str:
++    """單列行情分類（只看價量，不看 is_no_trade／is_halted）：
++    valid＝收盤非 NULL 且成交量 > 0；bad_volume＝有收盤價但成交量 NULL（核可 ①：一律資料錯誤）；
++    no_trade＝其餘（收盤 NULL，或成交量 0；含只有零股成交而收盤 NULL 的日子）。"""
++    c_na = close is None or pd.isna(close)
++    v_na = volume is None or pd.isna(volume)
++    if not c_na and v_na:
++        return "bad_volume"
++    if not c_na and not v_na and float(volume) > 0:
++        return "valid"
++    return "no_trade"
++
++
++def no_trade_flag_conflict(close: Any, volume: Any, is_no_trade: Any) -> Optional[str]:
++    """is_no_trade 交叉檢查（核可 ③：只標註，不改結果碼）。旗標 NULL／缺欄或該列為 bad_volume 時不比對。
++    回傳衝突說明或 None。"""
++    if is_no_trade is None or pd.isna(is_no_trade):
++        return None
++    kind = row_kind(close, volume)
++    if kind == "bad_volume":
++        return None
++    flag = int(float(is_no_trade)) == 1
++    if flag and kind == "valid":
++        return "is_no_trade＝1 但價量顯示有成交"
++    if not flag and kind == "no_trade":
++        return "is_no_trade＝0 但價量顯示整股無成交（收盤 NULL 或量 0）"
++    return None
++
++
++def check_change_after_no_trade(close: float, last_close: float, change_twd: Any, change_sign: Any,
++                                change_note: Any = None, official_ref: Any = None
++                                ) -> tuple[str, Optional[float], Optional[float], Optional[float], str]:
++    """整股無成交日的次一有效交易日（前一交易日有列但整股無成交）之漲跌核對（核可 ②）。
++    官方漲跌以參考價計（TWSE 標 X 不比價；TPEx 以次日參考價為基準），自算仍以前一有效收盤為基準（只顯示，不覆蓋）。
++    回傳 (狀態, 來源帶號漲跌, 差異, 容許值, 說明)：
++    - 來源 X 或 change_note＝「無比價」→ after_no_trade，說明「無比價」；
++    - 有官方參考價 official_ref → 以 (收盤 − 參考價) 與來源漲跌比對：一致 after_no_trade，超過容許值 mismatch；
++    - 無官方參考價 → after_no_trade（不比對、不算 mismatch），說明列出來源隱含的參考價；
++    - 來源正負號矛盾 → source_sign_conflict（資料問題優先）；來源無漲跌 → after_no_trade。"""
++    src, st = signed_source_change(change_twd, change_sign)
++    head = "前一交易日整股無成交"
++    sign = clean_str(change_sign)
++    is_x = sign is not None and sign.upper() == "X"            # 來源 X 時 change_twd 多為 NULL，先判 X
++    if is_x or st == "source_not_comparable" or (src is None and clean_str(change_note) == NO_COMPARE_NOTE):
++        return "after_no_trade", None, None, None, f"{NO_COMPARE_NOTE}（{head}，官方漲跌標 X）"
++    if st == "source_sign_conflict":
++        return st, src, None, None, f"{head}；來源漲跌正負號矛盾"
++    ref = None if official_ref is None or pd.isna(official_ref) or float(official_ref) <= 0 else float(official_ref)
++    if st == "no_source":
++        extra = f"；官方參考價 {ref:.2f}" if ref is not None else ""
++        return "after_no_trade", None, None, None, f"{head}；官方未提供漲跌{extra}"
++    if ref is not None:
++        tol = NON_EVENT_TOLERANCE_TWD
++        diff = (close - ref) - src
++        if abs(diff) <= tol + 1e-9:
++            return "after_no_trade", src, diff, tol, f"{head}；依官方參考價 {ref:.2f} 比對一致"
++        return "mismatch", src, diff, tol, f"{head}；依官方參考價 {ref:.2f} 比對不一致（差 {diff:+.3f} 元）"
++    return ("after_no_trade", src, None, None,
++            f"{head}；官方漲跌以參考價計（隱含參考價 {close - src:.2f} 元），自算以前一有效收盤 {last_close:.2f} 元為基準，不比對")
++
++
+ def check_change(close: float, base: float, is_event_day: bool, change_twd: Any, change_sign: Any
+                  ) -> tuple[str, Optional[float], Optional[float], float]:
+     """回傳 (狀態, 來源帶號漲跌, 差異, 容許值)。狀態：ok／mismatch／no_source／source_not_comparable／source_sign_conflict。
+diff -ruN -x __pycache__ -x .pytest_cache base/analysis/io_sqlite.py work/analysis/io_sqlite.py
+--- base/analysis/io_sqlite.py	2026-11-10 11:56:25.000000000 +0800
++++ work/analysis/io_sqlite.py	2026-11-10 12:09:12.348755990 +0800
+@@ -141,6 +141,9 @@
+         extra = ', "change"' if "change" in pcols else ""  # schema §7.3：change（含正負號）與 change_twd 同義
+         if "is_halted" in pcols:                            # 資料庫已遷移的停牌旗標（schema.md DDL 尚未列）
+             extra += ", is_halted"
++        for c in ("is_no_trade", "change_note", A.NEXT_REF_COLUMN):   # 選用欄（核可 ②③）：存在才讀，只供核對與說明
++            if c in pcols:
++                extra += f", {c}"
+         prices = pd.read_sql_query(
+             f"SELECT {_PRICE_SQL_COLS}{extra} FROM daily_prices WHERE is_current = 1 AND price_date BETWEEN ? AND ?"
+             f"{sym_sql} ORDER BY symbol, price_date", con, params=[start, as_of, *sym_args])
+diff -ruN -x __pycache__ -x .pytest_cache base/analysis/screener.py work/analysis/screener.py
+--- base/analysis/screener.py	2026-11-10 11:56:25.000000000 +0800
++++ work/analysis/screener.py	2026-11-10 12:08:29.033021799 +0800
+@@ -173,8 +173,8 @@
+     "prior_high_twd", "prior_avg_volume_shares", "volume_ratio",
+     "pass_trend", "pass_breakout", "pass_volume", "pass_turnover",
+     "n_valid_days", "window_start", "window_gap_days", "window_halt_days", "window_missing_days",
+-    "window_no_trade_days", "n_adj_events", "adj_events",
+-    "coverage_note", "price_source", "price_fetched_at", "price_version",
++    "window_no_trade_days", "window_bad_data_days", "n_adj_events", "adj_events",
++    "coverage_note", "data_note", "price_source", "price_fetched_at", "price_version",
+ ]
+ CONDITION_COLUMNS = [
+     "symbol", "price_date", "condition_id", "condition_name", "enabled",
+@@ -340,11 +340,16 @@
+             return X("EXCL_NO_ROW_SUSPENDED_OR_MISSING", f"{as_of.date()} 同市場有行情但本股無資料列")
+         return X("EXCL_NO_DATA", f"{as_of.date()} 市場 {market or '未知'} 無行情資料")
+     t = today.iloc[0]
++    nt_note = A.no_trade_flag_conflict(t.close, t.volume, t.is_no_trade)
++    if nt_note:
++        base["data_note"] = f"is_no_trade 交叉檢查：{as_of.date()} {nt_note}"   # 只標註，不改結果碼（核可 ③）
+     if no_trade_today and (bool(t.is_halted) or A.is_halt_day(hiv, as_of)):
+         src = "daily_prices.is_halted＝1" if bool(t.is_halted) else "trading_halts 有停牌紀錄"
+         return X("EXCL_SUSPENDED", f"{as_of.date()} {src}")
+     if no_trade_today:
+         return X("EXCL_NO_TRADE", f"{as_of.date()} 無成交")
++    if A.row_kind(t.close, t.volume) == "bad_volume":
++        return X("EXCL_BAD_DATA", f"{as_of.date()} 有收盤價但成交量缺漏（NULL）")
+     prob = _row_problem(t, check_turnover=True)
+     if prob:
+         return X("EXCL_BAD_DATA", f"{as_of.date()} {prob}")
+@@ -368,21 +373,34 @@
+     # 缺口拆解（只供說明；門檻仍以合計 gaps 判斷，邏輯不變）
+     rows_by_date = {d: r for d, r in zip(g["date"], g.itertuples(index=False))}
+     vset = set(valid["date"])
+-    n_halt = n_miss = n_nt = 0
++    n_halt = n_miss = n_nt = n_bad = 0
++    first_bad = None
++    flag_conflicts = []
+     for d in trade[tpos[w0]:tpos[as_of] + 1]:
++        r = rows_by_date.get(d)
++        if r is not None and d != as_of and A.no_trade_flag_conflict(r.close, r.volume, r.is_no_trade):
++            flag_conflicts.append(d)
+         if d in vset:
+             continue
+-        r = rows_by_date.get(d)
+-        if (r is not None and bool(r.is_halted)) or A.is_halt_day(hiv, d):
++        if r is not None and A.row_kind(r.close, r.volume) == "bad_volume":
++            n_bad += 1                      # 核可 ①：有收盤價但量 NULL＝資料錯誤（仍計入缺口合計）
++            first_bad = first_bad or d
++        elif (r is not None and bool(r.is_halted)) or A.is_halt_day(hiv, d):
+             n_halt += 1
+         elif r is None:
+             n_miss += 1
+         else:
+             n_nt += 1
++    if flag_conflicts:
++        msg = f"is_no_trade 交叉檢查：視窗內 {len(flag_conflicts)} 日旗標與價量不一致（首日 {flag_conflicts[0].date()}）"
++        base["data_note"] = "；".join(x for x in (base["data_note"], msg) if x)
+     extra = {"n_valid_days": len(valid), "window_start": w0, "window_gap_days": gaps,
+-             "window_halt_days": n_halt, "window_missing_days": n_miss, "window_no_trade_days": n_nt}
++             "window_halt_days": n_halt, "window_missing_days": n_miss, "window_no_trade_days": n_nt,
++             "window_bad_data_days": n_bad}
+     if gaps > p.max_gap_days:
+         return X("EXCL_WINDOW_GAPS", f"視窗 {w0.date()}～{as_of.date()} 內 {gaps} 個交易日無資料列或無成交 > {p.max_gap_days}", **extra)
++    if first_bad is not None:
++        return X("EXCL_BAD_DATA", f"{first_bad.date()} 有收盤價但成交量缺漏（NULL）（視窗內，共 {n_bad} 日）", **extra)
+     for r in W.itertuples(index=False):
+         prob = _row_problem(r, check_turnover=False)
+         if prob:
+@@ -420,6 +438,12 @@
+     cbase, is_ev = A.change_base(float(W["close"].iloc[-2]), W["date"].iloc[-2], as_of, events)
+     change_pct = (close / cbase - 1.0) * 100.0
+     chk, src_chg, chk_diff, _ = A.check_change(close, cbase, is_ev, t.change_twd, t.change_sign)
++    prev_day = trade[tpos[as_of] - 1] if tpos[as_of] > 0 else None
++    prev_row = rows_by_date.get(prev_day) if prev_day is not None else None
++    if not is_ev and prev_row is not None and A.row_kind(prev_row.close, prev_row.volume) == "no_trade":
++        chk, src_chg, chk_diff, _, chk_note = A.check_change_after_no_trade(
++            close, cbase, t.change_twd, t.change_sign, t.change_note, prev_row.next_ref_twd)
++        base["data_note"] = "；".join(x for x in (chk_note, base["data_note"]) if x)
+ 
+     c1 = (close > ma_s) and (ma_s > ma_l)
+     c2 = close > prior_high
+diff -ruN -x __pycache__ -x .pytest_cache base/analysis/series.py work/analysis/series.py
+--- base/analysis/series.py	2026-11-10 11:56:25.000000000 +0800
++++ work/analysis/series.py	2026-11-10 12:09:06.892789470 +0800
+@@ -29,6 +29,13 @@
+     "no_trade": "無成交或無資料列（停牌或資料缺漏，待確認）",
+     "unavailable": "調整因子不可用（見 unavailable_code／unavailable_reason）",
+ }
++# 核可 ①：有收盤價但成交量 NULL 的列＝資料錯誤；狀態仍為 no_trade（不可畫、不計入），另標代碼與原因
++BAD_VOLUME_CODE = "EXCL_BAD_DATA"
++BAD_VOLUME_REASON = "有收盤價但成交量缺漏（NULL），視為資料錯誤"
++
++
++def _bad_volume(r0: Optional[dict]) -> bool:
++    return bool(r0) and A.row_kind(r0.get("close"), r0.get("volume")) == "bad_volume"
+ 
+ 
+ def _prepare(prices, actions, calendar, symbol, as_of, securities, actions_coverage):
+@@ -138,6 +145,7 @@
+         mas[w] = (m, note)
+ 
+     vpos = {d: i for i, d in enumerate(valid["date"])}
++    raw_by_date = {d: row for d, row in zip(px["date"], px.to_dict("records"))}
+     first = px["date"].iloc[0]
+     rows = []
+     for d in trade[tpos[first]:]:
+@@ -157,6 +165,8 @@
+                 r[f"ma_{w}_note"] = None if val is not None else (note[i] or "ADJ_UNAVAILABLE")
+         else:
+             r.update(close_twd=None, status="no_trade", unavailable_reason=MA_SERIES_STATUS["no_trade"])
++            if _bad_volume(raw_by_date.get(d)):
++                r.update(unavailable_code=BAD_VOLUME_CODE, unavailable_reason=BAD_VOLUME_REASON)
+             for w in ws:
+                 r[f"ma_{w}"], r[f"ma_{w}_note"] = None, "NO_TRADE"
+         rows.append(r)
+@@ -190,6 +200,7 @@
+         return pd.DataFrame(columns=cols)
+     events = A.resolve_events(valid, acts, None, p.adj_prev_close_tolerance, p.derive_share_factor)
+     cb, probs, cb_note = A.coverage_boundary(cov, market, as_of_ts)
++    by_date = {d: row for d, row in zip(px["date"], px.to_dict("records"))}
+     rows = []
+     for i in range(len(valid)):
+         r = valid.iloc[i]
+@@ -209,6 +220,17 @@
+         base, is_ev = A.change_base(float(pv["close"]), pv["date"], r["date"], between)
+         chk, src, diff, tol = A.check_change(float(r["close"]), base, is_ev, r["change_twd"], r["change_sign"])
+         notes = []
++        k = tpos.get(r["date"])
++        prev_row = by_date.get(trade[k - 1]) if k is not None and k > 0 else None
++        if not is_ev and prev_row is not None and A.row_kind(prev_row["close"], prev_row["volume"]) == "no_trade":
++            # 核可 ②：無成交日的次一有效交易日改標 after_no_trade（官方參考價可比時才可能 mismatch）
++            chk, src, diff, tol, nt = A.check_change_after_no_trade(
++                float(r["close"]), base, r["change_twd"], r["change_sign"], r.get("change_note"),
++                prev_row.get("next_ref_twd"))
++            notes.append(nt)
++        conflict = A.no_trade_flag_conflict(r["close"], r["volume"], r.get("is_no_trade"))
++        if conflict:
++            notes.append(f"is_no_trade 交叉檢查：{conflict}")   # 核可 ③：只標註
+         if probs:
+             notes.append(";".join(probs))
+         elif cb is not None and r["date"] < cb:
+@@ -285,6 +307,8 @@
+                                "amount_twd": _f(r0.get("turnover"))}
+         if d not in vpos:
+             out.update(status="no_trade", unavailable_reason=MA_SERIES_STATUS["no_trade"])
++            if _bad_volume(r0):
++                out.update(unavailable_code=BAD_VOLUME_CODE, unavailable_reason=BAD_VOLUME_REASON)
+         else:
+             i = vpos[d]
+             if usable[i]:
+diff -ruN -x __pycache__ -x .pytest_cache base/analysis/tables_draft.md work/analysis/tables_draft.md
+--- base/analysis/tables_draft.md	2026-11-10 04:09:45.000000000 +0800
++++ work/analysis/tables_draft.md	2026-11-10 12:10:43.012199628 +0800
+@@ -38,6 +38,7 @@
+   status                        TEXT    NOT NULL CHECK (status IN ('PASS', 'FAIL', 'EXCLUDED')),
+   exclusion_code                TEXT,                          -- 見 analysis/USAGE.md 排除代碼表
+   exclusion_reason              TEXT,                          -- 中文說明＋細節（程式產生）
++  data_note                     TEXT,                          -- 說明欄：無成交次日漲跌核對說明（含「無比價」）、is_no_trade 交叉檢查（只標註，不改結果碼；需補欄）
+   coverage_note                 TEXT,                          -- coverage_table_missing／coverage_table_empty／coverage_missing:M:K／window_before_coverage_start:M:K:日期／coverage_end_before_as_of:M:K:日期／coverage_hole:M:K:日期，多項以 ; 分隔
+   -- 條件 C1 趨勢：收盤 > MA短 > MA長（還原收盤）
+   c1_enabled                    INTEGER NOT NULL CHECK (c1_enabled IN (0, 1)),
+@@ -68,16 +69,17 @@
+   change_pct                    REAL,                          -- 收盤 ÷ 基準價 − 1（百分點）；事件日基準＝參考價
+   change_base_twd               REAL,
+   source_change_twd             REAL,                          -- 來源漲跌（帶號；不覆蓋自算值）
+-  change_check                  TEXT    CHECK (change_check IN ('ok', 'mismatch', 'no_source', 'source_not_comparable', 'source_sign_conflict')),
++  change_check                  TEXT    CHECK (change_check IN ('ok', 'mismatch', 'no_source', 'source_not_comparable', 'source_sign_conflict', 'after_no_trade')),  -- after_no_trade：前一交易日整股無成交（DECISIONS 2026-11-10 12:05 ②；需遷移 CHECK）
+   change_check_diff_twd         REAL,
+   volume_shares                 REAL,                          -- 官方總量口徑，依市場不同，見 daily_prices.source（上市含零股／盤後定價／鉅額；上櫃不含鉅額）
+   amount_twd                    REAL,                          -- 同上口徑（元），跨市場比較要留意
+   n_valid_days                  INTEGER,
+   window_start                  TEXT,
+-  window_gap_days               INTEGER,                       -- 視窗內非有效交易日數（＝下三欄合計；門檻判斷用合計）
++  window_gap_days               INTEGER,                       -- 視窗內非有效交易日數（＝下四欄合計；門檻判斷用合計）
+   window_halt_days              INTEGER,                       -- 其中確認停牌（trading_halts／is_halted）
+   window_missing_days           INTEGER,                       -- 其中無資料列且無停牌紀錄
+   window_no_trade_days          INTEGER,                       -- 其中有列但無成交
++  window_bad_data_days          INTEGER,                       -- 其中有收盤價但成交量 NULL（資料錯誤；DECISIONS 2026-11-10 12:05 ①；需補欄）
+   n_adj_events                  INTEGER,
+   adj_events                    TEXT,                          -- 視窗內調整事件與 f／s 因子文字
+   -- 追溯
+diff -ruN -x __pycache__ -x .pytest_cache base/analysis/tests/test_no_trade_decisions.py work/analysis/tests/test_no_trade_decisions.py
+--- base/analysis/tests/test_no_trade_decisions.py	1970-01-01 08:00:00.000000000 +0800
++++ work/analysis/tests/test_no_trade_decisions.py	2026-11-10 12:18:13.437435567 +0800
+@@ -0,0 +1,227 @@
++"""DECISIONS 2026-11-10 12:05 核可三項（整股無成交日相關）測試——只用測試用合成資料。
++① 有收盤價但成交量 NULL＝資料錯誤（評估日與視窗內皆是）；
++② 無成交日的次一有效交易日 change_check＝after_no_trade（有官方參考價才比對；X 顯示「無比價」）；
++③ is_no_trade 只在說明欄（data_note）交叉檢查，不改結果碼。"""
++import sqlite3
++
++import pandas as pd
++import pytest
++
++import adjust as A
++import io_sqlite as I
++import screener as S
++import series as SR
++import synthetic_data as SD
++import verify_independent as VI
++import writer as W
++
++AS_OF, PREV, PREV2 = "2026-10-05", "2026-10-02", "2026-10-01"
++
++
++# ---------------- 純函式 ----------------
++def test_row_kind():
++    assert A.row_kind(10.0, 1000) == "valid"
++    assert A.row_kind(10.0, None) == "bad_volume" and A.row_kind(10.0, float("nan")) == "bad_volume"
++    assert A.row_kind(None, 0) == "no_trade" and A.row_kind(None, 5) == "no_trade"      # 只有零股成交
++    assert A.row_kind(10.0, 0) == "no_trade" and A.row_kind(None, None) == "no_trade"
++
++
++def test_no_trade_flag_conflict():
++    assert A.no_trade_flag_conflict(10.0, 1000, 1) == "is_no_trade＝1 但價量顯示有成交"
++    assert A.no_trade_flag_conflict(None, 0, 0).startswith("is_no_trade＝0 但價量顯示整股無成交")
++    assert A.no_trade_flag_conflict(10.0, 1000, 0) is None and A.no_trade_flag_conflict(None, 0, 1) is None
++    assert A.no_trade_flag_conflict(10.0, 1000, None) is None                    # 旗標未知不比對
++    assert A.no_trade_flag_conflict(10.0, None, 1) is None                       # 資料錯誤列不比對
++
++
++def test_check_change_after_no_trade_pure():
++    f = A.check_change_after_no_trade
++    st, src, diff, tol, note = f(11.60, 11.00, None, "X")
++    assert (st, src, diff) == ("after_no_trade", None, None) and note.startswith("無比價")
++    st, *_, note = f(11.60, 11.00, None, None, change_note="無比價")
++    assert st == "after_no_trade" and "無比價" in note
++    # TPEx 2064 實例數字（官方次日參考價 10.95、漲跌 +0.65）：有參考價→一致
++    st, src, diff, tol, note = f(11.60, 11.00, 0.65, "+", official_ref=10.95)
++    assert st == "after_no_trade" and src == pytest.approx(0.65) and abs(diff) < 1e-9 and tol == 0.005
++    assert "依官方參考價 10.95 比對一致" in note
++    st, _, diff, _, note = f(11.60, 11.00, 0.65, "+", official_ref=10.90)
++    assert st == "mismatch" and diff == pytest.approx(0.05) and "不一致" in note
++    # 無官方參考價：不比對、不算 mismatch，列出隱含參考價
++    st, src, diff, tol, note = f(11.60, 11.00, 0.65, "+")
++    assert (st, diff, tol) == ("after_no_trade", None, None) and "隱含參考價 10.95" in note
++    assert f(11.60, 11.00, 0.65, "-")[0] == "after_no_trade"                    # 帶號 −0.65
++    assert f(11.60, 11.00, -0.65, "+")[0] == "source_sign_conflict"
++    st, *_, note = f(11.60, 11.00, None, None)
++    assert st == "after_no_trade" and "官方未提供漲跌" in note
++    assert "after_no_trade" in A.CHANGE_CHECK_STATUSES
++
++
++# ---------------- 合成資料庫情境 ----------------
++def _db(tmp_path, sql=(), add_cols=True):
++    tmp_path.mkdir(parents=True, exist_ok=True)
++    p = SD.build_sqlite(tmp_path / "nt.db")
++    con = sqlite3.connect(p)
++    have = {r[1] for r in con.execute("PRAGMA table_info(daily_prices)")}
++    if add_cols:
++        for c, t in (("is_no_trade", "INTEGER"), ("change_note", "TEXT"), ("next_ref_price_twd", "REAL")):
++            if c not in have:
++                con.execute(f"ALTER TABLE daily_prices ADD COLUMN {c} {t}")
++    for q, args in sql:
++        con.execute(q, args)
++    con.commit()
++    con.close()
++    return p
++
++
++def _upd(sym, d, **kv):
++    return (f"UPDATE daily_prices SET {', '.join(f'{k} = ?' for k in kv)} WHERE symbol = ? AND price_date = ?",
++            [*kv.values(), sym, d])
++
++
++NO_TRADE = dict(open_twd=None, high_twd=None, low_twd=None, close_twd=None, volume_shares=0, amount_twd=0,
++                change_twd=None, change_sign=None)
++
++
++def _summary(p, as_of=AS_OF, **kw):
++    inp = I.load_screen_inputs(p, as_of=as_of)
++    return S.screen(**inp.screen_kwargs(), **kw).summary.set_index("symbol")
++
++
++def _vi(p, as_of=AS_OF):
++    data = VI.load_db(p, as_of=as_of)
++    return VI.recompute(data, S.ScreenParams().to_dict(), sorted(data["secs"]))
++
++
++def test_bad_volume_in_window_is_bad_data(tmp_path):
++    base = _summary(_db(tmp_path / "a"))
++    assert base.loc["TEST01", "status"] == "PASS"
++    p = _db(tmp_path / "b", [_upd("TEST01", "2026-09-28", volume_shares=None)])   # 視窗內：有收盤、量 NULL
++    s = _summary(p).loc["TEST01"]
++    assert s["exclusion_code"] == "EXCL_BAD_DATA" and "有收盤價但成交量缺漏（NULL）（視窗內" in s["exclusion_reason"]
++    assert (s["window_bad_data_days"], s["window_no_trade_days"], s["window_gap_days"]) == (1, 0, 1)   # 合計不變
++    v = _vi(p)["TEST01"]
++    assert v["exclusion_code"] == "EXCL_BAD_DATA" and v["window_bad_data_days"] == 1 and v["window_gap_days"] == 1
++
++
++def test_bad_volume_counts_in_gap_total_first(tmp_path):
++    # 缺口合計仍先判（與門檻比較的口徑不變）：4 日量 NULL → 合計 4 > 3 → EXCL_WINDOW_GAPS
++    days = ["2026-09-22", "2026-09-23", "2026-09-24", "2026-09-25"]
++    s = _summary(_db(tmp_path, [_upd("TEST01", d, volume_shares=None) for d in days])).loc["TEST01"]
++    assert s["exclusion_code"] == "EXCL_WINDOW_GAPS" and s["window_bad_data_days"] == 4 and s["window_gap_days"] == 4
++
++
++def test_bad_volume_on_as_of(tmp_path):
++    p = _db(tmp_path, [_upd("TEST01", AS_OF, volume_shares=None, is_halted=1)])
++    s = _summary(p).loc["TEST01"]
++    assert s["exclusion_code"] == "EXCL_BAD_DATA" and "有收盤價但成交量缺漏（NULL）" in s["exclusion_reason"]
++    assert _vi(p)["TEST01"]["exclusion_code"] == "EXCL_BAD_DATA"
++
++
++def test_series_mark_bad_volume(tmp_path):
++    p = _db(tmp_path, [_upd("TEST01", "2026-09-28", volume_shares=None)])
++    kw = I.load_symbol_inputs(p, "TEST01", as_of=AS_OF)
++    m = SR.ma_series(**kw).set_index("price_date").loc[pd.Timestamp("2026-09-28")]
++    assert m["status"] == "no_trade" and m["unavailable_code"] == "EXCL_BAD_DATA"
++    b = SR.ohlc_series(**kw).bars.set_index("price_date").loc[pd.Timestamp("2026-09-28")]
++    assert b["status"] == "no_trade" and b["unavailable_reason"] == SR.BAD_VOLUME_REASON
++    ok = SR.ma_series(**kw).set_index("price_date").loc[pd.Timestamp("2026-09-29")]
++    assert ok["status"] == "ok"
++
++
++def test_after_no_trade_without_official_ref(tmp_path):
++    p = _db(tmp_path, [_upd("TEST01", PREV, **NO_TRADE)])
++    s = _summary(p).loc["TEST01"]
++    assert s["change_check"] == "after_no_trade" and pd.isna(s["change_check_diff_twd"])
++    assert "前一交易日整股無成交" in s["data_note"] and "隱含參考價" in s["data_note"]
++    kw = I.load_symbol_inputs(p, "TEST01", as_of=AS_OF)
++    c = SR.change_series(**kw).set_index("price_date").loc[pd.Timestamp(AS_OF)]
++    assert c["change_check"] == "after_no_trade" and c["prev_price_date"] == pd.Timestamp(PREV2)
++    assert c["change_base_twd"] == pytest.approx(c["prev_close_twd"])          # 自算基準仍為前一有效收盤
++    assert VI.run_comparison(p, n_dates=3)["mismatches"] == []
++    assert VI.run_series_comparison(p, n_dates=1)["mismatches"] == []
++
++
++def test_after_no_trade_with_official_ref(tmp_path):
++    con = sqlite3.connect(_db(tmp_path / "x"))
++    close, chg = con.execute("SELECT close_twd, change_twd FROM daily_prices WHERE symbol='TEST01' AND price_date=? AND is_current=1",
++                             (AS_OF,)).fetchone()
++    con.close()
++    good = round(close - chg, 2)                                                # 與來源漲跌一致的參考價
++    p1 = _db(tmp_path / "g", [_upd("TEST01", PREV, **NO_TRADE, next_ref_price_twd=good)])
++    s = _summary(p1).loc["TEST01"]
++    assert s["change_check"] == "after_no_trade" and abs(s["change_check_diff_twd"]) <= 0.005
++    assert f"依官方參考價 {good:.2f} 比對一致" in s["data_note"]
++    p2 = _db(tmp_path / "b", [_upd("TEST01", PREV, **NO_TRADE, next_ref_price_twd=good - 0.5)])
++    s2 = _summary(p2).loc["TEST01"]
++    assert s2["change_check"] == "mismatch" and s2["change_check_diff_twd"] == pytest.approx(0.5)
++    assert _vi(p2)["TEST01"]["change_check"] == "mismatch" and _vi(p1)["TEST01"]["change_check"] == "after_no_trade"
++
++
++def test_after_no_trade_twse_x_shows_no_compare(tmp_path):
++    p = _db(tmp_path, [_upd("TEST01", PREV, **NO_TRADE),
++                       _upd("TEST01", AS_OF, change_twd=None, change_sign="X", change_note="無比價")])
++    s = _summary(p).loc["TEST01"]
++    assert s["change_check"] == "after_no_trade" and s["data_note"].startswith("無比價")
++    assert pd.isna(s["source_change_twd"])
++    assert _vi(p)["TEST01"]["change_check"] == "after_no_trade"
++
++
++def test_x_without_prior_no_trade_unchanged(tmp_path):
++    # 前一交易日有成交時維持原規則（本批不改）：X 且有數值→source_not_comparable；X 且數值 NULL→no_source（既有行為）
++    p = _db(tmp_path / "a", [_upd("TEST01", AS_OF, change_twd=0.0, change_sign="X")])
++    s = _summary(p).loc["TEST01"]
++    assert s["change_check"] == "source_not_comparable" and pd.isna(s["data_note"])
++    p = _db(tmp_path / "b", [_upd("TEST01", AS_OF, change_twd=None, change_sign="X")])
++    assert _summary(p).loc["TEST01", "change_check"] == "no_source"
++
++
++def test_is_no_trade_cross_check_only_annotates(tmp_path):
++    base = _summary(_db(tmp_path / "a"))
++    p = _db(tmp_path / "b", [_upd("TEST01", AS_OF, is_no_trade=1), _upd("TEST01", "2026-09-28", is_no_trade=1),
++                             _upd("TEST12", AS_OF, is_no_trade=0), _upd("TEST02", AS_OF, is_no_trade=0)])
++    s = _summary(p)
++    for sym in ("TEST01", "TEST12", "TEST02"):
++        assert (s.loc[sym, "status"], s.loc[sym, "exclusion_code"]) == (base.loc[sym, "status"], base.loc[sym, "exclusion_code"])
++    assert f"is_no_trade 交叉檢查：{AS_OF} is_no_trade＝1 但價量顯示有成交" in s.loc["TEST01", "data_note"]
++    assert "視窗內 1 日旗標與價量不一致（首日 2026-09-28）" in s.loc["TEST01", "data_note"]
++    assert s.loc["TEST12", "exclusion_code"] == "EXCL_NO_TRADE" and "is_no_trade＝0" in s.loc["TEST12", "data_note"]
++    assert pd.isna(s.loc["TEST02", "data_note"])                               # 一致：不標註
++    kw = I.load_symbol_inputs(p, "TEST01", as_of=AS_OF)
++    c = SR.change_series(**kw).set_index("price_date").loc[pd.Timestamp(AS_OF)]
++    assert "is_no_trade 交叉檢查" in c["note"] and c["status"] == "ok"
++
++
++def test_missing_optional_columns_tolerated(tmp_path):
++    p = _db(tmp_path, [_upd("TEST01", PREV, open_twd=None, high_twd=None, low_twd=None, close_twd=None,
++                            volume_shares=0, amount_twd=0)], add_cols=False)
++    s = _summary(p).loc["TEST01"]
++    assert s["change_check"] == "after_no_trade"
++
++
++def _sr_db(path, allow_after=True):
++    import re
++    ddl = re.search(r"```sql\n(.*?)```", (SD.HERE.parent / "tables_draft.md").read_text(encoding="utf-8"), re.S).group(1)
++    ddl = ddl.replace("CHECK (symbol NOT LIKE 'TEST%')", "")
++    if not allow_after:
++        ddl = ddl.replace(", 'after_no_trade'", "")          # 模擬資料庫 CHECK 尚未遷移
++    path.mkdir(parents=True, exist_ok=True)
++    c = sqlite3.connect(path / "analysis_tables.db")
++    c.executescript(ddl)
++    c.close()
++    return W.connect_writable(path / "analysis_tables.db")
++
++
++def test_writer_guards_change_check_constraint(tmp_path):
++    p = _db(tmp_path, [_upd("TEST01", PREV, **NO_TRADE)])
++    inp = I.load_screen_inputs(p, as_of=AS_OF)
++    r = S.screen(**inp.screen_kwargs())
++    old = _sr_db(tmp_path / "old", allow_after=False)
++    with pytest.raises(ValueError, match="after_no_trade"):
++        W.write_screen_results(old, r, inp.input_max_fetched_at)
++    assert old.execute("SELECT COUNT(*) FROM screen_results").fetchone()[0] == 0          # 一列都不寫
++    new = _sr_db(tmp_path / "new")
++    rep = W.write_screen_results(new, r, inp.input_max_fetched_at)
++    assert rep.dropped_columns == [] and rep.inserted == len(r.summary)
++    row = new.execute("SELECT change_check, data_note, window_bad_data_days FROM screen_results "
++                      "WHERE symbol='TEST01'").fetchone()
++    assert row[0] == "after_no_trade" and "前一交易日整股無成交" in row[1] and row[2] == 0
+diff -ruN -x __pycache__ -x .pytest_cache base/analysis/tests/test_screener.py work/analysis/tests/test_screener.py
+--- base/analysis/tests/test_screener.py	2026-11-10 12:01:12.000000000 +0800
++++ work/analysis/tests/test_screener.py	2026-11-10 12:18:13.445435517 +0800
+@@ -40,8 +40,9 @@
+         ddl_cols = [ln.strip().split()[0] for ln in block.splitlines()
+                     if ln.strip() and not ln.strip().startswith(("PRIMARY", "UNIQUE"))]
+         # DDL 可能來自 schema.md §4 或 pipeline/schema.sql（後者已內含遷移欄位，如 change、is_halted）
+-        # change_note、is_no_trade：pipeline 2026-11-10 新增，analysis 不讀（無成交以價量判定，見 indicators.md §8）
+-        extra = set(SD.PRICE_EXTRA) | set(SD.ACTION_EXTRA) | {"change", "change_note", "is_no_trade"}
++        # change_note、is_no_trade、next_ref_price_twd：pipeline 2026-11-10 新增的選用欄，合成 fixture 不帶
++        # （analysis 只用於核對與說明，無成交仍以價量判定，見 indicators.md §8）
++        extra = set(SD.PRICE_EXTRA) | set(SD.ACTION_EXTRA) | {"change", "change_note", "is_no_trade", "next_ref_price_twd"}
+         assert set(cols) <= set(ddl_cols) | extra, (table, sorted(set(cols) - set(ddl_cols)))
+         assert set(ddl_cols) - set(cols) <= extra, (table, sorted(set(ddl_cols) - set(cols)))
+ 
+diff -ruN -x __pycache__ -x .pytest_cache base/analysis/verify_independent.py work/analysis/verify_independent.py
+--- base/analysis/verify_independent.py	2026-11-10 11:56:34.000000000 +0800
++++ work/analysis/verify_independent.py	2026-11-10 12:18:13.433435592 +0800
+@@ -40,7 +40,7 @@
+                   "prior_high_twd", "prior_avg_volume_shares", "volume_ratio")
+ EXACT_FIELDS = ("status", "exclusion_code", "pass_trend", "pass_breakout", "pass_volume", "pass_turnover",
+                 "change_check", "coverage_note", "window_gap_days", "window_halt_days", "window_missing_days",
+-                "window_no_trade_days")
++                "window_no_trade_days", "window_bad_data_days")
+ # 獨立寫一份對映（不 import adjust）
+ TYPE_ALIAS = {"ex_dividend": "cash_dividend", "ex_rights": "stock_dividend"}
+ DIVIDEND_TYPES = ("cash_dividend", "stock_dividend", "ex_both")
+@@ -85,15 +85,18 @@
+         pc = [r[1] for r in con.execute("PRAGMA table_info(daily_prices)")]
+         chg = "COALESCE(\"change\", change_twd)" if "change" in pc else "change_twd"
+         hal = "is_halted" if "is_halted" in pc else "0"
++        cno = "change_note" if "change_note" in pc else "NULL"
++        nref = "next_ref_price_twd" if "next_ref_price_twd" in pc else "NULL"
+         for row in con.execute("SELECT symbol, market, price_date, open_twd, high_twd, low_twd, close_twd, "
+-                               "volume_shares, amount_twd, " + chg + ", change_sign, " + hal +
++                               "volume_shares, amount_twd, " + chg + ", change_sign, " + hal + ", " + cno + ", " + nref +
+                                " FROM daily_prices WHERE is_current=1"):
+             d = _d(row[2])
+             if start <= d <= as_of_d:
+                 prices.append({"symbol": row[0], "market": row[1], "date": d, "open": _f(row[3]), "high": _f(row[4]),
+                                "low": _f(row[5]), "close": _f(row[6]), "volume": _f(row[7]), "turnover": _f(row[8]),
+                                "chg": _f(row[9]), "sign": (row[10] or "").strip() or None,
+-                               "halted": row[11] is not None and int(row[11]) == 1})
++                               "halted": row[11] is not None and int(row[11]) == 1,
++                               "note": (row[12] or "").strip() or None, "ref": _f(row[13])})
+         actions = []
+         ac = [r[1] for r in con.execute("PRAGMA table_info(corporate_actions)")]
+         opt = [(c if c in ac else "NULL") for c in ("cash_subscription_ratio", "share_exchange_ratio")]
+@@ -198,6 +201,40 @@
+     return 5.0
+ 
+ 
++def _kind(r):
++    """獨立實作：valid／bad_volume（有收盤、量 NULL）／no_trade。"""
++    if r["close"] is not None and r["volume"] is None:
++        return "bad_volume"
++    if r["close"] is not None and r["volume"] is not None and r["volume"] > 0:
++        return "valid"
++    return "no_trade"
++
++
++def change_check_after_nt(close, chg, sign, note, ref):
++    """獨立實作：前一交易日整股無成交時的漲跌核對（DECISIONS 2026-11-10 12:05 ②）。"""
++    if (sign is not None and sign.upper() == "X") or (chg is None and note == "無比價"):
++        return "after_no_trade"
++    if chg is None:
++        return "after_no_trade"
++    v = chg
++    if sign == "-" and v > 0:
++        v = -v
++    if sign == "+" and v < 0:
++        return "source_sign_conflict"
++    if ref is not None and ref > 0:
++        return "after_no_trade" if abs((close - ref) - v) <= 0.005 + 1e-9 else "mismatch"
++    return "after_no_trade"
++
++
++def _prev_no_trade_row(data, by_date, d):
++    tr = data["trade"]
++    i = tr.index(d) if d in tr else -1
++    if i <= 0:
++        return None
++    r = by_date.get(tr[i - 1])
++    return r if (r is not None and _kind(r) == "no_trade") else None
++
++
+ def change_check(close, base, is_ev, chg, sign):
+     """獨立實作的 change 交叉檢查；容許值：非事件日 0.005 元，事件日 半檔+0.005 元。"""
+     if chg is None:
+@@ -382,19 +419,24 @@
+     w0 = W[0]["date"]
+     by_date = {r["date"]: r for r in g}
+     vd = {r["date"] for r in valid}
+-    nh = nm = nn = 0
++    nh = nm = nn = nb = 0
+     for d in data["trade"]:
+         if w0 <= d <= as_of and d not in vd:
+             r = by_date.get(d)
+-            if (r is not None and r["halted"]) or halted_on(data, sid, d):
++            if r is not None and _kind(r) == "bad_volume":
++                nb += 1
++            elif (r is not None and r["halted"]) or halted_on(data, sid, d):
+                 nh += 1
+             elif r is None:
+                 nm += 1
+             else:
+                 nn += 1
+-    wx.update(window_gap_days=nh + nm + nn, window_halt_days=nh, window_missing_days=nm, window_no_trade_days=nn)
++    wx.update(window_gap_days=nh + nm + nn + nb, window_halt_days=nh, window_missing_days=nm, window_no_trade_days=nn,
++              window_bad_data_days=nb)
+     if (pos[as_of] - pos[w0] + 1) - need > p["max_gap_days"]:
+         return ex("EXCL_WINDOW_GAPS")
++    if nb > 0:
++        return ex("EXCL_BAD_DATA")
+     for r in W:
+         if _bad(r, False):
+             return ex("EXCL_BAD_DATA")
+@@ -455,6 +497,9 @@
+             base = base * f
+             is_ev = True
+     chk = change_check(close, base, is_ev, t["chg"], t["sign"])
++    pr = _prev_no_trade_row(data, by_date, as_of)
++    if pr is not None and not is_ev:
++        chk = change_check_after_nt(close, t["chg"], t["sign"], t.get("note"), pr.get("ref"))
+     c1 = close > ma_s and ma_s > ma_l
+     c2 = close > ph
+     c3 = vol >= pav * p["volume_multiplier"]
+@@ -559,6 +604,7 @@
+     g, valid, acts, market, lst = _sym_rows(data, sym)
+     res = ind_resolve_all(acts, valid, p, None)
+     out = {}
++    by_date = {x["date"]: x for x in g}
+     for i in range(1, len(valid)):
+         r, pv = valid[i], valid[i - 1]
+         between = [x for x in res if pv["date"] < x[0] <= r["date"]]
+@@ -568,8 +614,11 @@
+         base = pv["close"]
+         for x in between:
+             base = base * x[2]
+-        out[r["date"]] = {"status": "ok", "change_pct": (r["close"] / base - 1.0) * 100.0,
+-                          "change_check": change_check(r["close"], base, len(between) > 0, r["chg"], r["sign"])}
++        chk = change_check(r["close"], base, len(between) > 0, r["chg"], r["sign"])
++        pr = _prev_no_trade_row(data, by_date, r["date"])
++        if pr is not None and not between:
++            chk = change_check_after_nt(r["close"], r["chg"], r["sign"], r.get("note"), pr.get("ref"))
++        out[r["date"]] = {"status": "ok", "change_pct": (r["close"] / base - 1.0) * 100.0, "change_check": chk}
+     return out
+ 
+ 
+diff -ruN -x __pycache__ -x .pytest_cache base/analysis/writer.py work/analysis/writer.py
+--- base/analysis/writer.py	2026-11-10 04:09:28.000000000 +0800
++++ work/analysis/writer.py	2026-11-10 12:09:59.428467082 +0800
+@@ -221,10 +221,10 @@
+         )
+         for c in ("close_twd", "change_pct", "change_base_twd", "source_change_twd", "change_check",
+                   "change_check_diff_twd", "volume_shares", "amount_twd", "n_adj_events", "adj_events",
+-                  "price_source", "price_fetched_at"):
++                  "price_source", "price_fetched_at", "data_note"):
+             r[c] = _clean(s.get(c))
+         for c in ("n_valid_days", "window_gap_days", "window_halt_days", "window_missing_days",
+-                  "window_no_trade_days", "n_adj_events"):
++                  "window_no_trade_days", "window_bad_data_days", "n_adj_events"):
+             v = _clean(s.get(c))
+             r[c] = None if v is None else int(v)
+         r["window_start"] = _clean(s.get("window_start"))
+@@ -237,6 +237,14 @@
+     return rows
+ 
+ 
++def _change_check_allowed(con: sqlite3.Connection) -> Optional[set[str]]:
++    """screen_results.change_check 的 CHECK 允許值（DDL 中 `change_check ... IN (...)`）；無此限制回傳 None。"""
++    import re
++    row = con.execute("SELECT sql FROM sqlite_master WHERE type = 'table' AND name = 'screen_results'").fetchone()
++    m = re.search(r"change_check[^,]*?CHECK\s*\(\s*change_check\s+IN\s*\(([^)]*)\)", (row or [""])[0] or "", re.I)
++    return None if m is None else set(re.findall(r"'([^']*)'", m.group(1)))
++
++
+ def write_screen_results(con: sqlite3.Connection, result: Any, input_max_fetched_at: Optional[str], *,
+                          screen_run_id: Any = None, retire_missing: bool = False,
+                          generated_at: Optional[str] = None) -> WriteReport:
+@@ -247,6 +255,12 @@
+     rows = screen_rows(result, input_max_fetched_at)
+     rep = WriteReport("screen_results")
+     gen = generated_at or _now()
++    allowed = _change_check_allowed(con)
++    if allowed is not None:
++        bad = sorted({r["change_check"] for r in rows if r.get("change_check") is not None} - allowed)
++        if bad:   # 例如 after_no_trade（DECISIONS 2026-11-10 12:05 ②）：資料庫 CHECK 未遷移前不寫，明確報錯
++            raise ValueError(f"screen_results.change_check 的 CHECK 不允許 {bad}（允許 {sorted(allowed)}）；"
++                             "請資料工程先遷移 CHECK，未寫入任何列")
+     with _tx(con):
+         cols = _columns(con, "screen_results")
+         rid = _run_id(con, screen_run_id)
+--- base/docs/indicators.md	2026-11-10 12:14:57.038640780 +0800
++++ work/docs/indicators.md	2026-11-10 12:18:23.749372287 +0800
+@@ -251,7 +251,7 @@
+ 
+ ## 8. 整股無成交日（規格；2026-11-10 第八批撰寫）
+ 
+-「整股無成交日」：交易所當日有開市（交易日曆為交易日，且同市場有行情）、該股**未停牌**，但當日沒有一般交易的成交價（收盤價為 NULL），或成交量為 0。本節先寫明現況（analysis-0.8.0 程式實際行為），再寫規格；兩者不同處列在 8.6，標「待負責人核可」，**未改選股行為**。
++「整股無成交日」：交易所當日有開市（交易日曆為交易日，且同市場有行情）、該股**未停牌**，但當日沒有一般交易的成交價（收盤價為 NULL），或成交量為 0。本節先寫明現況（analysis-0.8.0 程式實際行為），再寫規格；兩者不同處列在 8.6。8.6 第 1～3 項已由負責人於 2026-11-10 12:05 核可（DECISIONS），並已依本節實作（合入版本見 analysis/USAGE.md 變更紀錄）。
+ 
+ ### 8.1 官方資料的呈現方式（2026-11-10 11:57～11:58，Asia/Taipei，以 curl 實查）
+ 
+@@ -278,9 +278,10 @@
+ | 本股無列、同市場有行情、無停牌紀錄 | `EXCL_NO_ROW_SUSPENDED_OR_MISSING` |
+ | 本股有列、整股無成交（收盤 NULL 或成交量＝0）、確認停牌（`is_halted=1` 或 trading_halts） | `EXCL_SUSPENDED` |
+ | 本股有列、整股無成交、非確認停牌 | **`EXCL_NO_TRADE`**（評估日當天無成交的結果碼） |
++| 本股有列、有收盤價但成交量 NULL（不論 is_halted） | `EXCL_BAD_DATA`（資料錯誤，不是無成交；核可 ①） |
+ | 本股有列、有成交、但 `is_halted=1` | 照常評估（有成交即視為交易日，停牌旗標不影響） |
+ 
+-「整股無成交」的判定只看行情欄（`close_twd` 為 NULL，或 `volume_shares`＝0），**不依賴 `is_no_trade` 或 `is_halted`**。因此：只有零股成交（量 > 0、收盤 NULL）也算整股無成交；資料工程把無成交誤標為停牌時，只會把結果碼由 `EXCL_NO_TRADE` 變成 `EXCL_SUSPENDED`，以及把視窗缺口拆解由 `window_no_trade_days` 移到 `window_halt_days`，**不改變缺口合計與通過與否**。
++「整股無成交」的判定只看行情欄（`close_twd` 為 NULL，或 `volume_shares`＝0），**不依賴 `is_no_trade` 或 `is_halted`**（`adjust.row_kind`）。`is_no_trade` 只做交叉檢查：與價量判定不一致時（評估日或視窗內）寫入說明欄 `data_note`，**不改結果碼**（核可 ③；旗標 NULL 或該列為資料錯誤時不比對）。因此：只有零股成交（量 > 0、收盤 NULL）也算整股無成交；資料工程把無成交誤標為停牌時，只會把結果碼由 `EXCL_NO_TRADE` 變成 `EXCL_SUSPENDED`，以及把視窗缺口拆解由 `window_no_trade_days` 移到 `window_halt_days`，**不改變缺口合計與通過與否**。
+ 
+ ### 8.3 價格欄位處理（現況＝規格）
+ 
+@@ -290,19 +291,28 @@
+ ### 8.4 窗口計算（現況＝規格）
+ 
+ - 有效交易日＝`volume_shares > 0` 且 `close_twd` 非 NULL。均線（MA 短／長）、前 N 日最高、前 N 日均量**只用有效交易日**；無成交日跳過、不計入 N，不以 0 量拉低均量、不以前收補值（同第 4 節末段）。
+-- 視窗＝最近 `required_valid_days` 個有效交易日；起日 w₀ 到評估日之間的交易日中，非有效日的天數＝缺口 `window_gap_days`，拆成 `window_halt_days`（確認停牌）、`window_missing_days`（無資料列）、`window_no_trade_days`（有列但整股無成交）。
+-- **三者合計**與 `max_gap_days`（預設 3）比較，超過→`EXCL_WINDOW_GAPS`。無成交日與停牌、缺漏一樣各算 1 天。
++- 視窗＝最近 `required_valid_days` 個有效交易日；起日 w₀ 到評估日之間的交易日中，非有效日的天數＝缺口 `window_gap_days`，拆成 `window_bad_data_days`（有收盤價但成交量 NULL，優先判定）、`window_halt_days`（確認停牌）、`window_missing_days`（無資料列）、`window_no_trade_days`（有列但整股無成交）。
++- **四者合計**與 `max_gap_days`（預設 3）比較，超過→`EXCL_WINDOW_GAPS`（合計口徑與門檻不變）。無成交日與停牌、缺漏、資料錯誤一樣各算 1 天。合計未超過但 `window_bad_data_days` > 0 →`EXCL_BAD_DATA`（核可 ①）。
++- `ma_series`／`ohlc_series`：資料錯誤日仍為 `status=no_trade`（不畫、不計入），另標 `unavailable_code=EXCL_BAD_DATA`。
+ - 無成交日之後第一個有效交易日的漲跌幅（顯示用，不是篩選條件）：基準＝前一有效交易日收盤（事件日改用參考價，第 3 節）。
++- 同一日的 `change_check`（核可 ②；條件：前一交易日本股有列且整股無成交，且非除權息等事件日）：
++  - 來源漲跌符號 X 或 `change_note`＝「無比價」→ `after_no_trade`，說明欄顯示「無比價」；
++  - 有官方參考價（選用欄 `daily_prices.next_ref_price_twd`＝TPEx「次日參考價」，記在無成交那一列）→ 以（收盤 − 參考價）與來源帶號漲跌比對，差 ≤ 0.005 元為 `after_no_trade`（說明「依官方參考價比對一致」），超過為 `mismatch`；
++  - 無官方參考價（欄位不存在或值為 NULL；TWSE 列一律為 NULL）→ `after_no_trade`，不比對、不算 mismatch，說明列出來源隱含的參考價（收盤 − 來源漲跌）；
++  - 來源正負號矛盾仍為 `source_sign_conflict`；來源無漲跌為 `after_no_trade`（說明「官方未提供漲跌」）。
++  - 前一交易日有成交的日子維持原規則（含：來源 X 且數值 NULL 時為 `no_source`，本批未改）。
+ 
+ ### 8.5 預設評估日
+ 
+ 無成交列也是「有現行行情列」，所以會被第 0 節預設評估日規則採計（表示該日官方已公布行情）。
+ 
+-### 8.6 現況與規格的差異、待負責人核可（皆未改程式）
++### 8.6 現況與規格的差異（第 1～3 項 2026-11-10 12:05 核可並已實作，待合入）
+ 
+-1. 【待負責人核可】（已核可 12:05，待排程後合入）視窗內「有收盤價但成交量為 NULL」的列：現況在評估日當天回 `EXCL_BAD_DATA`，但在視窗內被算成 `window_no_trade_days`。規格建議：視窗內同樣視為資料錯誤（`EXCL_BAD_DATA`），不當作無成交。需改 `screener.py` 有效日與缺口拆解、`verify_independent.py` 同步。
+-2. 【待負責人核可】（已核可 12:05，待排程後合入）無成交日次日的漲跌幅基準：官方 TPEx 以「次日參考價」為基準（例：2064 於 115/11/09 漲跌 0.65＝11.60−10.95），TWSE 標「X」不比價；現況以前一有效交易日收盤（11.00）為基準，與來源比對會標 `change_check=mismatch`。只影響顯示，不影響篩選。規格建議：無成交日的次一有效日 `change_check` 改標新狀態（例如 `after_no_trade`），不算 mismatch；是否改用官方參考價為基準由負責人決定。需改 `adjust.check_change`／`screener.py`／`series.change_series`。
+-3. 【待負責人核可】（已核可 12:05，待排程後合入）是否讀 `is_no_trade` 作交叉檢查：規格建議判定仍以行情欄為準，`is_no_trade` 與行情欄不一致時只在說明欄標記，不改結果碼。需改 `io_sqlite.py`（讀欄）與 `screener.py`（加註）。
++1. 【已核可 12:05，已實作】視窗內「有收盤價但成交量為 NULL」的列：現況在評估日當天回 `EXCL_BAD_DATA`，但在視窗內被算成 `window_no_trade_days`。規格建議：視窗內同樣視為資料錯誤（`EXCL_BAD_DATA`），不當作無成交。需改 `screener.py` 有效日與缺口拆解、`verify_independent.py` 同步。
++2. 【已核可 12:05，已實作】無成交日次日的漲跌幅基準：官方 TPEx 以「次日參考價」為基準（例：2064 於 115/11/09 漲跌 0.65＝11.60−10.95），TWSE 標「X」不比價；現況以前一有效交易日收盤（11.00）為基準，與來源比對會標 `change_check=mismatch`。只影響顯示，不影響篩選。規格建議：無成交日的次一有效日 `change_check` 改標新狀態（例如 `after_no_trade`），不算 mismatch；是否改用官方參考價為基準由負責人決定。需改 `adjust.check_change`／`screener.py`／`series.change_series`。
++3. 【已核可 12:05，已實作】是否讀 `is_no_trade` 作交叉檢查：規格建議判定仍以行情欄為準，`is_no_trade` 與行情欄不一致時只在說明欄標記，不改結果碼。需改 `io_sqlite.py`（讀欄）與 `screener.py`（加註）。
++   - 實作摘要（DECISIONS 2026-11-10 12:05）：第 1 項見 8.2、8.4（新欄 `window_bad_data_days`）；第 2 項見 8.4（新狀態 `after_no_trade`，自算漲跌幅與基準不變）；第 3 項見 8.2（新說明欄 `data_note`）。資料庫需配合：`screen_results` 補 `window_bad_data_days`、`data_note` 欄，`change_check` 的 CHECK 加入 `after_no_trade`（未遷移前 writer 整批拒寫並報錯）；官方參考價比對需 `daily_prices.next_ref_price_twd`（選用，缺欄時不比對）。
++   - 真實快照（2026-11-10 11:57:25，唯讀）以 change_series 實測 138 檔有無成交列的代號：change_check 變化 490 筆（mismatch→after_no_trade 232、ok→after_no_trade 222、no_source→after_no_trade 36），其中「無比價」36 筆；screener 於 2026-11-04、11-09 的 status／排除碼無任何變化。
+ 4. 量的口徑：TWSE 總量含零股，只有零股成交的日子量 > 0；TPEx tradingStock 以「張」為單位，零股不足一張時成交張數為 0、成交仟元不為 0。兩者依 8.2 都判為整股無成交，判定一致；但 sample30（上櫃用 tradingStock）與全市場回補（上櫃用 dailyQuotes，成交股數）量的口徑不同，請資料工程確認正式採用哪一個來源（不需改 analysis）。
+ 5. 資料工程：MI_INDEX 無成交次日的官方「X」（不比價）未存入 `change_sign`（存成 ''、`change_twd`＝0.0），使漲跌比對誤標 mismatch；STOCK_DAY 有「X0.00」。建議保留「X」（analysis 已把 X 視為 `source_not_comparable`）。
+ 6. 資料工程正在修「整股無成交被誤標停牌」；修完後重驗：`EXCL_SUSPENDED`／`EXCL_NO_TRADE` 的分配與 `window_halt_days`／`window_no_trade_days` 拆解應改變，`window_gap_days` 合計與 PASS／FAIL 不應改變。

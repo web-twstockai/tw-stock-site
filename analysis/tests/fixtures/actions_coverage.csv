@@ -1,0 +1,10 @@
+market,action_kind,coverage_start
+TWSE,ex_right_dividend,2026-06-01
+TWSE,capital_reduction_restore,2026-06-01
+TWSE,par_value_change,2026-06-01
+TWSE,stock_split,2026-06-01
+TPEx,cash_dividend,2026-06-01
+TPEx,stock_dividend,2026-06-01
+TPEx,ex_both,2026-06-01
+TPEx,par_value_change,2026-06-01
+TPEx,stock_split,2026-06-01

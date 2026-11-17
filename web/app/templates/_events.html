@@ -1,0 +1,28 @@
+{% from "_macros.html" import test_badge %}
+{% if events %}
+<ol class="timeline">
+{% for e in events %}
+  <li class="ev cat-{{ e.category }}">
+    <div class="ev-head">
+      <span class="tag tag-{{ e.category }}">{{ e.category_label }}</span>
+      <time>{{ e.published_at }}</time>
+      {% if e.is_test %}{{ test_badge() }}{% endif %}
+    </div>
+    <div class="ev-title"><a href="{{ e.url }}" rel="noopener">{{ e.title }}</a></div>
+    <details><summary>摘要／可能影響／待確認</summary>
+      <dl>
+        <dt>相關公司</dt><dd>{% for c in e.related %}<a href="/stock/{{ c }}">{{ c }}</a> {% endfor %}{{ e.name }}</dd>
+        <dt>事件摘要</dt><dd>{{ e.summary }}</dd>
+        <dt>可能影響</dt><dd>{{ e.impact }}</dd>
+        <dt>待確認事項</dt><dd>{{ e.pending }}</dd>
+        {% if e.evidence %}<dt>關聯證據</dt><dd>{{ e.evidence }}</dd>{% endif %}
+        <dt>來源</dt><dd>{{ e.source }}｜發布 {{ e.published_at }}</dd>
+        <dt>連結</dt><dd><a href="{{ e.url }}" rel="noopener">{{ e.url_kind|default('原文連結') }}</a></dd>
+      </dl>
+    </details>
+  </li>
+{% endfor %}
+</ol>
+{% else %}
+<div class="empty" data-state="no-events">近 30 天沒有符合的事件。</div>
+{% endif %}

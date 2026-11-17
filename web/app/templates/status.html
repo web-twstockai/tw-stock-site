@@ -1,0 +1,167 @@
+{% extends "base.html" %}
+{% from "_macros.html" import status_badge, test_badge, dt, excl_summary %}
+{% block title %}資料狀態｜台股盤後研究{% endblock %}
+{% block content %}
+<h1>資料狀態</h1>
+{%- set src_bad = (sources or [])|selectattr('status_code', 'equalto', 'source_down')|list -%}
+{%- set src_stale = [] -%}{%- for x in (sources or []) if x.stale == True %}{% set _ = src_stale.append(x) %}{% endfor -%}
+{%- set job_bad = [] -%}{%- for j in (jobs or []) if j.status in ('failed', 'partial') %}{% set _ = job_bad.append(j) %}{% endfor -%}
+<nav class="jumpbar" aria-label="本頁區塊" data-testid="status-jumpbar">
+  <ul>
+    <li><a href="#last-run">最近更新</a></li>
+    <li><a href="#sources"{% if src_bad or src_stale %} class="has-issue" data-state="issue"{% endif %}>各來源{% if src_bad or src_stale %} <span class="jb-flag" aria-hidden="true">⚠</span><span class="sr">（{% if src_bad %}{{ src_bad|length }} 個來源故障{% endif %}{% if src_bad and src_stale %}、{% endif %}{% if src_stale %}{{ src_stale|length }} 個過期{% endif %}）</span>{% endif %}</a></li>
+    <li><a href="#jobs"{% if job_bad %} class="has-issue" data-state="issue"{% endif %}>工作紀錄{% if job_bad %} <span class="jb-flag" aria-hidden="true">⚠</span><span class="sr">（{{ job_bad|length }} 筆失敗或部分完成）</span>{% endif %}</a></li>
+    <li><a href="#excluded">排除名單</a></li>
+    <li><a href="#coverage">覆蓋起日</a></li>
+    <li><a href="#exclusion-codes">排除代碼</a></li>
+    <li><a href="#status-legend">標籤說明</a></li>
+  </ul>
+</nav>
+{% if unavailable %}
+<div class="alert st-source_down-box" data-state="db-unavailable"><strong>資料無法讀取</strong>：{{ unavailable }}<br>
+  資料庫尚未建立或仍在入庫中；網站以唯讀方式讀取，不會建立或修改資料庫。</div>
+{% endif %}
+{% if static_export is defined and static_export %}
+<section class="card" id="public-site" data-testid="public-site" data-static-build>
+  <h2>公開站版本</h2>
+  <ul class="plain">
+    <li>本版資料日期：<strong data-build-date>{{ meta.data_date }}</strong>　匯出時間：<span data-build-generated>—</span>（台北）</li>
+    <li class="note" data-build-stale-line hidden></li>
+  </ul>
+  <p class="muted">公開站只在每次發布（每交易日 18:00、每日 22:00）通過自檢後更新；未通過時維持上一版。</p>
+</section>
+{% elif pages is defined and pages %}
+<section class="card" id="public-site" data-testid="public-site">
+  <h2>公開站 <small><a href="{{ pages.url }}" rel="noopener">{{ pages.url }}</a></small></h2>
+  {% if pages.error %}<p class="note">{{ status_badge('error', pages.error) }} {{ pages.error }}</p>
+  {% elif not pages.has_record %}<p data-state="no-deploy-record">尚無發布紀錄（deploy_pages.sh 推送成功或失敗後才會寫入 web/logs/pages_last_deploy.json）。</p>
+  {% if pages.inferred is defined and pages.inferred %}<ul class="plain"><li>公開站資料日期（推定）：<strong data-public-date>{{ pages.public_data_date }}</strong>　產生於 {{ pages.generated }}（台北）<small class="muted">依部署工作目錄 build/pages-repo 最後推送內容推定</small></li>
+    {% if pages.behind %}<li data-state="public-behind"><span class="pill pill-warn">⏱ 落後</span> 公開站落後本機：本機資料日期 {{ pages.local_data_date }}，公開站仍是 {{ pages.public_data_date }}。</li>{% endif %}</ul>{% endif %}
+  {% else %}
+  <ul class="plain">
+    {% if pages.public_data_date %}<li>公開站資料日期：<strong data-public-date>{{ pages.public_data_date }}</strong>　推送：{{ pages.pushed_at }}（台北）{% if pages.confirmed_at %}　最近確認無變更：{{ pages.confirmed_at }}（台北）{% endif %}</li>
+    {% if pages.behind %}<li data-state="public-behind"><span class="pill pill-warn">⏱ 落後</span> 公開站落後本機：本機資料日期 {{ pages.local_data_date }}，公開站仍是 {{ pages.public_data_date }}。</li>
+    {% elif pages.behind == false %}<li data-state="public-current">與本機資料日期相同（{{ pages.local_data_date }}）。</li>{% endif %}
+    {% else %}<li data-state="no-public-success">尚無成功推送紀錄。</li>{% endif %}
+    {% if pages.last_attempt %}<li{% if pages.attempt_failed %} data-state="deploy-failed"{% endif %}>最近一次發布：{{ pages.last_attempt.at }}（台北）　{% if pages.attempt_failed %}<span class="pill pill-warn">✕ 未推送</span> {% endif %}{{ pages.last_attempt.status_text }}{% if pages.attempt_failed %}；公開站停在上一版{% if pages.last_attempt.reason %}。原因：{{ pages.last_attempt.reason }}{% endif %}{% endif %}</li>{% endif %}
+  </ul>
+  {% endif %}
+</section>
+{% endif %}
+<section class="card" id="last-run">
+  <h2>最近一次更新</h2>
+  <ul class="plain">
+    <li>開始：{{ dt(meta.last_run_started) }}　完成：{{ dt(meta.last_run_finished) }}（{{ meta.timezone }}，UTC+8）</li>
+    <li>資料日期：{{ meta.data_date }}　結果：{{ meta.update_status }}</li>
+    {% if meta.update_detail %}<li>{{ meta.update_detail }}</li>{% endif %}
+  </ul>
+  {% if is_test %}<p>{{ test_badge() }} 本頁內容為測試資料（欄位依 docs/schema.md 的 job_runs／source_status）。</p>{% endif %}
+</section>
+<section class="card" id="sources">
+  <h2>各來源 <small>source_status</small></h2>
+  {% if sources %}
+  {#- 來源多時（正式資料 128 個，含逐月營收來源）只展開需要注意的列；正常列收進 details，避免手機頁面過長 -#}
+  {%- macro src_row(s) %}<tr id="src-{{ s.id }}">
+      <td class="stack-h"><a href="{{ s.href }}">{{ s.name }}</a>{% if s.category_label %} <small class="muted">{{ s.category_label }}</small>{% endif %}</td>
+      {%- set sc = s.status_code or 'insufficient' %}
+      <td data-status="{{ sc }}">{% if sc == 'ok' %}<span class="badge st-ok">{{ STATUS_LABELS.get('ok', s.status) }}</span>
+          {% elif sc == 'source_down' %}{{ status_badge('source_down', '已保留上次成功版本', s.last_success) }}
+          {% else %}{{ status_badge(sc, s.missing) }}{% endif %}
+          {%- if s.stale is sameas true %}<br><span class="pill pill-warn" data-state="stale" title="{{ s.stale_note }}">⏱ 過期：應有 {{ s.expected_data_date }}，目前 {{ s.latest_data_date }}</span>{% endif %}</td>
+      <td>{{ dt(s.last_success) }}</td><td>{{ dt(s.last_attempt) }}{% if s.http %}（HTTP {{ s.http }}）{% endif %}</td>
+      <td>{{ s.data_date }}</td><td class="wrap">{{ s.missing or '—' }}</td>
+      <td>{% if s.errors %}<ul class="errs">{% for e in s.errors %}<li>{{ e }}</li>{% endfor %}</ul>{% else %}—{% endif %}</td>
+    </tr>{% endmacro -%}
+  {%- set src_ok = [] -%}{%- set src_attn = [] -%}
+  {%- for s in sources %}{% if (s.status_code or 'insufficient') == 'ok' and s.stale is not sameas true %}{% set _ = src_ok.append(s) %}{% else %}{% set _ = src_attn.append(s) %}{% endif %}{% endfor -%}
+  {%- set fold = sources|length > 12 -%}
+  <p class="src-sum" data-testid="source-summary">共 {{ sources|length }} 個來源：正常 {{ src_ok|length }}｜需注意 {{ src_attn|length }}{% if src_bad %}（來源故障 {{ src_bad|length }}）{% endif %}{% if src_stale %}（過期 {{ src_stale|length }}）{% endif %}</p>
+  {%- if not fold or src_attn %}
+  <div class="table-wrap stack-wrap" tabindex="0" role="region" aria-label="各來源狀態表{{ '（需注意）' if fold }}"><table class="data stack">
+    <thead><tr><th>來源</th><th>狀態</th><th>最後成功時間</th><th>最後嘗試</th><th>資料日期</th><th>缺漏／備註</th><th>錯誤紀錄</th></tr></thead>
+    <tbody>{% for s in (src_attn if fold else sources) %}{{ src_row(s) }}{% endfor %}</tbody>
+  </table></div>
+  {%- endif %}
+  {%- if fold and src_ok %}
+  <details class="src-ok-fold" data-testid="sources-ok-fold"><summary>其餘 {{ src_ok|length }} 個正常來源</summary>
+  <div class="table-wrap stack-wrap" tabindex="0" role="region" aria-label="各來源狀態表（正常）"><table class="data stack">
+    <thead><tr><th>來源</th><th>狀態</th><th>最後成功時間</th><th>最後嘗試</th><th>資料日期</th><th>缺漏／備註</th><th>錯誤紀錄</th></tr></thead>
+    <tbody>{% for s in src_ok %}{{ src_row(s) }}{% endfor %}</tbody>
+  </table></div></details>
+  {%- endif %}
+  {% else %}<div class="empty" data-state="no-sources">{{ status_badge('insufficient', 'source_status 沒有資料') }} 尚無來源狀態紀錄。</div>{% endif %}
+</section>
+{#- job_runs 的成功／失敗項目：正式資料每項可能附上逐檔明細（數百字），太長時只列項目名稱，明細收合 -#}
+{%- macro job_items(items) -%}
+{%- set items = items or [] -%}
+{%- if not items %}—{% elif (items|join('、'))|length <= 80 %}{{ items|join('、') }}
+{%- else %}<details class="items-fold"><summary>{{ items|length }} 項：{% for x in items %}{{ (x|string).split(':', 1)[0] }}{{ '、' if not loop.last }}{% endfor %}</summary><ul class="errs">{% for x in items %}<li>{{ x }}</li>{% endfor %}</ul></details>{% endif -%}
+{%- endmacro %}
+<section class="card" id="jobs">
+  <h2>工作紀錄 <small>job_runs 最近 20 筆</small></h2>
+  {% if jobs %}
+  {%- macro job_row(j) %}<tr id="job-{{ j.run_id }}">
+      <td class="stack-h"><a href="{{ j.href }}">{{ j.run_id }}</a></td><td>{{ j.job_name }}</td>
+      <td><span class="badge {{ 'st-ok' if j.status == 'success' else 'st-source_down' if j.status in ('failed', 'partial') else 'st-insufficient' }}">{{ j.status_label }}</span></td>
+      <td>{{ dt(j.started_at) }}</td><td>{{ dt(j.finished_at) }}</td><td>{{ j.data_date }}</td><td>{{ j.scope }}</td>
+      <td class="wrap">{{ job_items(j.success_items) }}</td><td class="wrap">{{ job_items(j.failed_items) }}</td>
+      <td>{{ j.retry_count }}</td><td class="wrap">{{ j.error_summary or '—' }}</td>
+    </tr>{% endmacro -%}
+  {#- 手機上每筆是一張卡片：先列最近 5 筆，其餘收合 -#}
+  {%- set jn = 5 %}
+  <div class="table-wrap stack-wrap" tabindex="0" role="region" aria-label="工作紀錄表"><table class="data stack">
+    <thead><tr><th>#</th><th>工作</th><th>結果</th><th>開始</th><th>完成</th><th>資料日期</th><th>範圍</th><th>成功</th><th>失敗</th><th>重試</th><th>錯誤摘要</th></tr></thead>
+    <tbody>{% for j in jobs[:jn] %}{{ job_row(j) }}{% endfor %}</tbody>
+  </table></div>
+  {%- if jobs|length > jn %}
+  <details class="src-ok-fold" data-testid="jobs-fold"><summary>較早的 {{ jobs|length - jn }} 筆{% set jb_old = [] %}{% for x in jobs[jn:] if x.status in ('failed', 'partial') %}{% set _ = jb_old.append(x) %}{% endfor %}{% if jb_old %}（其中 {{ jb_old|length }} 筆失敗或部分完成）{% endif %}</summary>
+  <div class="table-wrap stack-wrap" tabindex="0" role="region" aria-label="工作紀錄表（較早）"><table class="data stack">
+    <thead><tr><th>#</th><th>工作</th><th>結果</th><th>開始</th><th>完成</th><th>資料日期</th><th>範圍</th><th>成功</th><th>失敗</th><th>重試</th><th>錯誤摘要</th></tr></thead>
+    <tbody>{% for j in jobs[jn:] %}{{ job_row(j) }}{% endfor %}</tbody>
+  </table></div></details>
+  {%- endif %}
+  {% else %}<div class="empty" data-state="no-jobs">{{ status_badge('insufficient', 'job_runs 沒有資料') }} 尚無工作紀錄。</div>{% endif %}
+</section>
+<section class="card" id="excluded">
+  <h2>排除名單 <small>securities_excluded（非普通股）</small></h2>
+  {% if excluded %}
+  <p>清單日 {{ excluded[0].data_date }}，共 {{ '{:,}'.format(excluded|length) }} 檔：</p>
+  {{ excl_summary(excluded) }}
+  <details><summary>明細（前 100 檔）</summary>
+  <div class="table-wrap stack-wrap"><table class="data stack">
+    <thead><tr><th>代號</th><th>名稱</th><th>市場</th><th>CFI</th><th>排除原因</th><th>清單日</th></tr></thead>
+    <tbody>{% for e in excluded[:100] %}<tr><td class="stack-h"><a href="/source?table=securities_excluded&symbol={{ e.symbol|urlencode }}&market={{ e.market }}&data_date={{ e.data_date }}&exclude_reason={{ e.exclude_reason|urlencode }}">{{ e.symbol }}</a></td><td>{{ e.name or '' }}</td><td>{{ e.market }}</td><td>{{ e.cfi_code or '' }}</td><td>{{ e.exclude_reason }}</td><td>{{ e.data_date }}</td></tr>{% endfor %}</tbody>
+  </table></div></details>
+  {% else %}<div class="empty" data-state="no-excluded">{{ status_badge('insufficient', 'securities_excluded 沒有資料') }} 尚無排除名單。</div>{% endif %}
+</section>
+<section class="card" id="coverage">
+  <h2>除權息／減資資料覆蓋起日 <small>corporate_actions_coverage（暫定表）</small></h2>
+  {% if coverage %}
+  <div class="table-wrap stack-wrap"><table class="data stack">
+    <thead><tr><th>市場</th><th>類別</th><th>覆蓋起日</th></tr></thead>
+    <tbody>{% for c in coverage %}<tr><td class="stack-h">{{ c.market }}</td><td>{{ c.action_kind }}</td><td>{{ c.coverage_start }}</td></tr>{% endfor %}</tbody>
+  </table></div>
+  {% else %}<div class="empty" data-state="no-coverage">{{ status_badge('insufficient', '表尚未建立或沒有資料') }} 尚無覆蓋起日；analysis strict 政策下視窗內個股會被排除為 EXCL_ADJ_COVERAGE_GAP。</div>{% endif %}
+</section>
+<section class="card" id="exclusion-codes" data-testid="exclusion-codes">
+  <h2>選股排除代碼說明 <small>今日預設條件{% if excl_trade_date %}（{{ excl_trade_date }}）{% endif %}的檔數</small></h2>
+  <div class="table-wrap stack-wrap"><table class="data excl-legend stack">
+    <thead><tr><th>代碼</th><th>說明</th><th class="r">今日檔數</th><th>說明來源</th></tr></thead>
+    <tbody>{% for e in excl_codes %}<tr id="code-{{ e.code }}"{% if e.suspend %} class="cov"{% endif %}>
+      <td class="stack-h"><code>{{ e.code }}</code></td><td class="wrap" data-excl-label="{{ e.code }}">{{ e.label }}</td>
+      <td class="r">{{ e.count if e.count is not none else '—' }}</td><td><small>{{ e.src }}</small></td></tr>{% endfor %}</tbody>
+  </table></div>
+  <p class="muted">停牌相關兩個代碼意義不同：<code>EXCL_SUSPENDED</code>＝確認停牌；<code>EXCL_NO_ROW_SUSPENDED_OR_MISSING</code>＝停牌或資料缺漏、待確認。</p>
+</section>
+<section class="card" id="status-legend">
+  <h2>狀態標籤說明</h2>
+  <ul class="plain legend-list">
+    <li>{{ status_badge('insufficient') }} 歷史資料不夠計算或資料表沒有對應列，不補造。</li>
+    <li>{{ status_badge('revenue_missing') }} 本站資料庫還沒有這個月份的營收；只反映已入庫資料，不判斷公司是否已公告，也不放預估值。</li>
+    <li>{{ status_badge('financials_missing') }} 本站資料庫還沒有這一期財報；同上，只反映已入庫資料，不放預估值。</li>
+    <li>{{ status_badge('not_applicable') }} 產業不適用（如金融業毛利率），滑過看說明。</li>
+    <li>{{ status_badge('source_down', '', '2026-11-08') }} 抓取失敗，保留並顯示上次成功版本。</li>
+    {% if is_test %}<li>{{ test_badge() }} 假資料，僅供版型與測試，不混入正式結果。</li>{% endif %}
+  </ul>
+</section>
+{% endblock %}

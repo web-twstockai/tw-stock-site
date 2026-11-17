@@ -1,0 +1,162 @@
+{% extends "base.html" %}
+{% from "_macros.html" import val, chg, status_badge, test_badge, srcline, screen_table, dt, spark %}
+{% block title %}盤後總覽｜台股盤後研究{% endblock %}
+{% block content %}
+{#- 依區塊 id 與標籤取出 summary.py 提供的 fact（不在網站重算） -#}
+{%- set F = {} -%}{%- set SEC = {} -%}
+{%- for sec in summary.sections -%}{%- set _ = SEC.update({sec.id: sec}) -%}
+  {%- for f in sec.facts -%}{%- set _ = F.update({f.label: f}) -%}{%- endfor -%}
+{%- endfor -%}
+{%- set rev = [] -%}
+{%- for f in SEC.revenue.facts if f.label.endswith('已有營收') %}{% set _ = rev.append(f) %}{% endfor -%}
+{%- set evf = [] -%}{%- for f in SEC.events.facts if f.label.endswith('重大訊息則數') %}{% set _ = evf.append(f) %}{% endfor -%}
+{%- set down = (sources or [])|selectattr('status_code', 'equalto', 'source_down')|list -%}
+
+<section class="card daily-summary" id="daily-summary" data-testid="daily-summary">
+  <div class="lead">
+    <div class="lead-main">
+      <p class="kicker"><span data-date="{{ summary.date }}">{{ summary.date }}</span>　盤後重點{% if summary.is_test %} {{ test_badge() }}{% endif %}</p>
+      {%- set tx = F['加權指數'] %}{% set txp = F['加權指數漲跌幅'] %}{% set txc = F['加權指數漲跌'] %}
+      <h1 class="headline">{% if tx and tx.val.ok %}加權指數收 <span class="hl-g">{{ val(tx.val) }} 點{% if txc or txp %}，{% endif %}</span>{% if txc %}<span class="hl-g">{{ chg(txc.val) }} 點{% if txp %}，{% endif %}</span>{% endif %}{% if txp %}<span class="hl-g">{{ chg(txp.val) }}</span>{% endif %}{% else %}加權指數 {{ val(tx.val) if tx else status_badge('insufficient', '沒有指數資料') }}{% endif %}</h1>
+      {%- set ixs = SEC.market.index_series if SEC.market and SEC.market.index_series is defined else none %}
+      <div class="spark-row" role="group" aria-label="指數近 20 個交易日走勢">
+        {{ spark(ixs.TAIEX if ixs else none, '加權指數') }}
+        {{ spark(ixs.TPEX if ixs else none, '櫃買指數') }}
+      </div>
+
+      <ol class="ledger">
+        {#- 1 市場概況 -#}
+        <li class="lg-row lg-market" id="sum-market">
+          <h3 class="lg-k">市場概況 <small>{{ summary.universe_label }}</small></h3>
+          <div class="lg-v">
+            {%- set tp = F['櫃買指數'] %}{% set tpp = F['櫃買指數漲跌幅'] %}{% set tpc = F['櫃買指數漲跌'] %}
+            <p class="lg-line"><span class="lg-l">櫃買指數</span> <b class="big">{{ val(tp.val) if tp else '—' }}</b>{% if tp and tp.val.ok %} <small>點</small>{% endif %} {% if tpc %}{{ chg(tpc.val) }} <small>點</small> {% endif %}{% if tpp %}{{ chg(tpp.val) }}{% endif %}</p>
+            {%- set n = F['行情檔數'] %}{% set u = F['上漲家數'] %}{% set d = F['下跌家數'] %}
+            {% if u and d and n and n.val.ok and n.val.value %}
+            {%- set rest = n.val.value - u.val.value - d.val.value %}
+            <div class="breadth" role="img" aria-label="上漲 {{ u.val.value }} 檔、下跌 {{ d.val.value }} 檔、其餘 {{ rest }} 檔，共 {{ n.val.value }} 檔有行情">
+              <span class="b-up" style="width:{{ (u.val.value / n.val.value * 100)|round(2) }}%"></span><span class="b-flat" style="width:{{ (rest / n.val.value * 100)|round(2) if rest > 0 else 0 }}%"></span><span class="b-down" style="width:{{ (d.val.value / n.val.value * 100)|round(2) }}%"></span>
+            </div>
+            {%- set fl = F.get('平盤家數') %}{% set nc = F.get('無比價家數') %}
+            <p class="lg-line breadth-legend"><span class="up">▲ 上漲 {{ val(u.val) }} 檔</span><span class="down">▼ 下跌 {{ val(d.val) }} 檔</span>{% if fl %}<span class="flat" data-testid="flat-count">■ 平盤 {{ val(fl.val) }}{% if fl.val.ok %} 檔{% endif %}</span>{% endif %}{% if nc %}<span class="nocompare" data-testid="nocompare-count">無比價 {{ val(nc.val) }}{% if nc.val.ok %} 檔{% else %} <small class="muted">{{ nc.sub }}</small>{% endif %}</span>{% endif %}<span class="muted">行情 {{ val(n.val) }} 檔</span></p>
+            {% else %}
+            {%- set fl = F.get('平盤家數') %}{% set nc = F.get('無比價家數') %}
+            <p class="lg-line">{% if n %}行情檔數 {{ val(n.val) }}{% endif %}{% if u %}｜上漲 {{ val(u.val) }}{% endif %}{% if d %}｜下跌 {{ val(d.val) }}{% endif %}{% if fl %}｜平盤 {{ val(fl.val) }}{% endif %}{% if nc %}｜無比價 {{ val(nc.val) }}{% if not nc.val.ok %} <small class="muted">{{ nc.sub }}</small>{% endif %}{% endif %}</p>
+            {% endif %}
+            {%- set amt = F['成交金額合計'] %}
+            {% if amt %}<p class="lg-line"><span class="lg-l">成交金額合計</span> <b>{{ val(amt.val, big=True) }}</b>{% if amt.val.ok %}元{% endif %}{% if amt.sub %} <small class="muted" data-testid="turnover-note">{{ amt.sub }}</small>{% endif %}</p>{% endif %}
+          </div>
+        </li>
+        {#- 2 技術篩選 -#}
+        {%- set ss = SEC.screen %}
+        <li class="lg-row" id="sum-screen">
+          <h3 class="lg-k">技術篩選（預設條件）</h3>
+          <div class="lg-v">
+            {%- set pf = F['入選檔數'] %}{% set ef = F['排除檔數'] %}
+            <p class="lg-line"><span class="lg-l">入選檔數</span> <b class="big">{{ val(pf.val) if pf else '—' }}</b>{% if pf and pf.val.ok %} 檔{% endif %}{% if ef %}<span class="sep">｜</span><span class="lg-l">排除檔數</span> <b>{{ val(ef.val) }}</b>{% if ef.val.ok %} 檔{% endif %}{% endif %}
+              {% if ss.more %}<a class="more" href="{{ ss.more[1] }}">看今日選股表 ↓</a>{% endif %}</p>
+            {% if ss.zero and ss.zero_kind == 'coverage' %}
+            <div class="state state-coverage" data-state="zero-coverage"><p class="state-big">0 檔</p><p><b>0 檔是因為資料覆蓋不足，不是沒有股票符合條件。</b><a href="/status#coverage">查看覆蓋起日 →</a></p></div>
+            {% elif ss.zero %}
+            <div class="state state-zero" data-state="zero"><p class="state-big">0 檔</p><p>條件下無符合標的（不放寬條件）。</p></div>
+            {% endif %}
+          </div>
+        </li>
+        {#- 3 月營收（F-001 核准措辭：〈月份〉已有營收 N／M｜近 12 個月新高 X｜看全部 →；不放未見檔數） -#}
+        <li class="lg-row" id="sum-revenue">
+          <h3 class="lg-k">月營收</h3>
+          <div class="lg-v">
+            {% if rev %}{% set rf = rev[0] %}{% set rm = rf.label.replace('已有營收', '')|trim %}
+            <p class="lg-line">{% if rm %}<span class="lg-l">{{ rm }}</span> {% endif %}已有營收 <b class="big">{{ val(rf.val) }}</b>{% if rf.val.ok and SEC.revenue.revenue_universe %}<span class="of" title="{{ SEC.revenue.revenue_universe_note }}">／{{ SEC.revenue.revenue_universe }}</span>{% endif %}{% if rf.val.ok %} 檔{% endif %}{% if SEC.revenue.high_fact is defined and SEC.revenue.high_fact %}<span data-testid="rev-high">｜近 12 個月新高 <b>{{ val(SEC.revenue.high_fact.val) }}</b> 檔</span>{% endif %}{% if SEC.revenue.more_href is defined %}｜<a href="{{ SEC.revenue.more_href }}" data-testid="rev-more">看全部 →</a>{% endif %}</p>
+            {% else %}
+            {% for f in SEC.revenue.facts if not f.label.startswith('年增率') %}<p class="lg-line">已有營收 {{ val(f.val) }}</p>{% endfor %}
+            {% endif %}
+          </div>
+        </li>
+        {#- 4 重大訊息 -#}
+        <li class="lg-row" id="sum-events">
+          <h3 class="lg-k">重大訊息（官方）</h3>
+          <div class="lg-v">
+            {% for f in SEC.events.facts %}<p class="lg-line"><span class="lg-l">{{ f.label.replace('重大訊息則數', '')|trim or '今日' }}</span> <b class="big">{{ val(f.val) }}</b>{% if f.val.ok %} 則{% endif %} <a class="more" href="#events">看事件 ↓</a></p>{% endfor %}
+          </div>
+        </li>
+        {#- 5 資料狀態 -#}
+        <li class="lg-row" id="sum-status">
+          <h3 class="lg-k">資料狀態</h3>
+          <div class="lg-v">
+            {% for f in SEC.status.facts %}<p class="lg-line"><span class="lg-l">來源故障</span> <b class="big">{{ val(f.val) }}</b>{% if f.val.ok %} 個{% endif %}
+              {% for text, href in f.links %}<br><a class="more wrapok" href="{{ href }}">{{ text }} →</a>{% endfor %}</p>{% endfor %}
+          </div>
+        </li>
+      </ol>
+      <p class="fine">每個數字由程式從資料表計算，點數字可開啟它的來源列（資料表、主鍵、資料日期）。{{ '目前為 30 檔驗證樣本，不代表全市場。' if summary.is_test else '' }}</p>
+    </div>
+
+    <aside class="lead-side" aria-label="資料截至">
+      <h2 class="side-h">資料截至</h2>
+      <dl class="asof">
+        <dt>行情</dt><dd>{{ summary.date }} 收盤</dd>
+        <dt>最後更新</dt><dd>{% if (meta.last_run_finished or "")|string|length >= 10 %}{{ dt(meta.last_run_finished) }}（台北）{% elif meta.last_completed_at is defined and (meta.last_completed_at or "")|string|length >= 10 %}<span data-testid="last-completed">上次完成 {{ dt(meta.last_completed_at) }}（台北）</span>{% else %}—{% endif %}</dd>
+        <dt>更新結果</dt><dd>{{ meta.update_status }}</dd>
+      </dl>
+      {% if down %}
+      <div class="state state-stale" data-state="source_down">
+        <p><span class="pill pill-warn">⏱ 部分資料停在上次成功版本</span></p>
+        <ul class="plain">{% for s in down %}<li><b>{{ s.name }}</b>：來源故障，上次成功 {{ dt(s.last_success) }}，目前顯示上次成功版本。</li>{% endfor %}</ul>
+        <a href="/status">看資料狀態 →</a>
+      </div>
+      {% elif meta.update_detail %}
+      <p class="side-note">{{ meta.update_detail }}</p>
+      {% endif %}
+    </aside>
+  </div>
+
+  {% set nar = summary.narrative %}
+  <details class="nar-wrap"{% if nar.error %} open{% endif %}>
+    <summary>解釋文字與每個數字的來源 <small>{{ nar.engine }}</small></summary>
+  <div class="narrative{{ ' is-test' if nar.is_test }}" data-state="narrative" data-testid="narrative">
+    <h3>解釋文字 <small>{{ nar.engine }}{% if nar.generation_method %}（generation_method={{ nar.generation_method }}）{% endif %}</small>
+      {% if nar.is_test %}{{ test_badge() }}{% endif %}</h3>
+    {% if nar.mode == 'archived' %}
+    <p class="nar-meta" data-state="narrative-archived">存檔時間：{{ nar.generated_at }}｜provider：{{ nar.provider }}｜<a href="{{ nar.href }}">來源：daily_summaries →</a></p>
+    {% else %}
+    <p class="nar-meta" data-state="narrative-live"><span class="badge st-insufficient">尚未存檔，即時計算</span> daily_summaries 沒有 {{ summary.date }} 的存檔（或表不存在），以下由 analysis/narrative.py 即時產生。</p>
+    {% endif %}
+    {% if nar.error %}
+    <p data-state="narrative-error" data-status="{{ nar.error_status or 'insufficient' }}">{{ status_badge(nar.error_status or 'insufficient', nar.error) }} {{ nar.error }}</p>
+    {% else %}
+    <div class="nar-text" data-narrative-text>{% for ln in nar.lines %}<p>{{ ln }}</p>{% endfor %}</div>
+    {% if nar.facts_note %}<p class="note" data-state="facts-note">{{ nar.facts_note }}</p>{% endif %}
+    <details class="nar-facts"><summary>文字中每個數字的來源（facts_json，{{ nar.facts|length }} 項）</summary>
+      <div class="table-wrap"><table class="data"><thead><tr><th>#</th><th>項目</th><th class="r">值</th><th>來源表.欄位</th><th>主鍵</th><th>資料日期</th></tr></thead>
+      <tbody>{% for f in nar.facts %}<tr><td>{{ f.id }}</td><td>{{ f.label }}</td>
+        <td class="r">{% if f.href %}<a href="{{ f.href }}">{{ f.display or '—' }}</a>{% else %}{{ f.display or '—' }}{% endif %} {{ f.unit }}</td>
+        <td><code>{{ f.table }}.{{ f.field }}</code></td><td><small>{{ f.key }}</small></td><td>{{ f.date }}</td></tr>{% endfor %}</tbody></table></div>
+    </details>
+    {% endif %}
+  </div>
+  </details>
+  <p class="disclaimer">{{ summary.disclaimer }}</p>
+</section>
+
+<section class="block" id="today" aria-labelledby="today-h">
+  <header class="sec-h sec-h-row">
+    <div>
+      <h2 id="today-h">今日選股：趨勢＋突破＋量能 <small>{{ result.rows|length }} 檔／檢查 {{ result.universe_count }} 檔</small></h2>
+      <p class="sec-sub">預設四條件全部同時成立{% if result.rows %}；排序依成交金額（大到小），點欄名可改排序{% endif %}。</p>
+    </div>
+    <a class="btn" href="/screener">到條件選股調整條件 →</a>
+  </header>
+  <ul class="chips" aria-label="使用中的條件">
+    <li>① 收盤 &gt; MA20 &gt; MA60</li><li>② 收盤 &gt; 前 20 日最高</li><li>③ 成交量 ≥ 前 20 日均量 × 1.5</li><li>④ 成交金額 ≥ 1 億元</li>
+  </ul>
+  {{ screen_table(result, compact=True) }}
+  {{ srcline(result.engine, result.trade_date, result.is_test) }}
+</section>
+
+<section class="block" id="events" aria-labelledby="events-h">
+  <header class="sec-h"><h2 id="events-h">重要事件 <small>近 30 天</small></h2>
+  <p class="sec-sub">首頁只列官方已公告事實與媒體報導，依發布時間新到舊；社群與 AI 推論請到個股頁查看。</p></header>
+  {% include "_events.html" %}
+</section>
+{% endblock %}

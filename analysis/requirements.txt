@@ -1,0 +1,11 @@
+# analysis/.venv 鎖定版本（Python 3.13.5）。2026-11-10 依負責人決議：各自 venv、版本對齊。
+# 專案根目錄 .venv（Python 3.13.5）目前未安裝 pandas／numpy；若日後安裝，請使用下列版本。
+numpy==2.5.4
+pandas==3.1.1
+python-dateutil==4.0.0
+tzdata==2026.6
+pytest==9.2.0
+Pygments==2.21.0
+pluggy==1.7.0
+iniconfig==2.3.1
+packaging==26.3
