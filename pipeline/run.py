@@ -72,10 +72,19 @@ def run_job(job: str, symbols_mode: str, *, stop_before_s: str | None = None) ->
 
         if job in ("daily", "evening"):
             try:
-                if os.environ.get("PIPELINE_SKIP_ISIN") == "1":
-                    # 雲端（GitHub Actions）isin.twse.com.tw 約 13 KB/s、10 MB 要 12 分鐘以上：預設略過，沿用 DB 內的清單
-                    st = "skipped(PIPELINE_SKIP_ISIN=1，沿用 DB 內證券清單)"
+                skip = os.environ.get("PIPELINE_SKIP_ISIN") == "1"
+                if skip:
+                    # 雲端（GitHub Actions）isin.twse.com.tw 約 13 KB/s、10 MB 要 12 分鐘以上：預設略過，沿用 DB 內的清單。
+                    # 但 DB 內清單不足（空庫／壞檔）時忽略旗標照抓，絕不在 0 檔下「成功」。
+                    can_skip, cnts = securities.should_skip_isin(conn)
+                    if not can_skip:
+                        log.warning("PIPELINE_SKIP_ISIN=1 但 DB 內普通股清單不足 %s（門檻 %s）→ 忽略旗標，照抓 isin",
+                                    cnts, securities.MIN_COMMON_TO_SKIP)
+                        skip = False
+                if skip:
+                    st = f"skipped(PIPELINE_SKIP_ISIN=1，沿用 DB 內證券清單 {cnts})"
                     log.info("securities: %s", st)
+                    securities.note_isin_skipped(conn, "雲端略過 isin")
                 else:
                     st = securities.fetch_and_store(conn)
                 success.append(f"securities:{st}")

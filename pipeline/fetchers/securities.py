@@ -17,6 +17,34 @@ ISIN_TWSE = "https://isin.twse.com.tw/isin/C_public.jsp?strMode=2"
 ISIN_TPEX = "https://isin.twse.com.tw/isin/C_public.jsp?strMode=4"
 COMMON_CFI = {"ESVUFR", "ESVTFR"}
 
+# 雲端略過 isin 時，DB 內證券清單至少要有這麼多檔普通股，否則忽略略過旗標、照抓（2026-11-17 實際：上市 1058、上櫃 898）
+MIN_COMMON_TO_SKIP = {"TWSE": 900, "TPEx": 700}
+
+
+def should_skip_isin(conn: sqlite3.Connection) -> tuple[bool, dict]:
+    """PIPELINE_SKIP_ISIN=1 時能否真的略過：DB 內現行普通股清單要達門檻。回傳 (可略過, 各市場檔數)。"""
+    counts = {"TWSE": 0, "TPEx": 0}
+    try:
+        for m, n in conn.execute(
+            "SELECT market, COUNT(*) FROM securities WHERE is_current=1 AND COALESCE(is_common,1)=1 GROUP BY market"
+        ).fetchall():
+            counts[m] = n
+    except sqlite3.Error:
+        pass
+    ok = all(counts.get(m, 0) >= th for m, th in MIN_COMMON_TO_SKIP.items())
+    return ok, counts
+
+
+def note_isin_skipped(conn: sqlite3.Connection, reason: str) -> None:
+    """略過 isin 時只更新 last_attempt_at 與 notes；ok、last_success_at、last_error 等一律不動（清單其實是舊的）。"""
+    now = now_iso()
+    for sid in ("isin_twse", "isin_tpex"):
+        conn.execute(
+            "UPDATE source_status SET last_attempt_at=?, notes=? WHERE source_id=?",
+            (now, f"skipped {now[:10]}：{reason}（沿用舊清單，ok／last_success_at 未更新）", sid),
+        )
+    conn.commit()
+
 
 def _exclude_reason(cfi: str, market: str, section: str) -> str | None:
     if "創新板" in market or "創新板" in section:
@@ -84,7 +112,7 @@ def fetch_and_store(conn: sqlite3.Connection) -> dict:
     stats = {"twse_common": 0, "tpex_common": 0, "excluded": 0}
     for url, market in ((ISIN_TWSE, "TWSE"), (ISIN_TPEX, "TPEx")):
         # ISIN 檔很大（上市約 10 MB），慢速連線可能要 10 分鐘以上：總時間上限放寬到 900 秒（其他請求維持預設 150 秒）
-        resp = twse.request("GET", url, deadline=900, timeout=(20, 120))
+        resp = twse.request("GET", url, deadline=900, timeout=(20, 120), retries=2)
         data_date, rows = _parse_isin_html(resp.content, market)
         touch_source(conn, f"isin_{market.lower()}", url=url, ok=True, http_status=resp.status_code, data_date=data_date)
         for row in rows:
@@ -144,6 +172,9 @@ def fetch_and_store(conn: sqlite3.Connection) -> dict:
                 stats["twse_common"] += 1
             else:
                 stats["tpex_common"] += 1
+        conn.execute(
+            "UPDATE source_status SET notes=NULL WHERE source_id=? AND notes LIKE 'skipped%'", (f"isin_{market.lower()}",)
+        )   # 這次真的抓成功了，清掉先前「略過」註記
         conn.commit()
         log.info("%s common=%s excluded_rows≈%s data_date=%s", market, stats, stats["excluded"], data_date)
     return stats

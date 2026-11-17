@@ -28,22 +28,38 @@ class DeadlineExceeded(requests.Timeout):
     """單次嘗試超過總時間上限；屬 RequestException，沿用既有重試流程。"""
 
 
+_warned_no_alarm = False
+
+
 @contextlib.contextmanager
 def _hard_deadline(seconds: float, what: str):
-    if seconds <= 0 or threading.current_thread() is not threading.main_thread() or not hasattr(signal, "setitimer"):
+    """單次嘗試的總時間上限（SIGALRM）。會保存並還原外層已存在的 ITIMER_REAL 計時器與 handler。"""
+    global _warned_no_alarm
+    if seconds <= 0:
         yield
         return
+    if threading.current_thread() is not threading.main_thread() or not hasattr(signal, "setitimer"):
+        if not _warned_no_alarm:   # 沒有 SIGALRM（非主執行緒／Windows）：只剩 requests 的 timeout，沒有總時間上限
+            log.warning("總時間上限未啟用（非主執行緒或沒有 SIGALRM）：%s", what)
+            _warned_no_alarm = True
+        yield
+        return
+    outer_left, outer_interval = signal.getitimer(signal.ITIMER_REAL)
+    eff = min(seconds, outer_left) if outer_left > 0 else seconds
 
     def _handler(signum, frame):
-        raise DeadlineExceeded(f"total wall-clock deadline {seconds:.0f}s exceeded: {what}")
+        raise DeadlineExceeded(f"total wall-clock deadline {eff:.0f}s exceeded: {what}")
 
     old = signal.signal(signal.SIGALRM, _handler)
-    signal.setitimer(signal.ITIMER_REAL, seconds)
+    t0 = time.monotonic()
+    signal.setitimer(signal.ITIMER_REAL, eff)
     try:
         yield
     finally:
         signal.setitimer(signal.ITIMER_REAL, 0)
         signal.signal(signal.SIGALRM, old)
+        if outer_left > 0:   # 還原外層計時器：剩餘時間扣掉已用；若已到期就立刻觸發
+            signal.setitimer(signal.ITIMER_REAL, max(outer_left - (time.monotonic() - t0), 0.001), outer_interval)
 
 
 class FetchError(Exception):
