@@ -662,6 +662,16 @@ def scorecard_page(request: Request):
     return templates.TemplateResponse(request, "scorecard.html", ctx(request, nav="scorecard", **SC.build()))
 
 
+@app.get("/changes", response_class=HTMLResponse)
+def changes_page(request: Request):
+    """每日模式異動：各模式比前一交易日新進／掉出的股票。只讀快照，不在請求路徑重算。"""
+    from . import mode_diff as MD
+    from . import hub as H
+    src = get_source()
+    diff = MD.build(src, H._core(src))
+    return templates.TemplateResponse(request, "changes.html", ctx(request, nav="hub", mode_diff=diff))
+
+
 @app.get("/watchlist", response_class=HTMLResponse)
 def watchlist_page(request: Request):
     """自選清單頁：內容由前端讀 localStorage 與 /api/watchlist 組出來；這裡只出殼頁與說明文字。"""

@@ -179,22 +179,23 @@ def error_param(msg: str) -> str:
     return ""
 
 
-def _key(source: DataSource, p: ScreenParams) -> tuple:
+def _key(source: DataSource, p: ScreenParams, as_of: Optional[str] = None) -> tuple:
     try:
         u = source.universe
         uk = (u.name, u.symbols)
     except Exception as e:   # 設定錯誤：不快取成功結果
         uk = ("error", str(e))
     from .analysis_hooks import data_version
-    return (id(source), uk, data_version(source)) + p.key()
+    key = (id(source), uk, data_version(source)) + p.key()
+    return key + ((str(as_of),) if as_of else ())  # 未指定評估日時鍵與舊版相同
 
 
-def run_screen(source: DataSource, params: ScreenParams) -> ScreenResult:
-    k = _key(source, params)
+def run_screen(source: DataSource, params: ScreenParams, as_of: Optional[str] = None) -> ScreenResult:
+    k = _key(source, params, as_of)
     if k not in _CACHE:
         if len(_CACHE) >= _CACHE_MAX:   # 參數組合很多時只留最近的結果（全市場一組結果約數 MB）
             _CACHE.pop(next(iter(_CACHE)))
-        _CACHE[k] = _compute(source, params)
+        _CACHE[k] = _compute(source, params, as_of=as_of)
     import copy
     res = copy.copy(_CACHE[k])
     res.rows = list(res.rows)
@@ -212,7 +213,7 @@ def _num(x: Any) -> Optional[float]:
     return None if math.isnan(f) else f
 
 
-def _compute(source: DataSource, p: ScreenParams) -> ScreenResult:
+def _compute(source: DataSource, p: ScreenParams, as_of: Optional[str] = None) -> ScreenResult:
     engine = "analysis/screener.py screen()"
     res = ScreenResult(params=p, trade_date="—", engine=engine, is_test=source.is_test)
     if source.is_test:
@@ -257,6 +258,9 @@ def _compute(source: DataSource, p: ScreenParams) -> ScreenResult:
         res.extra.update(error_type=type(e).__name__, error_message=str(e), error_param=error_param(str(e)))
         return res
     try:
+        if as_of:
+            kw = dict(kw)
+            kw["as_of"] = as_of
         out = m.screen(params=ap, **kw)
     except (ValueError, TypeError, KeyError) as e:
         res.error = f"篩選器無法執行：{type(e).__name__}: {e}"

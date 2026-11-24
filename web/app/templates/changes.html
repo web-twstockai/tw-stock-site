@@ -1,0 +1,71 @@
+{% extends "base.html" %}
+{% block title %}每日異動｜台股盤後研究{% endblock %}
+{% block content %}
+{%- set d = mode_diff if mode_diff is defined else {} -%}
+{%- macro tier(t) -%}<span class="tier {{ {'基本': 't1', '進階': 't2', '高級': 't3'}.get(t, 't1') }}"><span class="sr">等級：</span>{{ t }}</span>{%- endmacro -%}
+{%- macro codes(items) -%}
+{%- if items -%}
+<ul class="md-codes">
+{%- for s in items -%}
+  <li>{% if s.href is defined and s.href %}<a href="{{ s.href }}">{{ s.code }}{% if s.name %} {{ s.name }}{% endif %}</a>{% else %}<span>{{ s.code }}{% if s.name %} {{ s.name }}{% endif %}</span>{% endif %}</li>
+{%- endfor -%}
+</ul>
+{%- else -%}
+<span class="md-none">沒有</span>
+{%- endif -%}
+{%- endmacro -%}
+<article class="changes-page" data-testid="changes-page">
+  <header class="page-head">
+    <div>
+      <p class="kicker">篩選中心</p>
+      <h1>每日模式異動</h1>
+      <p class="ph-lead">列出每個篩選模式，比對照日新符合（新進）與不再符合（掉出）的股票。只比較「符合條件」的名單，條件本身沒有改。</p>
+    </div>
+    <dl class="ph-meta">
+      <div><dt>今日資料日</dt><dd>{{ d.today|default('—') }}</dd></div>
+      <div><dt>對照日</dt><dd>{% if d.prev is defined and d.prev %}{{ d.prev }}{% else %}—{% endif %}</dd></div>
+      {% if d.universe_label is defined and d.universe_label %}<div><dt>檢查範圍</dt><dd>{{ d.universe_label }}</dd></div>{% endif %}
+    </dl>
+  </header>
+
+  <p class="md-warn" role="note"><b>!</b> {{ d.signal_note if d.signal_note is defined and d.signal_note else '「新進」不是買進建議。' }}</p>
+  {% if d.backfill_note is defined and d.backfill_note %}<p class="md-note">{{ d.backfill_note }}</p>{% endif %}
+  {% if d.stale_note is defined and d.stale_note %}<p class="md-note" role="status">{{ d.stale_note }}</p>{% endif %}
+
+  {% if d.state is defined and d.state != 'ok' %}
+  <div class="state st-warn" role="status" data-testid="changes-missing">
+    <p><b>資料不足</b>：{{ d.reason if d.reason is defined and d.reason else '尚無前一交易日快照，無法列出異動。' }}</p>
+    <p><a href="/hub">回篩選中心 →</a></p>
+  </div>
+  {% else %}
+  <p class="md-sum" data-testid="changes-sum">今日（{{ d.today }}）比對照日（{{ d.prev }}）共新進 {{ '{:,}'.format(d.n_entered|default(0)) }} 檔次、掉出 {{ '{:,}'.format(d.n_exited|default(0)) }} 檔次（同一檔股票可出現在多個模式，檔次會分開計）。</p>
+
+  {%- for m in d.modes|default([]) %}
+  <section class="md-mode" id="{{ m.id }}" data-mode="{{ m.id }}" data-status="{{ m.status }}">
+    <div class="md-head">
+      <h2>{% if m.href is defined and m.href and m.available %}<a href="{{ m.href }}"><span class="mcode">{{ m.id }}</span>{{ m.name }}</a>{% else %}<span class="mcode">{{ m.id }}</span>{{ m.name }}{% endif %}{{ tier(m.tier) }}</h2>
+      {% if m.status == 'ok' %}
+      <p class="md-counts"><span class="md-in">新進 <b>{{ '{:,}'.format(m.n_entered) }}</b></span><span class="md-out">掉出 <b>{{ '{:,}'.format(m.n_exited) }}</b></span><span class="md-tot">今日符合 {{ '{:,}'.format(m.n_today) }} ／ 對照日 {{ '{:,}'.format(m.n_prev) }}</span></p>
+      {% endif %}
+    </div>
+    {% if m.status != 'ok' %}
+    <p class="md-lack">{% if m.status == 'na' %}本模式目前無法計算，不比較異動{% else %}資料不足{% endif %}{% if m.reason is defined and m.reason %}：{{ m.reason }}{% endif %}</p>
+    {% else %}
+    <div class="md-cols">
+      <div class="md-col in">
+        <h3>新進（{{ '{:,}'.format(m.n_entered) }}）</h3>
+        {{ codes(m.entered) }}
+      </div>
+      <div class="md-col out">
+        <h3>掉出（{{ '{:,}'.format(m.n_exited) }}）</h3>
+        {{ codes(m.exited) }}
+      </div>
+    </div>
+    {% endif %}
+  </section>
+  {%- endfor %}
+  <p class="disc">{{ d.disclaimer if d.disclaimer is defined and d.disclaimer else '歷史統計，不代表未來，非投資建議' }}。</p>
+  <p><a href="/hub">回篩選中心 →</a></p>
+  {% endif %}
+</article>
+{% endblock %}

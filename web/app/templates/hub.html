@@ -56,6 +56,62 @@
 <div class="state st-fail" role="alert"><p><b>✕ 篩選中心暫時無法計算</b>：{{ hub.error }}</p><p><a href="/status">看資料狀態 →</a></p></div>
 {% endif %}
 
+{%- set d = hub.mode_diff if hub.mode_diff is defined else (mode_diff if mode_diff is defined else none) -%}
+{% if d %}
+<section class="mode-diff" id="today-changes" data-testid="mode-diff" aria-labelledby="h-today-changes">
+  <div class="sec-h">
+    <h2 id="h-today-changes">今天的變化</h2>
+    <p class="sec-sub">比{% if d.prev is defined and d.prev %}對照日 {{ d.prev }}{% else %}前一交易日{% endif %}，各模式新符合或不再符合的股票。</p>
+  </div>
+  <p class="md-warn" role="note"><b>!</b> {{ d.signal_note if d.signal_note is defined and d.signal_note else '「新進」不是買進建議。' }}</p>
+  {% if d.stale_note is defined and d.stale_note %}<p class="md-note" role="status">{{ d.stale_note }}</p>{% endif %}
+  {% if d.state is defined and d.state != 'ok' %}
+  <div class="state st-warn" role="status" data-testid="mode-diff-missing">
+    <p><b>資料不足</b>：{{ d.reason if d.reason is defined and d.reason else '尚無前一交易日快照，無法列出異動。' }}</p>
+    <p><a href="{{ d.href|default('/changes') }}">看每日異動頁的說明 →</a></p>
+  </div>
+  {% else %}
+  <p class="md-sum">今日 {{ d.today }} 比對照日 {{ d.prev }}：新進 {{ '{:,}'.format(d.n_entered|default(0)) }} 檔次、掉出 {{ '{:,}'.format(d.n_exited|default(0)) }} 檔次。</p>
+  <div class="table-wrap">
+    <table class="data md-table" data-testid="mode-diff-table">
+      <thead>
+        <tr><th>模式</th><th>新進</th><th>掉出</th></tr>
+      </thead>
+      <tbody>
+      {%- for m in d.modes|default([]) %}
+        <tr data-mode="{{ m.id }}" data-status="{{ m.status }}">
+          <th class="wrap">{% if m.href is defined and m.href and m.available %}<a href="{{ m.href }}"><span class="mcode">{{ m.id }}</span>{{ m.name }}</a>{% else %}<span class="mcode">{{ m.id }}</span>{{ m.name }}{% endif %}</th>
+          {% if m.status == 'ok' %}
+          <td class="wrap" data-col="in"><span class="md-n in">{{ '{:,}'.format(m.n_entered) }} 檔</span>
+            {%- if m.entered_preview %}
+            <ul class="md-codes compact">
+            {%- for s in m.entered_preview %}<li>{% if s.href is defined and s.href %}<a href="{{ s.href }}">{{ s.code }}</a>{% else %}{{ s.code }}{% endif %}</li>{%- endfor -%}
+            </ul>
+            {%- if m.n_entered > (m.entered_preview|length) %}<p class="md-more">另有 {{ '{:,}'.format(m.n_entered - (m.entered_preview|length)) }} 檔，見<a href="{{ d.href|default('/changes') }}#{{ m.id }}">完整名單</a></p>{% endif -%}
+            {%- endif %}
+          </td>
+          <td class="wrap" data-col="out"><span class="md-n out">{{ '{:,}'.format(m.n_exited) }} 檔</span>
+            {%- if m.exited_preview %}
+            <ul class="md-codes compact">
+            {%- for s in m.exited_preview %}<li>{% if s.href is defined and s.href %}<a href="{{ s.href }}">{{ s.code }}</a>{% else %}{{ s.code }}{% endif %}</li>{%- endfor -%}
+            </ul>
+            {%- if m.n_exited > (m.exited_preview|length) %}<p class="md-more">另有 {{ '{:,}'.format(m.n_exited - (m.exited_preview|length)) }} 檔，見<a href="{{ d.href|default('/changes') }}#{{ m.id }}">完整名單</a></p>{% endif -%}
+            {%- endif %}
+          </td>
+          {% else %}
+          <td class="wrap" colspan="2">{% if m.status == 'na' %}本模式目前無法計算，不比較異動{% else %}資料不足{% endif %}{% if m.reason is defined and m.reason %}：{{ m.reason }}{% endif %}</td>
+          {% endif %}
+        </tr>
+      {%- endfor %}
+      </tbody>
+    </table>
+  </div>
+  <p class="md-more-all"><a class="btn" href="{{ d.href|default('/changes') }}">看完整名單（每日異動） →</a></p>
+  {% endif %}
+  {% if d.backfill_note is defined and d.backfill_note %}<p class="md-note">{{ d.backfill_note }}</p>{% endif %}
+</section>
+{% endif %}
+
 <details class="method" id="method">
   <summary><span aria-hidden="true">?</span> 「5 日勝率」怎麼算</summary>
   <div class="method-body">

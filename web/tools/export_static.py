@@ -110,7 +110,7 @@ def make_policy(universe: set[str], default_month: str | None = None):
     def allow(key: str) -> bool:
         path, _, query = key.partition("?")
         q = dict(parse_qsl(query))
-        if path in ("/", "/status", "/api/stocks", "/watchlist", "/api/watchlist", "/scorecard"):
+        if path in ("/", "/status", "/api/stocks", "/watchlist", "/api/watchlist", "/scorecard", "/changes"):
             return not q
         if path in ("/screener", "/screener.csv"):
             if not set(q) <= {"f", "sort", "order", *TOGGLES}:
@@ -186,7 +186,7 @@ def export(out: Path, db: Path, base: str = "/tw-stock-site/", max_pages: int = 
     """symbols：只匯出這些個股頁（測試用；None＝追蹤範圍全部）。screener_combos：是否預先計算 16×5×2 組選股結果。"""
     t0 = time.time()
     tmpdir = Path(tempfile.mkdtemp(prefix="twsite-export-"))
-    saved_env = {k: os.environ.get(k) for k in ("TWSITE_SOURCE", "TWSITE_DB", "TWSITE_UNIVERSE", "TWSITE_STATIC_EXPORT")}
+    saved_env = {k: os.environ.get(k) for k in ("TWSITE_SOURCE", "TWSITE_DB", "TWSITE_UNIVERSE", "TWSITE_STATIC_EXPORT", "TWSITE_MODE_SNAPSHOT", "TWSITE_MODE_SNAPSHOT_URL")}
     saved_source = None
     try:
         snap = tmpdir / "twstock.db"
@@ -215,7 +215,19 @@ def export(out: Path, db: Path, base: str = "/tw-stock-site/", max_pages: int = 
             universe = set(symbols) & universe
         client = TestClient(app, raise_server_exceptions=True)
 
-        seeds = ["/", "/screener", "/screener.csv", "/revenue", "/revenue.csv", "/status", "/api/stocks", "/watchlist", "/api/watchlist", "/scorecard"]
+        # 每日異動：先讀上一版快照（或在有上限時重算前一日），再呈現頁面，避免請求路徑重算
+        from app import mode_diff as MD, hub as HUB
+        today = (src.meta() or {}).get("data_date") or ""
+        core = None
+        try:
+            core = HUB._core(src)
+            today = core.get("as_of") or today
+        except Exception:
+            core = None
+        prev = MD.prepare_for_export(out if out.exists() else None, src, core or {"as_of": today})
+        log("模式異動快照：" + ("對照 " + str((prev or {}).get("as_of") or "") if prev else "尚無前一日（頁面將顯示資料不足）"))
+
+        seeds = ["/", "/screener", "/screener.csv", "/revenue", "/revenue.csv", "/status", "/api/stocks", "/watchlist", "/api/watchlist", "/scorecard", "/changes"]
         seeds += list(HUB_PAGES) + ["/industry"]   # 各產業頁由產業總覽的連結爬到
         seeds += [f"/stock/{c}" for c in sorted(universe)]
         # 選股表單在靜態版只能開關 4 項條件＋排序：預先算好全部組合（16×5×2），表單送出時查表
@@ -338,6 +350,12 @@ def export(out: Path, db: Path, base: str = "/tw-stock-site/", max_pages: int = 
              # 篩選中心／產業頁：網址 → 檔案（check_export 逐一確認存在）
              "extra_pages": {k: pages[k]["file"] for k in sorted(pages) if is_extra_page(k)}},
             ensure_ascii=False, indent=1), "utf-8")
+        # 今日各模式符合名單快照（供下次匯出比對「前一交易日」）
+        try:
+            from app import mode_diff as MD, hub as HUB
+            MD.write_today_snapshot(stage, src, HUB._core(src))
+        except Exception as e:
+            raise ExportError(f"寫入模式快照失敗：{type(e).__name__}：{e}") from e
         # 自檢（tools/check_export.py）：首頁行情檔數 ≤ 範圍檔數、搜尋清單每檔都有頁；不符就中止，不覆蓋上一版
         sys.path.insert(0, str(Path(__file__).resolve().parent))
         from check_export import check as _check, summary as _summary
@@ -366,6 +384,11 @@ def export(out: Path, db: Path, base: str = "/tw-stock-site/", max_pages: int = 
             from app import data_source as _ds, screening as _sc
             _ds.set_source(saved_source[0])
             _sc.clear_cache()
+        try:
+            from app import mode_diff as _md
+            _md.clear_prepared()
+        except Exception:
+            pass
 
 
 def _trade_days_around(src, data_date) -> list[str]:

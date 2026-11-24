@@ -5,6 +5,11 @@
 set -euo pipefail
 OUT="${1:-build/site}"
 mkdir -p build
+# 前一日模式快照（今天的變化）：先從公開站下載；失敗不影響建置（2026-11-24 21:51）。已有 TWSITE_MODE_SNAPSHOT 則不覆寫。
+if [ -z "${TWSITE_MODE_SNAPSHOT:-}" ]; then
+  SNAP="$(bash tools/cloud/fetch_mode_snapshot.sh build/prev-mode-snapshot.json || true)"
+  if [ -n "$SNAP" ] && [ -f "$SNAP" ]; then export TWSITE_MODE_SNAPSHOT="$SNAP"; fi
+fi
 ( cd web && TWSITE_UNIVERSE=all python -W ignore tools/peak_mem.py --json ../build/export_mem.json -- \
     python -W ignore tools/export_static.py --mode v2 --pages auto --out "../$OUT" )
 ( cd web && python -W ignore tools/check_export.py "../$OUT" )

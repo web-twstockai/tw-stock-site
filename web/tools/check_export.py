@@ -163,6 +163,18 @@ def check(out: Path) -> list[str]:
         problems.append("缺少 watchlist/index.html（自選清單頁）")
     if not (out / "scorecard" / "index.html").is_file():
         problems.append("缺少 scorecard/index.html（模式成績單頁）")
+    if not (out / "changes" / "index.html").is_file():
+        problems.append("缺少 changes/index.html（每日模式異動頁）")
+    snap = out / "data" / "mode-snapshot.json"
+    if not snap.is_file():
+        problems.append("缺少 data/mode-snapshot.json（每日模式異動快照）")
+    else:
+        try:
+            payload = __import__("json").loads(snap.read_text("utf-8"))
+            if not isinstance(payload, dict) or not payload.get("as_of") or not isinstance(payload.get("passes"), dict):
+                problems.append("data/mode-snapshot.json 缺少 as_of 或 passes")
+        except Exception as e:
+            problems.append(f"讀不到 data/mode-snapshot.json：{e}")
     if not wl.is_file():
         problems.append("缺少 api/watchlist.json（自選清單資料）")
     else:

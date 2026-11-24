@@ -117,7 +117,7 @@ def run(v1: Path, v2: Path) -> dict:
     files = ["index.html", "status/index.html", "stock/index.html", "source/index.html", "screener/index.html",
              "revenue/index.html"]
     # 篩選中心、產業頁：兩版都是伺服器整頁輸出（同檔名），也檢查 v2 版的連結
-    served = ["index.html", "status/index.html", "watchlist/index.html", "scorecard/index.html"] + sorted(
+    served = ["index.html", "status/index.html", "watchlist/index.html", "scorecard/index.html", "changes/index.html"] + sorted(
         p.relative_to(v1).as_posix() for top in ("hub", "industry") for p in (v1 / top).rglob("*.html")
         if (v1 / top).is_dir())
     files += [f for f in served[2:] if (v2 / f).is_file()]

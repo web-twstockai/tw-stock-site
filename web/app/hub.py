@@ -204,9 +204,9 @@ def _month_add(ym: str, k: int) -> str:
     return f"{y}-{m:02d}"
 
 
-def _screen(src: DataSource, values: dict):
+def _screen(src: DataSource, values: dict, as_of: Optional[str] = None):
     from .screening import run_screen
-    r = run_screen(src, ScreenParams(values=dict(values)))
+    r = run_screen(src, ScreenParams(values=dict(values)), as_of=as_of)
     out = r.extra.get("analysis_result")
     if r.error or out is None:
         raise RuntimeError(r.error or "analysis/screener.py 沒有回傳結果")
@@ -352,10 +352,23 @@ def build(src: DataSource, selected: Optional[str] = None, sort: Optional[str] =
     if core.get("fatal"):
         view["error"] = core["fatal"]
         _fill_modes(view, {}, selected)
+        try:
+            from . import mode_diff as MD
+            view["mode_diff"] = MD.build(src, core)
+        except Exception:
+            view["mode_diff"] = dict(state="insufficient", reason="今日模式結果無法計算，因此無法比較異動。",
+                                     today="—", prev=None, modes=[], href="/changes")
         return view
     view.update(as_of=core["as_of"], revenue_month=core["revenue_month"], price=core["price"])
     computed = {k: dict(v) for k, v in core["computed"].items()}   # 複本：選取／排序不改到快取
     _fill_modes(view, computed, selected, sort, src)
+    try:
+        from . import mode_diff as MD
+        view["mode_diff"] = MD.build(src, core)
+    except Exception as e:
+        view["mode_diff"] = dict(state="insufficient", reason="異動比對暫時無法計算。",
+                                 today=core.get("as_of") or "—", prev=None, modes=[], href="/changes",
+                                 signal_note="", backfill_note="", disclaimer="", n_entered=0, n_exited=0)
     return view
 
 
@@ -504,9 +517,12 @@ def today_modes(src: DataSource, code: str) -> dict:
                 tier_rule=MH.stock_tier_rule(), disclaimer=_disclaimer())
 
 
-def _compute_core(src: DataSource) -> dict:
+def _compute_core(src: DataSource, as_of: Optional[str] = None) -> dict:
+    def screen(values):
+        # 未指定評估日時不傳 as_of，與舊版呼叫相容（測試常 monkeypatch 成兩參數）
+        return _screen(src, values, as_of=as_of) if as_of else _screen(src, values)
     try:
-        r1, s1 = _screen(src, P_M1)
+        r1, s1 = screen(P_M1)
     except Exception as e:
         return dict(fatal=f"選股引擎無法執行（{e}）")
     from .screening import exclusion_labels
@@ -534,8 +550,8 @@ def _compute_core(src: DataSource) -> dict:
     safe("M1", m1f)
 
     def m2f():
-        _, sa = _screen(src, P_M2_SHORT)
-        _, sb = _screen(src, P_M2_LONG)
+        _, sa = screen(P_M2_SHORT)
+        _, sb = screen(P_M2_LONG)
         ma, mb = _status_map(sa), _status_map(sb)
         ok = lambda s: (ma.get(s) or {}).get("status") not in (None, "EXCLUDED") and \
             (mb.get(s) or {}).get("status") not in (None, "EXCLUDED")
@@ -548,7 +564,7 @@ def _compute_core(src: DataSource) -> dict:
     safe("M2", m2f)
 
     def m6f():
-        _, s6 = _screen(src, P_M6)
+        _, s6 = screen(P_M6)
         m6 = _status_map(s6)
         ok = lambda s: (m6.get(s) or {}).get("status") not in (None, "EXCLUDED")
         passed = [s for s in symbols if (m6.get(s) or {}).get("status") == "PASS"]
@@ -598,7 +614,7 @@ def _compute_core(src: DataSource) -> dict:
         if rev_err:
             raise RuntimeError(rev_err)
         rm = rev[month]
-        _, st = _screen(src, P_TREND)
+        _, st = screen(P_TREND)
         mt = _status_map(st)
         ok = lambda s: (rm.get(s) or {}).get("rev_12m_high_status") in ("true", "false") and \
             (mt.get(s) or {}).get("status") not in (None, "EXCLUDED")

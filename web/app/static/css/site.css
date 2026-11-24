@@ -629,3 +629,44 @@ label.watch-import input{position:absolute;width:1px;height:1px;overflow:hidden;
 @media (max-width:640px){
   .score-table td[data-col=why]{max-width:none}
 }
+
+/* 每日模式異動（HANDOFF §34） */
+.mode-diff{margin:0 0 var(--s5);padding:var(--s4);border:1px solid var(--line);border-radius:var(--r);background:var(--surface,#fff)}
+.mode-diff .sec-h{margin-bottom:var(--s2)}
+.md-warn{margin:0 0 var(--s3);padding:8px 12px;border-left:4px solid var(--warn-line);background:var(--warn-bg,#fffaf0);color:var(--ink);font-size:14px;line-height:1.55}
+.md-note,.md-sum{margin:0 0 var(--s3);font-size:14px;color:var(--ink2);line-height:1.55}
+.md-table th.wrap,.md-table td.wrap{white-space:normal;overflow-wrap:anywhere;vertical-align:top}
+.md-table .mcode{font:700 12.5px/1 var(--sans);color:var(--muted);margin-right:6px}
+.md-n{display:inline-block;font-weight:700;margin-bottom:4px}
+.md-n.in{color:var(--ink)}
+.md-n.out{color:var(--ink)}
+.md-codes{display:flex;flex-wrap:wrap;gap:6px 8px;margin:4px 0 0;padding:0;list-style:none}
+.md-codes li{margin:0;padding:0}
+.md-codes a,.md-codes span{display:inline-flex;align-items:center;min-height:32px;padding:2px 8px;border:1px solid var(--line2);border-radius:999px;background:#fff;text-decoration:none;color:var(--ink);font-size:13px}
+.md-codes a:hover{background:var(--brand-weak)}
+.md-codes.compact a,.md-codes.compact span{min-height:28px;font:600 13px/1 var(--mono)}
+.md-more,.md-more-all{margin:6px 0 0;font-size:13px}
+.md-more-all{margin-top:var(--s3)}
+.md-more-all .btn{min-height:40px;display:inline-flex;align-items:center}
+.md-none{color:var(--muted);font-size:14px}
+
+.changes-page .ph-lead{max-width:46em}
+.changes-page .md-mode{margin:0 0 var(--s4);padding:var(--s4) 0;border-top:1px solid var(--line)}
+.changes-page .md-head{display:flex;flex-wrap:wrap;align-items:baseline;justify-content:space-between;gap:8px 16px}
+.changes-page .md-head h2{margin:0;font-size:18px}
+.changes-page .md-head .mcode{font:700 13px/1 var(--sans);color:var(--muted);margin-right:6px}
+.md-counts{display:flex;flex-wrap:wrap;gap:8px 14px;margin:0;font-size:14px}
+.md-counts .md-in b,.md-col.in h3{color:var(--ink)}
+.md-counts .md-out b,.md-col.out h3{color:var(--ink)}
+.md-lack{margin:8px 0 0;font-size:14px;color:var(--ink2)}
+.md-cols{display:grid;grid-template-columns:1fr 1fr;gap:var(--s3);margin-top:var(--s3)}
+.md-col{padding:12px;border:1px solid var(--line2);border-radius:var(--r);background:#fff}
+.md-col.in{border-top:3px solid #2f6b3a}
+.md-col.out{border-top:3px solid #8a3a32}
+.md-col h3{margin:0 0 8px;font-size:15px}
+.changes-page .disc{margin:var(--s4) 0 var(--s2);color:var(--ink2);font-size:14px}
+@media (max-width:640px){
+  .md-cols{grid-template-columns:1fr}
+  .md-codes a,.md-codes span{min-height:40px}
+  .md-table td[colspan]{max-width:none}
+}

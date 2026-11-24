@@ -136,6 +136,8 @@ class Linker:
             return "watchlist/" if not pairs else None
         if path == "/scorecard":
             return "scorecard/" if not pairs else None
+        if path == "/changes":
+            return "changes/" if not pairs else None
         if path.startswith("/static/"):
             return path[1:]
         m = re.fullmatch(r"/stock/(\w+)", path)
@@ -800,7 +802,7 @@ def export_v2(out: Path, db: Path, base: str = "/tw-stock-site/", log=print, sym
     t0 = time.time()
     mem: dict = {}
     tmpdir = Path(tempfile.mkdtemp(prefix="twsite-export2-"))
-    saved_env = {k: os.environ.get(k) for k in ("TWSITE_SOURCE", "TWSITE_DB", "TWSITE_UNIVERSE", "TWSITE_STATIC_EXPORT")}
+    saved_env = {k: os.environ.get(k) for k in ("TWSITE_SOURCE", "TWSITE_DB", "TWSITE_UNIVERSE", "TWSITE_STATIC_EXPORT", "TWSITE_MODE_SNAPSHOT", "TWSITE_MODE_SNAPSHOT_URL")}
     saved_source = None
     stage = None
     timing = {}
@@ -830,9 +832,21 @@ def export_v2(out: Path, db: Path, base: str = "/tw-stock-site/", log=print, sym
         G.update(main=M, src=src, templates=M.templates, client=client, out=stage, stocks=universe,
                  base=dict(request=None, meta=meta, is_test=src.is_test, site_sources=src.source_status()))
 
+        # 0) 每日異動：先讀上一版快照（或在有上限時重算前一日），再呈現 /hub、/changes
+        from app import mode_diff as MD, hub as HUB
+        today = (meta or {}).get("data_date") or ""
+        core = None
+        try:
+            core = HUB._core(src)
+            today = core.get("as_of") or today
+        except Exception:
+            core = None
+        prev = MD.prepare_for_export(out if out.exists() else None, src, core or {"as_of": today})
+        log("模式異動快照：" + ("對照 " + str((prev or {}).get("as_of") or "") if prev else "尚無前一日（頁面將顯示資料不足）"))
+
         # 1) 全站頁（首頁、資料狀態、API、404）原樣呈現
         raw = {}
-        for key in ("/", "/status", "/api/stocks", "/watchlist", "/api/watchlist", "/scorecard"):
+        for key in ("/", "/status", "/api/stocks", "/watchlist", "/api/watchlist", "/scorecard", "/changes"):
             r = client.get(key)
             if r.status_code != 200:
                 raise ExportError(f"{key} 回 {r.status_code}")
@@ -991,7 +1005,7 @@ def export_v2(out: Path, db: Path, base: str = "/tw-stock-site/", log=print, sym
         info = dict(data_date=meta.get("data_date"), generated=generated, last_run=meta.get("last_run_finished") or "")
         res = linker.resolver()
         for key, file in (("/", "index.html"), ("/status", "status/index.html"), ("/watchlist", "watchlist/index.html"),
-                          ("/scorecard", "scorecard/index.html")):
+                          ("/scorecard", "scorecard/index.html"), ("/changes", "changes/index.html")):
             (stage / file).parent.mkdir(parents=True, exist_ok=True)
             (stage / file).write_text(V1.rewrite_html(key, file, raw[key].text, {}, info, resolver=res), "utf-8")
         for key, body in extra_raw.items():
@@ -1060,6 +1074,11 @@ def export_v2(out: Path, db: Path, base: str = "/tw-stock-site/", log=print, sym
             ensure_ascii=False, indent=1), "utf-8")
         timing["write"] = round(time.time() - t1, 1)
         mem["end"] = _rss_mb()
+        try:
+            from app import mode_diff as MD, hub as HUB
+            MD.write_today_snapshot(stage, src, HUB._core(src))
+        except Exception as e:
+            raise ExportError(f"寫入模式快照失敗：{type(e).__name__}：{e}") from e
         from check_export import check as _check, summary as _summary
         problems = _check(stage)
         if problems:
@@ -1093,3 +1112,8 @@ def export_v2(out: Path, db: Path, base: str = "/tw-stock-site/", log=print, sym
             from app import data_source as _ds, screening as _sc
             _ds.set_source(saved_source[0])
             _sc.clear_cache()
+        try:
+            from app import mode_diff as _md
+            _md.clear_prepared()
+        except Exception:
+            pass
