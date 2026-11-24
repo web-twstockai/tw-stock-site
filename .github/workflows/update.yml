@@ -29,7 +29,7 @@ on:
         default: src
       # 以下為回補／修正參數（空白＝不傳，用 pipeline 預設；job 用不到的參數 run_pipeline.sh 會拒絕）
       symbols:
-        description: "daily／evening 的 --symbols（sample30｜all；空白＝sample30）；market_backfill 一律全市場，只能填 all 或空白"
+        description: "daily／evening 的 --symbols（sample30｜all；手動空白＝sample30；排程 schedule 強制 all）。匯出 universe 仍預設 sample30。market_backfill 一律全市場，只能填 all 或空白"
         type: string
         default: ""
       universe:
@@ -72,7 +72,7 @@ on:
         description: "--no-fetch：halts_backfill 不打上市 TWTAWU／halt_fix 不抓官方快照"
         type: boolean
         default: false
-  # 排程（2026-11-17 13:30 核可切換後啟用；台北 18:00 週一至五、22:00 每日；GitHub 排程可能延遲數分鐘到數十分鐘）：
+  # 排程（2026-11-17 13:30 核可切換後啟用；台北 18:00 週一至五、22:00 每日；GitHub 排程可能延遲數分鐘到數十分鐘）。2026-11-24：排程 IN_SYMBOLS 改為 all，IN_UNIVERSE 仍 sample30。
   schedule:
     - cron: "0 10 * * 1-5"   # 18:00 台北，週一至五 → daily（部署）
     - cron: "0 14 * * *"     # 22:00 台北，每日 → evening（部署）
@@ -114,7 +114,9 @@ jobs:
         id: pipe
         timeout-minutes: ${{ (inputs.job == 'tpex_volume_fix') && 65 || 185 }}
         env:
-          IN_SYMBOLS: ${{ inputs.symbols }}
+          # 排程（18:00 daily／22:00 evening）強制抓全市場行情；手動未填仍為 sample30。
+          # 匯出範圍獨立：IN_UNIVERSE 預設 sample30，排程不改為 all（全市場匯出記憶體尚未處理）。
+          IN_SYMBOLS: ${{ github.event_name == 'schedule' && 'all' || inputs.symbols }}
           IN_UNIVERSE: ${{ inputs.universe || 'sample30' }}
           IN_MAX_DATES: ${{ inputs.max_dates }}
           IN_BUDGET_MIN: ${{ inputs.budget_min }}
