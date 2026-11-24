@@ -89,7 +89,7 @@
           </div>
         </li>
       </ol>
-      <p class="fine">每個數字由程式從資料表計算，點數字可開啟它的來源列（資料表、主鍵、資料日期）。{{ '目前為 30 檔驗證樣本，不代表全市場。' if summary.is_test else '' }}</p>
+      <p class="fine">每個數字由程式從資料表計算，點數字可開啟它的來源列（資料表、主鍵、資料日期）。{% if summary.universe_all is defined %}{% if not summary.universe_all and summary.universe_label %}目前為 {{ summary.universe_label }}，不代表全市場。{% endif %}{% elif summary.is_test %}目前為測試資料，不代表全市場。{% endif %}</p>
     </div>
 
     <aside class="lead-side" aria-label="資料截至">
@@ -145,7 +145,7 @@
       <h2 id="today-h">今日選股：趨勢＋突破＋量能 <small>{{ result.rows|length }} 檔／檢查 {{ result.universe_count }} 檔</small></h2>
       <p class="sec-sub">預設四條件全部同時成立{% if result.rows %}；排序依成交金額（大到小），點欄名可改排序{% endif %}。</p>
     </div>
-    <a class="btn" href="/screener">到條件選股調整條件 →</a>
+    <span class="sec-acts"><a class="btn" href="/hub">到篩選中心看全部模式 →</a> <a class="btn" href="/screener">到自訂條件調整 →</a></span>
   </header>
   <ul class="chips" aria-label="使用中的條件">
     <li>① 收盤 &gt; MA20 &gt; MA60</li><li>② 收盤 &gt; 前 20 日最高</li><li>③ 成交量 ≥ 前 20 日均量 × 1.5</li><li>④ 成交金額 ≥ 1 億元</li>

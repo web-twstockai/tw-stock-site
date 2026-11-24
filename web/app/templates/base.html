@@ -8,6 +8,7 @@
 <title>{% block title %}台股盤後研究{% endblock %}{% if is_test %}（測試資料）{% endif %}</title>
 <link rel="icon" href="data:,">
 <link rel="stylesheet" href="/static/css/site.css">
+<link rel="stylesheet" href="/static/css/hub.css">
 <script>document.documentElement.classList.add('js')</script>
 </head>
 <body>
@@ -19,10 +20,9 @@
   <div class="wrap mast">
     <a class="brand" href="/" aria-label="台股盤後研究 首頁"><span class="seal" aria-hidden="true">盤後</span><span class="brand-name">台股盤後研究</span></a>
     <nav class="mainnav" aria-label="主要功能">
-      <a href="/"{% if nav == 'home' %} class="on" aria-current="page"{% endif %}>盤後總覽</a>
-      <a href="/screener"{% if nav == 'screener' %} class="on" aria-current="page"{% endif %}>條件選股</a>
-      <a href="/revenue"{% if nav == 'revenue' %} class="on" aria-current="page"{% endif %}>營收</a>
-      <a href="/status"{% if nav == 'status' %} class="on" aria-current="page"{% endif %}>資料狀態</a>
+      {%- for key, href, label in [('home', '/', '盤後總覽'), ('hub', '/hub', '篩選中心'), ('industry', '/industry', '產業分類'), ('screener', '/screener', '自訂條件'), ('revenue', '/revenue', '營收'), ('status', '/status', '資料狀態')] %}
+      <a href="{{ href }}"{% if nav == key %} class="on" aria-current="page"{% endif %}>{{ label }}</a>
+      {%- endfor %}
     </nav>
     <form class="search" action="/search" method="get" role="search">
       <label class="sr" for="site-q">搜尋股票代號或名稱（按 / 快速聚焦）</label>
@@ -64,6 +64,7 @@
   </div>
 </footer>
 <script src="/static/js/site.js" defer></script>
+<script src="/static/js/nav.js" defer></script>
 {% block scripts %}{% endblock %}
 </body>
 </html>

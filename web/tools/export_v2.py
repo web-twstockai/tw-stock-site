@@ -19,11 +19,13 @@
 """
 from __future__ import annotations
 
+import gc
 import gzip
 import html as _html
 import json
 import multiprocessing as mp
 import os
+import pickle
 import re
 import shutil
 import sys
@@ -105,9 +107,19 @@ def gz_json(path: Path, obj) -> int:
 
 
 # ---------------- 連結（app 網址 → v2 檔案或殼頁網址，相對於網站根目錄） ----------------
+class Target(str):
+    """Linker.target() 的結果；attrs＝要加在連結上的屬性（例如沒產生個股頁的標記）。"""
+    attrs = ""
+
+
+NOPAGE_ATTRS = ' data-nopage="1"'   # static.css 會在連結後加「（未收錄個股頁）」；點進去由 v2.js 顯示說明（不是 404）
+
+
 class Linker:
-    def __init__(self, stocks: set, months: set, src_ok: dict):
-        self.stocks, self.months, self.src_ok = stocks, months, src_ok
+    def __init__(self, stocks: set, months: set, src_ok: dict, nopage: set | frozenset = frozenset()):
+        """stocks＝有個股頁的股票；nopage＝在追蹤範圍內、但這版沒產生個股頁的股票（連到殼頁並標記，不是死連結）。"""
+        self.stocks, self.months, self.src_ok, self.nopage = stocks, months, src_ok, nopage
+        self.extra = G.get("extra") or {}   # 篩選中心／產業頁：網址鍵 → 檔案（主行程先算好，工作行程 fork 時帶著）
 
     def target(self, u) -> str | None:
         path = u.path
@@ -122,10 +134,19 @@ class Linker:
             return path[1:]
         m = re.fullmatch(r"/stock/(\w+)", path)
         if m:
+            if m.group(1) in self.nopage:
+                t = Target("stock/?" + urlencode([("code", m.group(1))]))
+                t.attrs = NOPAGE_ATTRS
+                return t
             if m.group(1) not in self.stocks or any(k not in STOCK_Q for k, _ in pairs):
                 return None
             pairs = [(k, v) for k, v in pairs if not (k == "price" and v == "adj")]
             return "stock/?" + urlencode([("code", m.group(1))] + sorted(pairs))
+        if path == "/hub" or path == "/industry" or path.startswith("/industry/"):
+            f = self.extra.get(V1.canon(path, u.query))
+            if f is None:
+                return None   # 其他模式、排序連結：拿掉連結（不可點），不是死連結
+            return f[: -len("index.html")] if f.endswith("index.html") else f
         if path == "/source":
             return ("source/?" + urlencode(sorted(pairs))) if self.src_ok.get(qkey(pairs)) else None
         if path in ("/screener", "/screener.csv"):
@@ -163,13 +184,37 @@ class Linker:
             if t is None:
                 return f'{sp}data-static-off="1" title="公開靜態版未提供此頁"'
             frag = ("#" + u.fragment) if u.fragment else ""
-            extra = ' data-v2-csv="1"' if u.path.endswith(".csv") else ""
+            extra = (' data-v2-csv="1"' if u.path.endswith(".csv") else "") + getattr(t, "attrs", "")
             return f'{sp}{attr}="{_html.escape(prefix + t + frag)}"{extra}'
         out = ATTR_RE.sub(sub, body)
         return re.sub(r'( data-v2-csv="1")\s+download\b', r"\1", out)
 
     def resolver(self):
         return lambda u: self.target(u)
+
+
+# ---------------- 篩選中心／產業頁 ----------------
+def render_extra_pages(client, log=print) -> dict:
+    """/hub（預設＋M1～M4、M6、M7、M2 依成交金額）、/industry 與產業總覽連到的每個產業頁（預設排序）。
+    回傳 {網址鍵: 原始 HTML}；任何一頁非 200 或出現測試資料標記就中止。"""
+    keys = list(V1.HUB_PAGES) + ["/industry"]
+    out: dict = {}
+    i = 0
+    while i < len(keys):
+        key = keys[i]
+        i += 1
+        r = client.get(key)
+        if r.status_code != 200:
+            raise ExportError(f"{key} 回 {r.status_code}")
+        body = r.text
+        if 'data-state="test"' in body or "（測試資料）</title>" in body:
+            raise ExportError(f"{key} 出現測試資料標記，中止匯出")
+        out[key] = body
+        if key == "/industry":
+            keys += [k for k in dict.fromkeys(links_in(key, body))
+                     if k.startswith("/industry/") and V1.is_extra_page(k) and k not in keys]
+    log(f"篩選中心／產業頁：{len(out)} 頁（產業 {sum(k.startswith('/industry/') for k in out)} 個）")
+    return out
 
 
 # ---------------- 模板呈現（直接用 app 的 Jinja 環境；與路由輸出相同） ----------------
@@ -230,10 +275,43 @@ def _variant(code: str, base_c: dict, g: str, pairs) -> str:
     return split_stock(main)[g]
 
 
+def _write_source_shard(path: Path, entries: dict) -> int:
+    """寫一份來源明細分檔；檔案已存在（別的行程先寫了同一檔）就合併，已有的鍵不覆蓋。"""
+    if path.exists():
+        old = json.loads(gzip.decompress(path.read_bytes()))
+        for k, v in entries.items():
+            old.setdefault(k, v)
+        entries = old
+    return gz_json(path, entries)
+
+
+def _split_own(code: str, items: dict) -> tuple[dict, dict]:
+    """工作行程渲染的來源明細 → (本股分檔 s/<代號> 的, 其他的)。本股的直接由工作行程寫檔，不傳回主行程（省主行程記憶體）。"""
+    own, other = {}, {}
+    for qk, v in items.items():
+        (own if source_shard(parse_qsl(v[2].partition("?")[2])) == f"s/{code}" else other)[qk] = v
+    return own, other
+
+
 def stock_job(arg):
-    code, assigned = arg
+    """一檔：有個股頁（has_page）→ 個股 JSON＋它連到的來源明細；沒有個股頁 → 只渲染指派給它的來源明細
+    （例如選股表、首頁連到的行情列）。本股的來源明細分檔在這裡直接寫出；回傳只帶其他分檔的項目。"""
+    code, assigned, has_page = arg
     t0 = time.time()
     M, src = G["main"], G["src"]
+    if not has_page:
+        known = dict(G["src_known"])
+        items: dict = {}
+        source_bfs(list(assigned), known, items)
+        linker = Linker(G["stocks"], G["months"], known, G["nopage"])
+        out_items = {qk: (t, linker.rewrite(m, k, "../"), k) for qk, (t, m, k) in items.items()}
+        own, other = _split_own(code, out_items)
+        sb = _write_source_shard(G["out"] / "data" / "source" / f"s/{code}.json.gz",
+                                 {qk: [t, m] for qk, (t, m, k) in own.items()}) if own else 0
+        new_known = {k: v for k, v in known.items() if k not in G["src_known"]}
+        return code, {"variants": 0, "sources": len(items), "bytes": 0, "source_bytes": sb, "page": False,
+                      "src_key": next((k for _t, _m, k in out_items.values()), None),
+                      "sec": round(time.time() - t0, 3)}, other, new_known
     c = M.stock_context(src, code, {})
     page = render("stock.html", nav="", **c)
     if 'data-state="test"' in page:
@@ -243,7 +321,6 @@ def stock_job(arg):
     data = {"code": code, "t": title, "pre": parts["pre"], "r": parts["r"],
             "q": {"": parts["q"]}, "f": {"": parts["f"]}, "e": {"": parts["e"]}}
     key0 = f"/stock/{code}"
-    frags = [main]
     todo = deque(links_in(key0, main))
     seen = set()
     src_keys = list(assigned)
@@ -268,24 +345,31 @@ def stock_job(arg):
             continue
         sec = _variant(code, c, g, pairs)
         data[g][sk] = sec
-        frags.append(sec)
         todo.extend(links_in(key0 + "?" + query, sec))
     # 來源明細：這檔連到的全部（已由主行程渲染的跳過）
     known = dict(G["src_known"])
     items: dict = {}
     source_bfs(src_keys, known, items)
-    linker = Linker(G["stocks"], G["months"], known)
+    linker = Linker(G["stocks"], G["months"], known, G["nopage"])
     pre = "../"
     for name in ("pre", "r"):
         data[name] = linker.rewrite(data[name], key0, pre)
     for g in ("q", "f", "e"):
         data[g] = {sk: linker.rewrite(h, key0 + ("?" + urlencode(parse_qsl(sk)) if sk else ""), pre)
                    for sk, h in data[g].items()}
+    n_variants = sum(len(data[g]) for g in ("q", "f", "e"))
     size = gz_json(G["out"] / "data" / "stock" / f"{code}.json.gz", data)
+    del data, c, page, main, parts
     out_items = {qk: (t, linker.rewrite(m, k, pre), k) for qk, (t, m, k) in items.items()}
+    del items
+    own, other = _split_own(code, out_items)
+    sb = _write_source_shard(G["out"] / "data" / "source" / f"s/{code}.json.gz",
+                             {qk: [t, m] for qk, (t, m, k) in own.items()}) if own else 0
     new_known = {k: v for k, v in known.items() if k not in G["src_known"]}
-    return code, {"variants": sum(len(data[g]) for g in ("q", "f", "e")), "sources": len(items),
-                  "bytes": size, "sec": round(time.time() - t0, 3)}, out_items, new_known
+    return code, {"variants": n_variants, "sources": len(out_items),
+                  "bytes": size, "source_bytes": sb, "page": True,
+                  "src_key": next((k for _t, _m, k in out_items.values()), None),
+                  "sec": round(time.time() - t0, 3)}, other, new_known
 
 
 # ---------------- 選股 ----------------
@@ -476,8 +560,21 @@ def build_revenue_month(month: str) -> dict:
     return ent
 
 
+REV_LINK_PARTS = ("a", "form", "gap", "cnt", "mid", "have_static", "z", "b")
+
+
 def rev_job(month):
-    return month, build_revenue_month(month)
+    """一個月份：結果先寫到暫存檔（主行程最後才逐月讀回改寫連結、寫出），只回傳它連到的站內網址。"""
+    e = build_revenue_month(month)
+    links = []
+    for part in REV_LINK_PARTS:
+        if e.get(part):
+            links += links_in("/revenue", e[part])
+    for tr in e.get("rows") or []:
+        links += links_in("/revenue", tr)
+    path = G["tmp"] / f"rev-{month}.pkl"
+    path.write_bytes(pickle.dumps(e, protocol=pickle.HIGHEST_PROTOCOL))
+    return month, str(path), list(dict.fromkeys(links))
 
 
 # ---------------- 殼頁 ----------------
@@ -503,9 +600,89 @@ def make_shell(raw_page: str, kind: str, file: str, linker: Linker, info: dict, 
     return body
 
 
+# ---------------- 記憶體控制 ----------------
+MAX_TASKS = 40   # 工作行程處理這麼多檔後換新行程（釋放 SQLite 列快取、分析結果快取等累積的記憶體）
+REV_WORKERS = int(os.environ.get("TWSITE_EXPORT_REV_WORKERS") or 3)   # 營收工作行程數上限（TWSITE_EXPORT_REV_WORKERS 可改）
+AUTO_ALL_PAGES_MAX = 300   # pages="auto"：追蹤範圍不超過這個檔數（例如 sample30）時全部產生個股頁
+
+
+def _rss_mb() -> int:
+    try:
+        with open("/proc/self/status") as f:
+            for ln in f:
+                if ln.startswith("VmRSS:"):
+                    return int(ln.split()[1]) // 1024
+    except OSError:
+        pass
+    return -1
+
+
+def _pre_fork() -> None:
+    """fork 工作行程前：回收垃圾並凍結現有物件（gc.freeze），子行程的 GC 不再掃這些物件，
+    共用頁面不會因為改寫 GC 標記而被複製（copy-on-write）。"""
+    gc.collect()
+    try:
+        import ctypes
+        ctypes.CDLL("libc.so.6").malloc_trim(0)   # 把已釋放的記憶體還給系統（glibc；其他平台略過）
+    except Exception:
+        pass
+    gc.freeze()
+
+
+PAGE_EXTRA_PROVIDERS: list = []   # 預留接口：callable(src) → 代號集合；產業頁上線後把「產業清單上的股票」掛在這裡
+
+
+def _hits(base_res) -> set:
+    """預設參數下，四項條件中至少一項成立的股票（＝16 組開關裡至少有一組會列入結果；排除的不算）。"""
+    if base_res is None:
+        return set()
+    s = base_res.summary
+    cols = [c for c in ("pass_trend", "pass_breakout", "pass_volume", "pass_turnover") if c in s.columns]
+    if not cols:
+        return set()
+    ok = s["status"] != "EXCLUDED"
+    anyp = s[cols].map(lambda x: x is not None and not (isinstance(x, float) and x != x) and bool(x)).any(axis=1)
+    return {str(x) for x in s.loc[ok & anyp, "symbol"]}
+
+
+def _extra_symbols(src, page_extra) -> set:
+    out: set = set()
+    for prov in list(PAGE_EXTRA_PROVIDERS) + ([page_extra] if page_extra is not None else []):
+        v = prov(src) if callable(prov) else prov
+        out |= {str(x).strip() for x in (v or []) if str(x).strip()}
+    f = os.environ.get("TWSITE_PAGE_EXTRA", "").strip()
+    if f:
+        p = Path(f) if Path(f).is_absolute() else ROOT / f
+        if not p.is_file():
+            raise ExportError(f"TWSITE_PAGE_EXTRA={f}：找不到清單檔")
+        out |= {ln.split("#", 1)[0].strip() for ln in p.read_text("utf-8").splitlines()} - {""}
+    return out
+
+
+def page_symbols(mode: str, universe: set, tracking: set, base_res, src, page_extra=None) -> tuple[set, str]:
+    """要產生個股頁的股票（回傳 (集合, 說明)）。
+    - "all"：匯出範圍全部；
+    - "hits"：符合任一篩選條件的股票（_hits）＋另外指定的（PAGE_EXTRA_PROVIDERS／page_extra／TWSITE_PAGE_EXTRA）；
+    - "auto"（預設）：追蹤範圍 ≤ AUTO_ALL_PAGES_MAX 檔 → all，否則 hits（全市場）。"""
+    if mode not in ("auto", "all", "hits"):
+        raise ExportError(f"pages 只能是 auto／all／hits，收到 {mode!r}")
+    if mode == "auto":
+        mode = "all" if len(tracking) <= AUTO_ALL_PAGES_MAX else "hits"
+    if mode == "all":
+        return set(universe), f"匯出範圍全部 {len(universe):,} 檔"
+    hits = _hits(base_res) & universe
+    extra = _extra_symbols(src, page_extra) & universe
+    return hits | extra, (f"符合任一篩選條件 {len(hits):,} 檔＋另外指定 {len(extra - hits):,} 檔"
+                          f"（預設參數；其餘 {len(universe - hits - extra):,} 檔未收錄個股頁）")
+
+
 # ---------------- 主流程 ----------------
-def export_v2(out: Path, db: Path, base: str = "/tw-stock-site/", log=print, symbols=None, workers: int | None = None) -> dict:
+def export_v2(out: Path, db: Path, base: str = "/tw-stock-site/", log=print, symbols=None, workers: int | None = None,
+              pages: str = "auto", page_extra=None) -> dict:
+    """pages：個股頁產生範圍（見 page_symbols()）；page_extra：另外要產生個股頁的代號（可迭代或 callable(src) → 代號），
+    例如之後的產業頁成分股；也可用環境變數 TWSITE_PAGE_EXTRA 指定清單檔。"""
     t0 = time.time()
+    mem: dict = {}
     tmpdir = Path(tempfile.mkdtemp(prefix="twsite-export2-"))
     saved_env = {k: os.environ.get(k) for k in ("TWSITE_SOURCE", "TWSITE_DB", "TWSITE_UNIVERSE", "TWSITE_STATIC_EXPORT")}
     saved_source = None
@@ -552,38 +729,63 @@ def export_v2(out: Path, db: Path, base: str = "/tw-stock-site/", log=print, sym
         dm = re.search(r'<option value="(\d{4}-\d{2})"[^>]*>[^<]*（預設）', rev_html)
         G["months"] = set(months)
         timing["pages"] = round(time.time() - t0, 1)
+        mem["pages"] = _rss_mb()
 
         # 2) 選股（主行程：analysis 全開跑一次）
         t1 = time.time()
         scr = build_screener(client, log)
         timing["screener"] = round(time.time() - t1, 1)
+        mem["screener"] = _rss_mb()
+
+        # 2b) 要產生個股頁的股票（見 page_symbols()）；其餘追蹤範圍內的股票連到殼頁並標「未收錄個股頁」
+        base_res = M.run_screen(src, M.ScreenParams()).extra.get("analysis_result")
+        page_set, page_why = page_symbols(pages, universe, tracking, base_res, src, page_extra)
+        nopage = frozenset(universe - page_set)   # symbols（測試縮小範圍）以外的股票維持「靜態版未提供」
+        G.update(stocks=page_set, nopage=nopage)
+        log(f"個股頁：{len(page_set):,} 檔（{page_why}）；未收錄個股頁 {len(nopage):,} 檔")
+
+        # 2c) 篩選中心、產業頁（app/hub.py、app/industry.py）：主行程整頁呈現。
+        #     hub 各模式的 screen() 由 screening.run_screen 快取，同一組參數整次匯出只算一次（8 個 hub 網址共用）；
+        #     產業頁用預設參數結果（就是上面選股已算過的那一組）。在 fork 之前做完，工作行程不會重算。
+        t1 = time.time()
+        extra_raw = render_extra_pages(client, log)
+        G["extra"] = {k: V1.url_to_file(k) for k in extra_raw}
+        timing["extra_pages"] = round(time.time() - t1, 1)
+        mem["extra_pages"] = _rss_mb()
 
         n_workers = workers or max(1, min(6, (os.cpu_count() or 2) - 1))
         ctx = mp.get_context("fork")
-        # 3) 月營收（工作行程，逐月）
+        # 3) 月營收（工作行程，逐月；結果寫暫存檔，主行程只收連結）
         t1 = time.time()
         G["src_known"] = {}
-        with ctx.Pool(n_workers) as pool:
-            revs = dict(pool.map(rev_job, months, chunksize=1))
+        G["tmp"] = tmpdir
+        _pre_fork()
+        # 每個營收工作行程要整月全市場資料（約 300 MB），同時開太多會變成整次匯出的峰值 → 最多 REV_WORKERS 個
+        with ctx.Pool(max(1, min(n_workers, REV_WORKERS)), maxtasksperchild=MAX_TASKS) as pool:
+            rev_files = {mo: (f, ls) for mo, f, ls in pool.imap(rev_job, months, chunksize=1)}
+        gc.unfreeze()
         timing["revenue"] = round(time.time() - t1, 1)
+        mem["revenue"] = _rss_mb()
 
         # 4) 全站頁、選股、營收連到的來源明細：有 symbol（且為匯出股票）的交給該股工作行程，其餘主行程渲染
         t1 = time.time()
         glinks = []
         for key in ("/", "/status"):
             glinks += links_in(key, raw[key].text)
+        for key, body in extra_raw.items():
+            glinks += links_in(key, body)
         for m in scr["masks"].values():
             for part in ("a", "form", "mid", "z", "src", "empty"):
                 if m.get(part):
                     glinks += links_in("/screener", m[part])
             for tr in m.get("rows") or []:
                 glinks += links_in("/screener", tr)
-        for mo, e in revs.items():
-            for part in ("a", "form", "gap", "cnt", "mid", "have_static", "z", "b"):
-                if e.get(part):
-                    glinks += links_in("/revenue", e[part])
-            for tr in e.get("rows") or []:
-                glinks += links_in("/revenue", tr)
+        for _f, ls in rev_files.values():
+            glinks += ls
+        # 選股資料先存暫存檔、釋放（最後才讀回改寫連結），工作行程 fork 時不必帶著它
+        scr_file = tmpdir / "screener.pkl"
+        scr_file.write_bytes(pickle.dumps(scr, protocol=pickle.HIGHEST_PROTOCOL))
+        del scr
         assigned: dict = {c: set() for c in universe}
 
         def assign(key):
@@ -595,30 +797,44 @@ def export_v2(out: Path, db: Path, base: str = "/tw-stock-site/", log=print, sym
         known: dict = {}
         gitems: dict = {}
         source_bfs([k for k in dict.fromkeys(glinks) if k.startswith("/source?")], known, gitems, assign_to=assign)
+        del glinks
         G["src_known"] = dict(known)
         timing["global_sources"] = round(time.time() - t1, 1)
+        mem["global_sources"] = _rss_mb()
 
-        # 5) 個股（工作行程）
+        # 5) 個股（工作行程）：有個股頁的股票整頁；沒有個股頁但有來源明細指派的，只渲染來源明細。
+        #    每檔寫完立刻釋放；本股的來源明細分檔由工作行程直接寫出，主行程只收其他分檔的項目。
         t1 = time.time()
         stats = {}
         items = {qk: (t, m, k, "g") for qk, (t, m, k) in gitems.items()}
-        jobs = [(c, sorted(assigned[c])) for c in sorted(universe)]
-        with ctx.Pool(n_workers) as pool:
-            for code, st, its, kn in pool.imap_unordered(stock_job, jobs, chunksize=4):
+        del gitems
+        jobs = [(c, sorted(assigned[c]), c in page_set) for c in sorted(universe) if c in page_set or assigned[c]]
+        del assigned
+        _pre_fork()
+        with ctx.Pool(n_workers, maxtasksperchild=MAX_TASKS) as pool:
+            for code, st, its, kn in pool.imap_unordered(stock_job, jobs, chunksize=2):
                 stats[code] = st
                 known.update(kn)
                 for qk, (t, m, k) in its.items():
                     items.setdefault(qk, (t, m, k, "w"))
+        gc.unfreeze()
         timing["stocks"] = round(time.time() - t1, 1)
+        mem["stocks"] = _rss_mb()
 
         # 6) 改寫主行程片段的連結並寫檔
         t1 = time.time()
-        linker = Linker(universe, set(months), known)
+        linker = Linker(page_set, set(months), known, nopage)
         shards: dict = {}
         for qk, (t, m, k, who) in items.items():
             mm = linker.rewrite(m, k, "../") if who == "g" else m
             shards.setdefault(source_shard(parse_qsl(k.partition("?")[2])), {})[qk] = [t, mm]
-        src_bytes = sum(gz_json(stage / "data" / "source" / f"{sh}.json.gz", d) for sh, d in shards.items())
+        src_bytes = sum(st.get("source_bytes", 0) for st in stats.values())
+        src_bytes += sum(_write_source_shard(stage / "data" / "source" / f"{sh}.json.gz", d) for sh, d in shards.items())
+        src_pages = sum(1 for v in known.values() if v)
+        n_pages = sum(1 for st in stats.values() if st.get("page"))
+        del shards
+        scr = pickle.loads(scr_file.read_bytes())
+        scr_file.unlink()
         for m in scr["masks"].values():
             for part in ("a", "form", "mid", "z", "src", "empty", "topen", "tclose"):
                 if m.get(part):
@@ -628,15 +844,21 @@ def export_v2(out: Path, db: Path, base: str = "/tw-stock-site/", log=print, sym
             if m.get("rows"):
                 m["rows"] = [linker.rewrite(x, "/screener", "../") for x in m["rows"]]
         scr_bytes = gz_json(stage / "data" / "screener.json.gz", scr)
+        del scr
         rev_bytes = 0
-        for mo, e in revs.items():
-            for part in ("a", "form", "gap", "cnt", "mid", "have_static", "z", "b"):
+        for mo in months:   # 逐月讀回、改寫、寫出、釋放
+            f, _ls = rev_files[mo]
+            e = pickle.loads(Path(f).read_bytes())
+            Path(f).unlink()
+            for part in REV_LINK_PARTS:
                 if e.get(part):
                     e[part] = linker.rewrite(e[part], "/revenue", "../")
             e.pop("have", None)
             if e.get("rows"):
                 e["rows"] = [linker.rewrite(x, "/revenue", "../") for x in e["rows"]]
             rev_bytes += gz_json(stage / "data" / "revenue" / f"{mo}.json.gz", e)
+            del e
+        mem["write_data"] = _rss_mb()
 
         # 7) 殼頁、全站頁、靜態檔
         shutil.copytree(WEB / "app" / "static", stage / "static")
@@ -649,13 +871,23 @@ def export_v2(out: Path, db: Path, base: str = "/tw-stock-site/", log=print, sym
         for key, file in (("/", "index.html"), ("/status", "status/index.html")):
             (stage / file).parent.mkdir(parents=True, exist_ok=True)
             (stage / file).write_text(V1.rewrite_html(key, file, raw[key].text, {}, info, resolver=res), "utf-8")
+        for key, body in extra_raw.items():
+            file = G["extra"][key]
+            (stage / file).parent.mkdir(parents=True, exist_ok=True)
+            (stage / file).write_text(V1.rewrite_html(key, file, body, {}, info, resolver=res), "utf-8")
+        del extra_raw
         stocks = [s for s in json.loads(raw["/api/stocks"].text) if s["code"] in universe]
+        for s_ in stocks:   # 沒產生個股頁的股票仍可搜尋，標 page=false（static.js 顯示「未收錄個股頁」）
+            if s_["code"] in nopage:
+                s_["page"] = False
         (stage / "api").mkdir(parents=True, exist_ok=True)
         (stage / "api" / "stocks.json").write_text(json.dumps(stocks, ensure_ascii=False), "utf-8")
-        first = sorted(universe)[0]
+        first = sorted(page_set or universe)[0]
+        src_key = next(iter(items.values()))[2] if items else next((st["src_key"] for st in stats.values()
+                                                                    if st.get("src_key")), None)
         shell_src = {"stock": client.get(f"/stock/{first}").text, "screener": client.get("/screener").text,
                      "revenue": rev_html,
-                     "source": client.get(next(iter(items.values()))[2]).text if items else raw["/status"].text}
+                     "source": client.get(src_key).text if src_key else raw["/status"].text}
         for kind, page in shell_src.items():
             f = f"{kind}/index.html"
             (stage / kind).mkdir(parents=True, exist_ok=True)
@@ -678,17 +910,21 @@ def export_v2(out: Path, db: Path, base: str = "/tw-stock-site/", log=print, sym
             f"- 資料日期：{meta.get('data_date') or '資料不足'}\n- 產生時間：{generated}（台北時間）\n- 匯出格式：v2（共用殼頁＋資料檔）\n\n"
             "僅供研究參考，不構成投資建議；技術訊號不代表獲利保證；本站不提供下單功能。\n", "utf-8")
         manifest = {"format": "v2", "generated_at": generated, "data_date": meta.get("data_date"),
-                    "stocks": {s["code"]: f"stock/?code={s['code']}" for s in stocks},
+                    "stocks": {s["code"]: f"stock/?code={s['code']}" for s in stocks if s["code"] not in nopage},
+                    "nopage": {s["code"]: s.get("name") or "" for s in stocks if s["code"] in nopage},
                     "months": months, "default_month": dm.group(1) if dm else None, "g_shards": G_SHARDS,
                     "routes": {}}
         (stage / "manifest.json").write_text(json.dumps(manifest, ensure_ascii=False), "utf-8")
         (stage / "build-info.json").write_text(json.dumps(
             {"format": "v2", "generated_at_taipei": generated, "data_date": meta.get("data_date"),
-             "pages": len(stats), "source": "sqlite（data/twstock.db 快照）", "universe": sorted(universe),
+             "pages": n_pages, "nopage": len(nopage), "page_policy": page_why,
+             "source": "sqlite（data/twstock.db 快照）", "universe": sorted(universe),
              "tracking_universe": sorted(tracking), "universe_label": src.universe.label,
-             "trade_days": V1._trade_days_around(src, meta.get("data_date")), "quotes_ready": "18:30"},
+             "trade_days": V1._trade_days_around(src, meta.get("data_date")), "quotes_ready": "18:30",
+             "extra_pages": dict(sorted(G["extra"].items()))},
             ensure_ascii=False, indent=1), "utf-8")
         timing["write"] = round(time.time() - t1, 1)
+        mem["end"] = _rss_mb()
         from check_export import check as _check, summary as _summary
         problems = _check(stage)
         if problems:
@@ -700,10 +936,11 @@ def export_v2(out: Path, db: Path, base: str = "/tw-stock-site/", log=print, sym
         stage = None
         size = sum(p.stat().st_size for p in out.rglob("*") if p.is_file())
         nfiles = sum(1 for p in out.rglob("*") if p.is_file())
-        result = {"mode": "v2", "stocks": len(stats), "seconds": round(time.time() - t0, 1), "timing": timing,
+        result = {"mode": "v2", "stocks": n_pages, "nopage": len(nopage), "tracking": len(tracking),
+                  "seconds": round(time.time() - t0, 1), "timing": timing, "main_rss_mb": mem,
                   "bytes": size, "files": nfiles, "stock_json_bytes": sum(s["bytes"] for s in stats.values()),
                   "source_bytes": src_bytes, "screener_bytes": scr_bytes, "revenue_bytes": rev_bytes,
-                  "source_pages": len(items), "workers": n_workers, "data_date": meta.get("data_date"),
+                  "source_pages": src_pages, "workers": n_workers, "data_date": meta.get("data_date"),
                   "generated": generated}
         log(f"完成：{json.dumps(result, ensure_ascii=False)}")
         return result

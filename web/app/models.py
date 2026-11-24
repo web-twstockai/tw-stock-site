@@ -34,6 +34,15 @@ STATUS_LABELS = {
     STATUS_ERROR: "讀取失敗",
     STATUS_NOT_APPLICABLE: "不適用",
     STATUS_SOURCE_DOWN: "來源故障",
+    # 篩選中心／產業分類（HUB_HANDOFF §5.6；2026-11-24）
+    "rate_pending": "計算中",          # 5 日勝率：上線初期，歷史勝率回補中（不顯示任何比例）
+    "rate_few": "樣本不足",            # 5 日勝率：未達 N ≥ 100 且 D ≥ 30（M5、M8 季頻結構性不足）
+    "mode_na": "尚未提供",             # 篩選模式：研究分析模組尚未提供計算
+    "mode_error": "無法計算",
+    "insufficient_data": "資料不足",   # 篩選模式：可評估比例未達 95%
+    "halted": "停牌",
+    "no_trade": "無成交",
+    "no_data": "資料不足",
 }
 
 TEST_LABEL = "測試資料"

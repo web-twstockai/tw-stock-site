@@ -116,6 +116,11 @@ def run(v1: Path, v2: Path) -> dict:
     # v2 全站頁與殼頁的連結
     files = ["index.html", "status/index.html", "stock/index.html", "source/index.html", "screener/index.html",
              "revenue/index.html"]
+    # 篩選中心、產業頁：兩版都是伺服器整頁輸出（同檔名），也檢查 v2 版的連結
+    served = ["index.html", "status/index.html"] + sorted(
+        p.relative_to(v1).as_posix() for top in ("hub", "industry") for p in (v1 / top).rglob("*.html")
+        if (v1 / top).is_dir())
+    files += [f for f in served[2:] if (v2 / f).is_file()]
     for f in files:
         reqs.append({"id": len(reqs), "kind": "file", "file": f})
 
@@ -153,16 +158,23 @@ def run(v1: Path, v2: Path) -> dict:
         else:
             report["diffs"].append({"url": logical, "kind": kind,
                                     "where": ("標題不同：" + t1 + " ≠ " + x["title"]) if t1 != x["title"] else first_diff(loose(a), loose(b))})
-    # 首頁、資料狀態頁（兩版都是伺服器輸出）
-    for f in ("index.html", "status/index.html"):
+    # 首頁、資料狀態頁、篩選中心、產業頁（兩版都是伺服器輸出）
+    for f in served:
         matched.add(f)
+        kind = {"index.html": "home", "status/index.html": "status"}.get(f) or f.split("/")[0]
+        if not (v2 / f).is_file():
+            report["compared"][kind] = report["compared"].get(kind, 0) + 1
+            report["missing_v2"].append(f)
+            continue
         t1, m1 = v1_main(v1 / f)
         t2, m2 = v1_main(v2 / f)
         a, b = norm(m1), norm(m2)
-        kind = "home" if f == "index.html" else "status"
-        report["compared"][kind] = 1
+        report["compared"][kind] = report["compared"].get(kind, 0) + 1
+        o1, o2 = a.count(" OFF"), b.count(" OFF")
+        report["v2_extra_links"] += max(0, o1 - o2)
+        report["v2_lost_links"] += max(0, o2 - o1)
         if loose(a) == loose(b):
-            report["same"][kind] = 1
+            report["same"][kind] = report["same"].get(kind, 0) + 1
         else:
             report["diffs"].append({"url": f, "kind": kind, "where": first_diff(loose(a), loose(b))})
     for x in res.values():

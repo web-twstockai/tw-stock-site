@@ -169,6 +169,14 @@
       return r.json();
     });
   }
+  function nopage(code,name){
+    if(!box.parentNode) return;
+    document.title=code+' '+(name||'')+'｜未收錄個股頁｜台股盤後研究';
+    box.innerHTML='<div class="empty" data-state="v2-nopage" role="status"><h1>'+esc(code+' '+(name||''))+'</h1>'+
+      '<p>本股在追蹤範圍內，但公開靜態版這一版<strong>未收錄個股頁</strong>：全市場模式只為「符合任一篩選條件的股票」（以及另外指定的清單）產生個股頁，'+
+      '其餘股票的行情仍列入首頁統計、篩選中心與產業頁。</p>'+
+      '<p><a href="'+esc(base)+'hub/">篩選中心</a>｜<a href="'+esc(base)+'industry/">產業分類</a>｜<a href="'+esc(base)+'">回首頁</a></p></div>';
+  }
   function fail(t){if(!box.parentNode) return;box.innerHTML='<div class="empty" data-state="v2-error" role="alert">'+esc(t)+' <a href="'+esc(base)+'">回首頁</a></div>'}
   var scr=(box.getAttribute('data-v2-scripts')||'').split(' ').filter(Boolean);
   function scripts(){
@@ -206,7 +214,14 @@
   if(kind==='stock'){
     var code=get(pairs,'code')||'';
     if(!/^[A-Za-z0-9]+$/.test(code)){fail('網址缺少股票代號。');p=null}
-    else p=load('data/stock/'+code+'.json.gz').then(function(d){show(TW2.stockMain(d,pairs))},function(){fail('公開靜態版沒有 '+code+' 的個股頁（不在追蹤範圍或尚未匯出）。')});
+    else p=load('data/stock/'+code+'.json.gz').then(function(d){show(TW2.stockMain(d,pairs))},function(){
+      // 沒有個股頁：在追蹤範圍內但這版未收錄（manifest.nopage）→ 說明狀態，不當成錯誤網址
+      return load('manifest.json').then(function(M){
+        var np=M.nopage||{};
+        if(Object.prototype.hasOwnProperty.call(np,code)) nopage(code,np[code]);
+        else fail('公開靜態版沒有 '+code+' 的個股頁（不在追蹤範圍或尚未匯出）。');
+      },function(){fail('公開靜態版沒有 '+code+' 的個股頁（不在追蹤範圍或尚未匯出）。')});
+    });
   } else if(kind==='source'){
     p=load('manifest.json').then(function(M){return load('data/source/'+TW2.sourceShard(pairs,M.g_shards)+'.json.gz')})
       .then(function(sh){show(TW2.sourceMain(sh,pairs))},function(){fail('公開靜態版沒有這筆來源明細。')});

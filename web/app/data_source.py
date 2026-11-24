@@ -1304,10 +1304,19 @@ class SqliteSource(DataSource):
         return [self._job_view(r) for r in self._q("SELECT * FROM job_runs ORDER BY run_id DESC LIMIT ?", (limit,))]
 
     def excluded_securities(self) -> list[dict]:
+        """全市場的 securities_excluded 有數萬列（權證等）。每次選股都重查一份，選股快取（最多 48 組）會各留一份，
+        匯出 v2 時主行程因此多出 1 GB 以上。改成依資料版本快取，所有選股結果共用同一份清單（唯讀，呼叫端不得修改）。"""
+        ver = self.data_version()
+        hit = getattr(self, "_excl_cache", None)
+        if hit is not None and hit[0] == ver:
+            return hit[1]
         if not self._columns("securities_excluded"):
-            return []
-        return self._q("SELECT * FROM securities_excluded WHERE data_date = (SELECT max(data_date) FROM securities_excluded)"
-                       " ORDER BY exclude_reason, symbol")
+            rows: list[dict] = []
+        else:
+            rows = self._q("SELECT * FROM securities_excluded WHERE data_date = (SELECT max(data_date) FROM securities_excluded)"
+                           " ORDER BY exclude_reason, symbol")
+        self._excl_cache = (ver, rows)
+        return rows
 
     def screener_frame(self) -> dict:
         """用研究分析的 analysis/io_sqlite.py 讀取（唯讀、只取 is_current=1），不自行組 SQL。"""

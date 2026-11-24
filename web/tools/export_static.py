@@ -31,7 +31,7 @@ import time
 from collections import Counter, deque
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
-from urllib.parse import parse_qsl, urlencode, urljoin, urlsplit
+from urllib.parse import parse_qsl, unquote, urlencode, urljoin, urlsplit
 
 WEB = Path(__file__).resolve().parents[1]
 ROOT = WEB.parent
@@ -41,6 +41,21 @@ TPE = timezone(timedelta(hours=8))
 TOGGLES = ("enable_trend", "enable_breakout", "enable_volume", "enable_turnover")
 SCREENER_SORTS = ("code", "change_pct", "turnover", "vol_ratio", "close")
 STOCK_GROUPS = {"price": ("price",), "fin": ("period", "scope", "basis"), "cat": ("cat",)}
+# 篩選中心／產業頁（app/hub.py、app/industry.py）：靜態版收錄的網址。其他模式（M5、M8）與產業頁的排序連結不匯出，
+# 改寫時拿掉連結（data-static-off，不可點、不是死連結）。
+HUB_MODES = ("M1", "M2", "M3", "M4", "M6", "M7")
+HUB_PAGES = ("/hub",) + tuple(f"/hub?mode={m}" for m in HUB_MODES) + ("/hub?mode=M2&sort=trade_value",)
+INDUSTRY_RE = re.compile(r"/industry/[^/]+")
+
+
+def is_extra_page(key: str) -> bool:
+    """篩選中心、產業總覽、各產業頁（只收預設排序）。"""
+    path, _, query = key.partition("?")
+    if path == "/hub":
+        return key in HUB_PAGES
+    if path == "/industry" or INDUSTRY_RE.fullmatch(path):
+        return not query
+    return False
 
 
 class ExportError(RuntimeError):
@@ -65,6 +80,7 @@ def _slug(query: str) -> str:
 
 def url_to_file(key: str) -> str:
     path, _, query = key.partition("?")
+    path = unquote(path)   # 產業頁網址是中文（百分比編碼）：檔名用原字，GitHub Pages 會把請求網址解碼後對到檔案
     if path.endswith(".csv"):
         return "csv/" + path[1:-4] + ("__" + _slug(query) if query else "") + ".csv"
     if path.startswith("/api/"):
@@ -127,7 +143,7 @@ def make_policy(universe: set[str], default_month: str | None = None):
             return changed <= 1
         if path == "/source":
             return True
-        return False
+        return is_extra_page(key)
     return allow
 
 
@@ -200,6 +216,7 @@ def export(out: Path, db: Path, base: str = "/tw-stock-site/", max_pages: int = 
         client = TestClient(app, raise_server_exceptions=True)
 
         seeds = ["/", "/screener", "/screener.csv", "/revenue", "/revenue.csv", "/status", "/api/stocks"]
+        seeds += list(HUB_PAGES) + ["/industry"]   # 各產業頁由產業總覽的連結爬到
         seeds += [f"/stock/{c}" for c in sorted(universe)]
         # 選股表單在靜態版只能開關 4 項條件＋排序：預先算好全部組合（16×5×2），表單送出時查表
         for mask in (range(16) if screener_combos else ()):
@@ -302,7 +319,10 @@ def export(out: Path, db: Path, base: str = "/tw-stock-site/", max_pages: int = 
              "source": "sqlite（data/twstock.db 快照）", "universe": sorted(universe),
              "tracking_universe": sorted(tracking), "universe_label": src.universe.label,
              # 前端判斷「本版是否落後」用（static.js；與 freshness.expected_for 同一規則：交易日 18:30 後才算當日）
-             "trade_days": _trade_days_around(src, meta.get("data_date")), "quotes_ready": "18:30"}, ensure_ascii=False, indent=1), "utf-8")
+             "trade_days": _trade_days_around(src, meta.get("data_date")), "quotes_ready": "18:30",
+             # 篩選中心／產業頁：網址 → 檔案（check_export 逐一確認存在）
+             "extra_pages": {k: pages[k]["file"] for k in sorted(pages) if is_extra_page(k)}},
+            ensure_ascii=False, indent=1), "utf-8")
         # 自檢（tools/check_export.py）：首頁行情檔數 ≤ 範圍檔數、搜尋清單每檔都有頁；不符就中止，不覆蓋上一版
         sys.path.insert(0, str(Path(__file__).resolve().parent))
         from check_export import check as _check, summary as _summary
@@ -363,6 +383,11 @@ def _static_screener_form(m: re.Match) -> str:
     return head + note + body + tail
 
 
+class _Link(str):
+    """改寫後的網址；attrs＝匯出 v2 resolver 要求加在連結上的屬性（例如 data-nopage）。"""
+    attrs = ""
+
+
 def rewrite_html(key: str, file: str, body: str, pages: dict, info: dict, absolute_base: str | None = None,
                  resolver=None) -> str:
     """resolver：匯出 v2 用（u → 相對網站根目錄的目標或 None）；v1 不傳，行為不變。"""
@@ -376,7 +401,11 @@ def rewrite_html(key: str, file: str, body: str, pages: dict, info: dict, absolu
             return prefix + u.path[1:]
         if resolver is not None:
             t = resolver(u)
-            return None if t is None else prefix + t + frag
+            if t is None:
+                return None
+            r = _Link(prefix + t + frag)
+            r.attrs = getattr(t, "attrs", "")
+            return r
         k = canon(u.path, u.query)
         if k in pages:
             if absolute_base:
@@ -402,7 +431,7 @@ def rewrite_html(key: str, file: str, body: str, pages: dict, info: dict, absolu
         new = link_for(v)
         if new is None:
             return f'{sp}data-static-off="1" title="公開靜態版未提供此頁"'  # 拿掉 href：不留點了會壞的連結
-        return f'{sp}{attr}="{html.escape(new)}"'
+        return f'{sp}{attr}="{html.escape(new)}"' + getattr(new, "attrs", "")
 
     body = ATTR_RE.sub(sub, body)
     if key.startswith("/screener") and not key.endswith(".csv"):
@@ -429,15 +458,23 @@ def main(argv=None) -> int:
     ap.add_argument("--mode", choices=("v1", "v2"), default="v1",
                     help="v1＝現行（每個網址一個 HTML，預設）；v2＝共用殼頁＋資料檔（tools/export_v2.py）")
     ap.add_argument("--workers", type=int, default=None, help="v2 的工作行程數（預設 CPU 數−1，最多 6）")
+    ap.add_argument("--pages", choices=("auto", "all", "hits"), default="auto",
+                    help="v2 個股頁範圍：auto＝追蹤範圍 ≤300 檔全部產生、否則同 hits；hits＝符合任一篩選條件＋TWSITE_PAGE_EXTRA 清單")
+    ap.add_argument("--symbols", default="",
+                    help="只匯出這些股票（逗號分隔，或 @清單檔；量測記憶體的有限視窗用，正式匯出不要給）")
     a = ap.parse_args(argv)
+    symbols = None
+    if a.symbols:
+        raw = Path(a.symbols[1:]).read_text("utf-8") if a.symbols.startswith("@") else a.symbols
+        symbols = [x.strip() for x in raw.replace(",", "\n").splitlines() if x.strip() and not x.strip().startswith("#")]
     out = Path(a.out).resolve()
     out.parent.mkdir(parents=True, exist_ok=True)
     try:
         if a.mode == "v2":
             from export_v2 import export_v2
-            export_v2(out, Path(a.db).resolve(), a.base, workers=a.workers)
+            export_v2(out, Path(a.db).resolve(), a.base, workers=a.workers, symbols=symbols, pages=a.pages)
             return 0
-        export(out, Path(a.db).resolve(), a.base, a.max_pages)
+        export(out, Path(a.db).resolve(), a.base, a.max_pages, symbols=symbols)
     except ExportError as e:
         print(f"匯出失敗：{e}", file=sys.stderr)
         return 2

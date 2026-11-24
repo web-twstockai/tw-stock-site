@@ -1,0 +1,159 @@
+{% extends "base.html" %}
+{% block title %}篩選中心｜台股盤後研究{% endblock %}
+{%- macro tier(t) -%}<span class="tier {{ {'基本': 't1', '進階': 't2', '高級': 't3'}.get(t, 't1') }}"><span class="sr">等級：</span>{{ t }}</span>{%- endmacro -%}
+{%- macro n0(v) -%}{{ '{:,}'.format(v) }}{%- endmacro -%}
+{%- macro pctx(v) -%}{{ '%.1f' % (v * 100) }}%{%- endmacro -%}
+{%- macro metric(v) -%}
+{%- if v.status == 'ok' and v.value is not none -%}<span class="num" title="來源：{{ v.source }}；資料日期 {{ v.as_of }}">{{ ('−' if v.value < 0 else '') ~ ((v.value|abs)|num(v.digits)) }}</span>
+{%- else -%}{{ status_badge(v.status, v.note) }}{%- endif -%}
+{%- endmacro -%}
+{%- macro rate_block(m) -%}
+<span class="rate"><span class="rate-l">5 日勝率</span>
+{%- if m.rate_status == 'rate_few' %}<span class="pill pill-few">! {{ STATUS_LABELS.rate_few }}</span></span>
+<span class="rate-n">季頻訊號一年只有 4 個公告期，未達 D ≥ 30 的顯示門檻，不顯示比例｜{{ hub.disclaimer }}</span>
+{%- else %}<span class="pill pill-pend">{{ STATUS_LABELS.rate_pending }}</span></span>
+<span class="rate-n">歷史勝率回補中，暫不計算，不顯示比例</span>
+{%- endif -%}
+{%- endmacro -%}
+{%- macro count_block(m) -%}
+{%- if m.mode_status == 'mode_na' -%}
+<span class="cnt"><span class="cnt-l">今日</span><span class="pill pill-muted big">{{ STATUS_LABELS.mode_na }}</span></span>
+<span class="na-why">{{ m.na }}。</span>
+{%- elif m.mode_status == 'error' -%}
+<span class="cnt"><span class="cnt-l">今日</span><span class="pill pill-bad big">✕ {{ STATUS_LABELS.mode_error }}</span></span>
+<span class="na-why">{{ m.error }}</span>
+{%- elif m.mode_status == 'insufficient_data' -%}
+<span class="cnt"><span class="cnt-l">今日</span><span class="pill pill-muted big">{{ STATUS_LABELS.insufficient_data }}</span></span>
+<span class="lack">! 可評估 {{ n0(m.evaluable_count) }}／{{ n0(m.denominator) }} 檔（{{ pctx(m.coverage_ratio) }}），未達 95%</span>
+{%- if m.young_excluded_count %}<span class="young">{{ n0(m.young_excluded_count) }} 檔上市未滿，未納入</span>{% endif -%}
+{%- else -%}
+<span class="cnt{{ ' zero' if m.today_count == 0 }}"><span class="cnt-l">今日</span><b class="cnt-v num">{{ n0(m.today_count) }}</b><span class="cnt-u">檔</span><span class="cnt-of">／可評估 {{ n0(m.evaluable_count) }} 檔</span></span>
+{%- if m.excluded_count %}<span class="lack">! {{ n0(m.excluded_count) }} 檔資料不足，未納入</span>{% endif -%}
+{%- if m.young_excluded_count %}<span class="young">{{ n0(m.young_excluded_count) }} 檔上市未滿，未納入</span>{% endif -%}
+{%- if m.halted_count %}<span class="young">{{ n0(m.halted_count) }} 檔停牌，未納入</span>{% endif -%}
+{%- endif -%}
+{%- endmacro -%}
+{% block content %}
+{%- set hub = hub if hub is defined else {} -%}
+<div class="hubpg">
+<div class="page-head">
+  <div>
+    <h1>篩選中心</h1>
+    <p class="ph-lead">選一個篩選模式，看今天符合的股票。想依產業瀏覽，請到「<a href="/industry">產業分類</a>」。</p>
+  </div>
+  <dl class="ph-meta">
+    <div><dt>資料日期</dt><dd data-date="{{ hub.as_of|default('—') }}">{{ hub.as_of|default('—') }}</dd></div>
+    <div><dt>檢查範圍</dt><dd>{{ hub.universe_label|default('—') }}</dd></div>
+    {% if hub.revenue_month is defined and hub.revenue_month %}<div><dt>營收月份</dt><dd>{{ hub.revenue_month }}</dd></div>{% endif %}
+  </dl>
+</div>
+{% if hub.error is defined and hub.error %}
+<div class="state st-fail" role="alert"><p><b>✕ 篩選中心暫時無法計算</b>：{{ hub.error }}</p><p><a href="/status">看資料狀態 →</a></p></div>
+{% endif %}
+
+<details class="method" id="method">
+  <summary><span aria-hidden="true">?</span> 「5 日勝率」怎麼算</summary>
+  <div class="method-body">
+    <p><b>5 日勝率{{ hub.windef }}。</b>報酬剛好等於 0 算「沒有上漲」。</p>
+    <ul>
+      <li><b>進出場：</b>訊號日的下一個交易日開盤買進，從買進日算第 5 個交易日收盤賣出。進場日開盤就漲停（買不到）不進場、另列件數；持有中停牌或第 5 日無成交，延後到下一個有成交的交易日收盤，最多再等 20 個交易日。</li>
+      <li><b>價格：</b>還原價；持有期間的除權息、減資照實計入。</li>
+      <li><b>成本：</b>買、賣手續費各 0.1425%，賣出證交稅 0.3%。股利稅因人而異，未計入。</li>
+      <li><b>不重複計：</b>同一檔股票在持有期間（5 個交易日）內再出現的訊號不另計。</li>
+      <li><b>不偷看未來：</b>只用訊號日當時已知的資料；月營收、財報以法定申報期限為準（例如月營收以次月 10 日）。</li>
+      <li><b>顯示門檻：</b>事件數 N ≥ 100 且訊號日數 D ≥ 30 才顯示比例，否則顯示「樣本不足」。統計期間從 2023-11 起。</li>
+      <li><b>目前狀態：</b>歷史勝率仍在回補與計算中，本頁不顯示任何勝率數字。</li>
+    </ul>
+    <p class="disc">{{ hub.disclaimer }}。</p>
+  </div>
+</details>
+
+<section class="modes" aria-labelledby="h-modes">
+  <div class="sec-h"><h2 id="h-modes">篩選模式</h2><p class="sec-sub"><b>{{ hub.tier_note }}</b>{{ hub.free_note }}</p></div>
+  <div class="launch-note" role="note"><b>!</b> {{ hub.launch_note }}</div>
+  {%- for t, tc, tnote in hub.tiers|default([]) %}
+  <div class="tier-group">
+    <div class="tg-h">{{ tier(t) }}<span class="tg-n">{{ tnote }}</span>
+      <p class="tg-def"><b>5 日勝率</b>{{ hub.windef }}（報酬＝0 算沒有上漲）。N＝事件數、D＝訊號日數，N ≥ 100 且 D ≥ 30 才顯示比例，否則「樣本不足」。統計期間 2023-11 起。<b>{{ hub.disclaimer }}。</b></p></div>
+    <div class="mode-grid">
+    {%- for m in hub.modes if m.tier == t %}
+      <div class="mode-cell" data-cell="{{ m.id }}">
+      {%- if m.available %}
+        <a class="mode{{ ' on' if m.selected }}" href="/hub{{ '' if m.selected else '?mode=' ~ m.id }}#results"{% if m.selected %} aria-current="true"{% endif %} data-mode="{{ m.id }}">
+      {%- else %}
+        <div class="mode na" data-mode="{{ m.id }}" data-state="{{ m.mode_status }}">
+      {%- endif %}
+          <span class="mode-top"><span class="mcode">{{ m.id }}</span>{{ tier(m.tier) }}{% if m.legacy is defined and m.legacy %}<span class="dflt">原首頁預設</span>{% endif %}{% if m.selected %}<span class="sel">✓ 已選</span>{% endif %}</span>
+          <span class="mode-name">{{ m.name }}</span><span class="mode-desc">{{ m.desc }}</span>
+          {{ count_block(m) }}
+          <span class="mode-rate">{{ rate_block(m) }}</span>
+      {%- if m.available %}</a>{% else %}</div>{% endif %}
+      </div>
+    {%- endfor %}
+    </div>
+  </div>
+  {%- endfor %}
+</section>
+
+<div class="lower">
+  <div class="lower-main">
+  {%- set m = hub.selected if hub.selected is defined else none %}
+  {%- if not m %}
+    <section class="results empty-pick" id="results" aria-live="polite" tabindex="-1"><p class="pick-hint"><span aria-hidden="true">↑</span> 選一個篩選模式，結果會顯示在這裡。目前沒有預設選取。</p></section>
+  {%- else %}
+    <section class="results" id="results" aria-live="polite" tabindex="-1" data-mode="{{ m.id }}">
+      <header class="res-h"><p class="eyebrow">{{ tier(m.tier) }} {{ m.id }} 篩選結果</p><h2>{{ m.name }}</h2><p class="res-cond">條件：{{ m.desc }}</p></header>
+      {%- if m.mode_status == 'error' %}
+      <div class="state st-fail" role="alert"><p><b>✕ 無法計算</b>：{{ m.error }}</p><p>這不是 0 檔。<a href="/status">看資料狀態 →</a></p></div>
+      {%- elif m.mode_status == 'insufficient_data' %}
+      <div class="state st-nodata" role="status" data-state="insufficient_data"><p class="st-big"><span class="pill pill-muted big">{{ STATUS_LABELS.insufficient_data }}</span></p>
+        <p><b>這不是 0 檔。</b>今日可評估 {{ n0(m.evaluable_count) }}／{{ n0(m.denominator) }} 檔（{{ pctx(m.coverage_ratio) }}），未達 95%，名單與 5 日勝率都不顯示。{% if m.young_excluded_count %}另有 {{ n0(m.young_excluded_count) }} 檔上市未滿，未納入（不計入分母）。{% endif %}{% if m.halted_count %}{{ n0(m.halted_count) }} 檔停牌，未納入（不計入分母）。{% endif %}</p>
+        {%- if m.excluded_reasons %}<p>未能評估的原因（分析引擎判定）：</p><ul class="excl-list">{% for x in m.excluded_reasons[:6] %}<li title="{{ x.code }}">{{ x.label }}：{{ n0(x.count) }} 檔</li>{% endfor %}</ul>{% endif %}
+        <p class="st-meta"><a href="/status">看資料狀態 →</a></p></div>
+      {%- else %}
+        {%- set alt = m.alt_sort if m.alt_sort is defined else none %}
+        {%- set by_amt = m.sort_key == 'trade_value' %}
+        {%- if m.mode_status == 'zero' %}
+      <div class="state st-zero" role="status" data-state="zero"><p class="st-big"><b class="num">0</b> 檔</p><p>今日條件下沒有符合的股票（不放寬條件）。</p><p class="st-meta">可評估 {{ n0(m.evaluable_count) }} 檔</p></div>
+        {%- else %}
+      <div class="res-sum" role="note"><p class="sum-1"><span><b class="num">{{ n0(m.rows|length) }}</b> 檔</span><span>排序：{{ '成交金額（億元）' if by_amt else m.metric_label }} ↓</span><span class="sum-word">5 日勝率 {{ STATUS_LABELS.rate_few if m.rate_status == 'rate_few' else STATUS_LABELS.rate_pending }}（{{ '季頻訊號樣本不足' if m.rate_status == 'rate_few' else '歷史勝率回補中' }}）</span></p></div>
+        {%- endif %}
+        {%- if m.excluded_count %}<p class="lack-note">! <b>{{ n0(m.excluded_count) }} 檔資料不足，未納入</b>（可評估 {{ n0(m.evaluable_count) }}／{{ n0(m.denominator) }} 檔，{{ pctx(m.coverage_ratio) }}）</p>{% endif %}
+        {%- if m.young_excluded_count %}<p class="young-note"><b>{{ n0(m.young_excluded_count) }} 檔上市未滿，未納入</b>：上市時間不夠本模式需要的歷史長度，不計入覆蓋率分母（母體 {{ n0(m.universe_count) }} 檔 − {{ n0(m.young_excluded_count) }} 檔{% if m.halted_count %} − 停牌 {{ n0(m.halted_count) }} 檔{% endif %} ＝ {{ n0(m.denominator) }} 檔）。</p>
+        {%- elif m.halted_count %}<p class="young-note"><b>{{ n0(m.halted_count) }} 檔停牌，未納入</b>：不計入覆蓋率分母（母體 {{ n0(m.universe_count) }} 檔 − {{ n0(m.halted_count) }} 檔 ＝ {{ n0(m.denominator) }} 檔）。</p>{% endif %}
+        {%- for t in m.notes %}<p class="sort-note">{{ t }}</p>{% endfor %}
+        {%- if m.rows %}
+          {%- if alt %}
+      <p class="sort-alt" data-testid="sort-switch">排序方式：
+        {%- if by_amt %}<a href="/hub?mode={{ m.id }}#results">{{ m.metric_label }} ↓</a><span class="is-on" aria-current="true">✓ 成交金額 ↓</span>
+        {%- else %}<span class="is-on" aria-current="true">✓ {{ m.metric_label }} ↓</span><a href="/hub?mode={{ m.id }}&amp;sort=trade_value#results">成交金額 ↓</a>{% endif %}</p>
+          {%- if not by_amt %}<p class="sort-note">{{ hub.m2_sort_note|default('') }}</p>{% endif %}
+          {%- endif %}
+      <p class="sort-note">{{ hub.sort_note }}</p>
+      <div class="tbl-wrap"><table class="rt"><caption class="sr">{{ m.name }} 篩選結果名單</caption>
+        <thead><tr><th scope="col">股票</th><th scope="col" class="r">收盤（元）</th><th scope="col" class="r">漲跌幅</th>
+          {%- if by_amt %}<th scope="col" class="r sorted" aria-sort="descending">成交金額（億元）<span aria-hidden="true"> ↓</span></th>
+          {%- else %}<th scope="col" class="r sorted" aria-sort="descending">{{ m.metric_label }}<span aria-hidden="true"> ↓</span></th><th scope="col" class="r">成交金額（億元）</th>{% endif %}</tr></thead>
+        <tbody>
+        {%- for r in m.rows %}
+        <tr><th scope="row" class="stk"><a href="/stock/{{ r.code }}"><span class="snm" title="{{ r.name }}">{{ r.name }}</span><span class="scd">{{ r.code }}</span></a><span class="smk">{{ r.market }}</span></th>
+          <td class="r" data-l="收盤（元）">{{ val(r.close) }}</td><td class="r" data-l="漲跌幅">{{ chg(r.change_pct) }}</td>
+          {%- if not by_amt %}<td class="r" data-l="{{ m.metric_label }}">{{ metric(r.metric) }}</td>{% endif %}
+          <td class="r" data-l="成交金額（億元）">{{ val(r.amount) }}</td></tr>
+        {%- endfor %}
+        </tbody></table></div>
+      <p class="tbl-foot">點股票名稱進入個股研究。<span title="{{ m.engine }}">計算：{{ m.engine_zh }}</span>。漲跌以 ▲／▼／■ 加正負號與顏色表示（紅漲綠跌）。</p>
+        {%- endif %}
+      {%- endif %}
+    </section>
+  {%- endif %}
+  </div>
+  <aside class="topics" aria-labelledby="h-top">
+    <div class="sec-h sm"><h2 id="h-top">近期話題</h2></div>
+    <div class="later" role="note"><p class="later-h">重大訊息則數排行 <span class="later-tag">之後提供</span></p><p>近 7 個交易日重大訊息則數最多的個股（只算普通股、排除例行公告）。例行公告的排除規則仍待核可，目前還沒有這項功能。</p></div>
+    <div class="later" role="note"><p class="later-h">主題話題 <span class="later-tag">之後提供</span></p><p>例如把同一主題的多檔股票歸在一起；目前還沒有這項功能。</p></div>
+  </aside>
+</div>
+<p class="disclaimer">本頁為程式依資料庫計算的篩選結果，僅供研究參考，不構成投資建議；本站不提供下單功能。時間皆為台北時間。</p>
+</div>
+{% endblock %}

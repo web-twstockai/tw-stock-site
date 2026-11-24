@@ -39,6 +39,38 @@ def home_counts(index_html: str) -> dict:
     return out
 
 
+HUB_REQUIRED = ("/hub", "/hub?mode=M1", "/hub?mode=M2", "/hub?mode=M3", "/hub?mode=M4", "/hub?mode=M6", "/hub?mode=M7",
+                "/hub?mode=M2&sort=trade_value", "/industry")
+IND_LINK_RE = re.compile(r'<a class="ind-tile[^"]*" href="([^"]+)"')
+
+
+def check_extra_pages(out: Path, info: dict) -> list[str]:
+    """篩選中心與產業頁：必收的網址都要有檔案；產業總覽上的每個產業連結都要開得到（不是死連結）。"""
+    problems: list[str] = []
+    extra = info.get("extra_pages")
+    if extra is None:
+        return ["build-info.json 沒有 extra_pages（篩選中心／產業頁），匯出程式與自檢版本不符"]
+    miss = [k for k in HUB_REQUIRED if k not in extra]
+    if miss:
+        problems.append(f"篩選中心／產業頁缺少：{', '.join(miss)}")
+    nofile = [k for k, f in extra.items() if not (out / f).is_file()]
+    if nofile:
+        problems.append(f"篩選中心／產業頁有 {len(nofile)} 個檔案不存在（例：{', '.join(nofile[:3])}）")
+    ind_file = extra.get("/industry")
+    if ind_file and (out / ind_file).is_file():
+        from urllib.parse import unquote
+        base = (out / ind_file).parent
+        dead = []
+        for h in IND_LINK_RE.findall((out / ind_file).read_text("utf-8")):
+            t = unquote(html.unescape(h).split("#", 1)[0])
+            p = (base / t)
+            if not (p.is_file() or (p / "index.html").is_file()):
+                dead.append(t)
+        if dead:
+            problems.append(f"產業總覽有 {len(dead)} 個產業連結開不到（例：{', '.join(dead[:3])}）")
+    return problems
+
+
 def check(out: Path) -> list[str]:
     problems: list[str] = []
     try:
@@ -71,7 +103,16 @@ def check(out: Path) -> list[str]:
                   "static/js/v2.js", "data/screener.json.gz"):
             if not (out / f).is_file():
                 problems.append(f"v2 缺少 {f}")
-        no_page = [s["code"] for s in stocks if not (out / "data" / "stock" / f"{s['code']}.json.gz").is_file()]
+        # 全市場模式：未收錄個股頁的股票標 page=false（殼頁顯示說明，不是 404），不要求有 JSON，但必須列在 manifest.nopage
+        no_page = [s["code"] for s in stocks if s.get("page", True) is not False
+                   and not (out / "data" / "stock" / f"{s['code']}.json.gz").is_file()]
+        try:
+            _np = json.loads((out / "manifest.json").read_text("utf-8")).get("nopage") or {}
+        except Exception:
+            _np = {}
+        unlisted = [s["code"] for s in stocks if s.get("page", True) is False and s["code"] not in _np]
+        if unlisted:
+            problems.append(f"搜尋清單有 {len(unlisted):,} 檔標未收錄個股頁、但 manifest.nopage 沒列（例：{', '.join(unlisted[:5])}）")
     else:
         no_page = [s["code"] for s in stocks if not (out / "stock" / s["code"] / "index.html").is_file()]
     if no_page:
@@ -79,10 +120,17 @@ def check(out: Path) -> list[str]:
     outside = [s["code"] for s in stocks if universe and s["code"] not in universe]
     if outside:
         problems.append(f"搜尋清單有 {len(outside):,} 檔不在追蹤範圍（例：{', '.join(outside[:5])}）")
+    problems += check_extra_pages(out, info)
     try:
         man = json.loads((out / "manifest.json").read_text("utf-8"))
         if v2:
             miss = [c for c in (man.get("stocks") or {}) if not (out / "data" / "stock" / f"{c}.json.gz").is_file()]
+            both = [c for c in (man.get("nopage") or {}) if c in (man.get("stocks") or {})]
+            if both:
+                problems.append(f"manifest 有 {len(both):,} 檔同時列在 stocks 與 nopage（例：{', '.join(both[:5])}）")
+            outside_np = [c for c in (man.get("nopage") or {}) if universe and c not in universe]
+            if outside_np:
+                problems.append(f"manifest.nopage 有 {len(outside_np):,} 檔不在追蹤範圍（例：{', '.join(outside_np[:5])}）")
             nomon = [m for m in man.get("months") or [] if not (out / "data" / "revenue" / f"{m}.json.gz").is_file()]
             if nomon:
                 problems.append(f"v2 manifest 列的月營收月份有 {len(nomon)} 個沒有資料檔（例：{', '.join(nomon[:3])}）")

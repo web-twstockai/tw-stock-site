@@ -2,7 +2,8 @@
 {% from "_macros.html" import status_badge, test_badge, dt, excl_summary %}
 {% block title %}資料狀態｜台股盤後研究{% endblock %}
 {% block content %}
-<h1>資料狀態</h1>
+<div class="page-head"><div><h1>資料狀態</h1><p class="ph-lead">各來源最近一次更新、資料覆蓋與排除統計。時間皆為台北時間。</p></div>
+  <dl class="ph-meta"><div><dt>資料日期</dt><dd data-date="{{ meta.data_date }}">{{ meta.data_date }}</dd></div><div><dt>更新</dt><dd>{{ meta.update_status }}</dd></div></dl></div>
 {%- set src_bad = (sources or [])|selectattr('status_code', 'equalto', 'source_down')|list -%}
 {%- set src_stale = [] -%}{%- for x in (sources or []) if x.stale == True %}{% set _ = src_stale.append(x) %}{% endfor -%}
 {%- set job_bad = [] -%}{%- for j in (jobs or []) if j.status in ('failed', 'partial') %}{% set _ = job_bad.append(j) %}{% endfor -%}

@@ -188,7 +188,12 @@ def build_daily_summary(src: DataSource) -> dict:
     sections.append({"id": "status", "title": "資料狀態", "facts": facts})
 
     narrative = build_narrative(src, res, dd, [r for r in (idx.get("TAIEX"), idx.get("TPEX")) if r])
-    return {"date": dd, "sections": sections, "universe_label": uni_label, "narrative": narrative, "is_test": test,
+    try:   # 首頁「目前為○○，不代表全市場」依實際追蹤範圍（全市場不顯示）
+        uni_all = src.universe_symbols() is None
+    except Exception:
+        uni_all = False
+    return {"date": dd, "sections": sections, "universe_label": uni_label, "universe_all": uni_all,
+            "narrative": narrative, "is_test": test,
             "disclaimer": "技術條件僅為篩選結果，非投資建議；只有技術訊號時不推論漲跌原因。"}
 
 

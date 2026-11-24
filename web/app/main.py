@@ -156,6 +156,33 @@ def screener(request: Request):
         adv_bool=ADVANCED_BOOL_PARAMS, qs=params_query(p), params_query=params_query))
 
 
+@app.get("/hub", response_class=HTMLResponse)
+def hub(request: Request):
+    """篩選中心（HUB_HANDOFF §1–§8）：模式判斷全部呼叫 analysis（app/hub.py）。"""
+    from . import hub as H
+    qs = request.query_params
+    mode = (qs.get("mode") or "").upper()
+    view = H.build(get_source(), mode if mode in H.MODE_IDS else None, qs.get("sort"))
+    return templates.TemplateResponse(request, "hub.html", ctx(request, nav="hub", hub=view))
+
+
+@app.get("/industry", response_class=HTMLResponse)
+def industry_index(request: Request):
+    from . import industry as I
+    return templates.TemplateResponse(request, "industry.html", ctx(request, nav="industry", ind=I.index(get_source()),
+                                                                      industry_mod=I))
+
+
+@app.get("/industry/{industry_id}", response_class=HTMLResponse)
+def industry_detail(request: Request, industry_id: str):
+    from . import industry as I
+    qs = request.query_params
+    view = I.detail(get_source(), industry_id, qs.get("sort"), qs.get("dir"))
+    status = 200 if view.get("industry") or view.get("error") else 404
+    return templates.TemplateResponse(request, "industry.html", ctx(request, nav="industry", ind=view, industry_mod=I,
+                                                                      industry_id=industry_id), status_code=status)
+
+
 SCREENER_PAGE_SIZE = 100
 
 

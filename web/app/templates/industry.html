@@ -1,0 +1,64 @@
+{% extends "base.html" %}
+{%- set ind = ind if ind is defined else {} -%}
+{%- set cur = ind.industry if ind.industry is defined else none -%}
+{% block title %}{% if cur %}{{ cur.name }}｜{% endif %}產業分類｜台股盤後研究{% endblock %}
+{%- macro n0(v) -%}{{ '{:,}'.format(v) }}{%- endmacro -%}
+{% block content %}
+<div class="indpg">
+{%- set scope = '' if ind.universe_all|default(true) else '（追蹤範圍：' ~ ind.universe_label|default('') ~ '）' %}
+{%- if industry_id is defined %}
+<nav class="crumb" aria-label="位置"><a href="/industry">產業分類</a> <span aria-hidden="true">›</span> <span aria-current="page">{{ cur.name if cur else industry_id }}</span></nav>
+{%- endif %}
+{%- macro head(title, lead) -%}
+<div class="page-head"><div><h1>{{ title }}</h1><p class="ph-lead">{{ lead }}</p></div>
+  <dl class="ph-meta"><div><dt>資料日期</dt><dd data-date="{{ meta.data_date }}">{{ meta.data_date }}</dd></div>
+  <div><dt>產業別對照</dt><dd>{{ ind.mapping_date if ind.mapping_date is defined and ind.mapping_date else '日期不明' }}</dd></div>
+  <div><dt>範圍</dt><dd>{{ '上市櫃普通股' if ind.universe_all|default(true) else ind.universe_label|default('—') }}</dd></div></dl></div>
+{%- endmacro -%}
+{% if ind.error is defined and ind.error %}
+{{ head('產業分類', '依官方產業類別瀏覽上市櫃普通股。') }}
+<div class="state st-fail" role="alert"><p><b>✕ 產業資料暫時無法讀取</b>：{{ ind.error }}</p><p><a href="/status">看資料狀態 →</a></p></div>
+{% elif industry_id is not defined %}
+{{ head('產業分類', '依官方產業類別瀏覽上市櫃普通股' ~ scope ~ '。這裡只是分類瀏覽，不是篩選條件。') }}
+<p class="ind-rule">官方產業類別（證券基本資料的產業別）；上市、上櫃同名的產業合併為一類。產業別依 {{ ind.mapping_date or '—' }} 的證券基本資料（目前只有這一份對照，沒有歷史生效區間）。</p>
+{%- if not ind.industries %}
+<div class="state st-nodata" role="status"><p class="st-big"><span class="pill pill-muted big">資料不足</span></p><p>資料庫的證券基本資料沒有產業別，無法分類。</p><p class="st-meta"><a href="/status">看資料狀態 →</a></p></div>
+{%- else %}
+<ul class="ind-grid">
+{%- for g in ind.industries %}
+  <li><a class="ind-tile{{ ' z' if not g.stock_count }}" href="/industry/{{ g.industry_id|urlencode }}"><span class="it-n">{{ g.name }}</span><span class="it-c"><b class="num">{{ n0(g.stock_count) }}</b> 檔</span><span class="it-m">{{ ('上市 ' ~ g.listed_count ~ '・上櫃 ' ~ g.otc_count) if g.stock_count else ('追蹤範圍內沒有股票' if not ind.universe_all else '目前沒有股票') }}</span></a></li>
+{%- endfor %}
+</ul>
+<p class="ind-total">共 <b class="num">{{ ind.industries|length }}</b> 個產業、<b class="num">{{ n0(ind.total) }}</b> 檔{{ scope }}。點產業看全部股票。{% if ind.missing_count %}其中 {{ n0(ind.missing_count) }} 檔的證券基本資料沒有產業別，列在「未分類」。{% endif %}</p>
+{%- endif %}
+{% elif not cur %}
+{{ head('產業分類', '依官方產業類別瀏覽上市櫃普通股。') }}
+<div class="state st-fail" role="alert"><p><b>✕ 找不到這個產業</b>（「{{ industry_id }}」）。</p><p><a href="/industry">回產業總覽 →</a></p></div>
+{% else %}
+{{ head(cur.name, '官方產業類別「' ~ cur.name ~ '」的全部上市櫃普通股' ~ scope ~ '（上市、上櫃同名合併）。') }}
+{%- if not ind.rows %}
+<div class="state st-zero" role="status" data-state="zero"><p class="st-big"><b class="num">0</b> 檔</p><p>{{ '追蹤範圍內沒有這個產業的股票。' if not ind.universe_all else '這個產業目前沒有上市櫃普通股。' }}</p><p class="st-meta"><a href="/industry">回產業總覽 →</a></p></div>
+{%- else %}
+{%- set c = ind.cols|selectattr(0, 'equalto', ind.sort)|first %}
+<div class="res-sum" role="note"><p class="sum-1"><span><b class="num">{{ n0(ind.rows|length) }}</b> 檔</span><span>上市 {{ ind.listed_count }}・上櫃 {{ ind.otc_count }}</span><span>排序：{{ c[1] }} {{ '↑ 由小到大' if ind.dir == 'asc' else '↓ 由大到小' }}</span></p>
+{%- if ind.na %}<p class="sum-2">! 另有 {{ ind.na|length }} 檔今日沒有收盤價（{% for r in ind.na %}{{ r.code }} {{ STATUS_LABELS.get(r.price_status, '資料不足') }}{{ '、' if not loop.last }}{% endfor %}），數值排序時一律排在最後。</p>{% endif %}
+{%- if ind.pct_note is defined and ind.pct_note %}<p class="sum-2">{{ ind.pct_note }}</p>{% endif %}</div>
+<p class="hint" aria-hidden="true">← 左右滑動看更多欄（代號固定）→</p>
+<div class="itbl" tabindex="0" role="region" aria-label="{{ cur.name }} 股票表（可左右捲動）"><table class="rt it"><caption class="sr">{{ cur.name }} 全部股票，可依欄位排序</caption>
+<thead><tr>
+{%- for col in ind.cols %}{% set on = ind.sort == col[0] %}
+<th scope="col" class="{{ 'r ' if col[2] }}{{ 'fx ' if col[0] == 'code' }}{{ 'sorted' if on }}" aria-sort="{{ ('ascending' if ind.dir == 'asc' else 'descending') if on else 'none' }}"><a class="sort-b" href="{{ industry_mod.sort_href(cur.industry_id, ind, col[0]) }}">{{ col[1] }}<span class="sort-ic" aria-hidden="true">{{ ('↑' if ind.dir == 'asc' else '↓') if on else '↕' }}</span><span class="sr">（{{ ('由小到大' if ind.dir == 'asc' else '由大到小') if on else '未排序' }}，按一下切換）</span></a></th>
+{%- endfor %}
+</tr></thead>
+<tbody>
+{%- for r in ind.rows %}
+<tr{% if r.price_status != 'ok' %} class="row-na"{% endif %}><th scope="row" class="fx"><a class="cd" href="/stock/{{ r.code }}">{{ r.code }}</a></th><td class="nmc"><a class="nm" href="/stock/{{ r.code }}" title="{{ r.name }}">{{ r.name }}</a></td><td>{{ r.market }}</td>
+{%- if r.price_status != 'ok' %}<td class="r nc" colspan="4" data-state="{{ r.price_status }}"><span class="pill pill-muted">{{ STATUS_LABELS.get(r.price_status, '資料不足') }}</span> {{ r.reason }}</td>
+{%- else %}<td class="r">{{ val(r.close) }}</td><td class="r">{{ chg(r.change) }}</td><td class="r">{{ chg(r.change_pct) }}</td><td class="r">{{ val(r.amount) }}</td>{% endif %}</tr>
+{%- endfor %}
+</tbody></table></div>
+<p class="tbl-foot">點代號或名稱進入個股研究。收盤、漲跌（元）、成交金額為證交所／櫃買中心原值；漲跌幅由分析引擎計算（引擎排除的股票顯示資料不足，本站不自算）。漲跌以 ▲／▼／■ 加正負號與顏色表示（紅漲綠跌）。</p>
+{%- endif %}
+{% endif %}
+</div>
+{% endblock %}
