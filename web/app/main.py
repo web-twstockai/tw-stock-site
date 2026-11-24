@@ -24,9 +24,36 @@ from .screening import (SORT_KEYS, analysis_defaults, exclusion_label, exclusion
                         run_screen)
 
 BASE = Path(__file__).resolve().parent
-app = FastAPI(title="台股盤後研究", docs_url=None, redoc_url=None)
+from contextlib import asynccontextmanager  # noqa: E402
+
+
+@asynccontextmanager
+async def _lifespan(_app):
+    _warm_hub()
+    yield
+
+
+app = FastAPI(title="台股盤後研究", docs_url=None, redoc_url=None, lifespan=_lifespan)
 app.mount("/static", StaticFiles(directory=BASE / "static"), name="static")
 templates = Jinja2Templates(directory=BASE / "templates")
+
+
+def _warm_hub() -> None:
+    """伺服器啟動後在背景先算篩選中心 M1～M21（含 analysis/modes.py 全市場約 1 分鐘），請求不用等第一次計算。
+    TWSITE_MODES_WARM=0 關閉；測試資料、靜態匯出不預熱。"""
+    if os.environ.get("TWSITE_MODES_WARM", "1") == "0" or os.environ.get("TWSITE_STATIC_EXPORT") == "1":
+        return
+    import threading
+
+    def run():
+        try:
+            src = get_source()
+            if not src.is_test:
+                from . import hub as H
+                H._core(src)
+        except Exception:
+            pass   # 預熱失敗不影響服務；請求時照常計算並顯示錯誤狀態
+    threading.Thread(target=run, name="hub-warm", daemon=True).start()
 
 
 def fmt_num(v, digits=2):
@@ -369,6 +396,15 @@ def stock_screen_status(src, code: str):
     return None
 
 
+def stock_modes(src, code: str) -> dict:
+    """「今天符合的模式」：與篩選中心同一份計算（hub._core 快取）；失敗時回 error 狀態，不讓個股頁壞掉。"""
+    from . import hub as H
+    try:
+        return H.today_modes(src, code)
+    except Exception as e:
+        return dict(state="error", hits=[], insufficient=0, as_of="—", error=f"{type(e).__name__}：{e}")
+
+
 def stock_params(qs) -> tuple:
     """個股頁查詢參數 → (period, scope, basis, cat, price_mode)（不認得的值回預設）。"""
     period = "annual" if qs.get("period") == "annual" else "quarter"
@@ -439,6 +475,7 @@ def stock_context(src, code: str, qs, parts=("quote", "fin", "events", "rev", "s
         out["basis"], out["fin"] = stock_fin(src, code, period, scope, basis, "basis" in qs)
     if "screen" in parts:
         out["screen_status"] = stock_screen_status(src, code)
+        out["stock_modes"] = stock_modes(src, code)
     if "rev" in parts:
         out["rev"] = src.monthly_revenue(code, 24)
     if "events" in parts:

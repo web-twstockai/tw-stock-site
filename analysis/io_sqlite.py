@@ -22,7 +22,7 @@ import pandas as pd
 import adjust as A
 
 __all__ = ["tracked_members", "ScreenInputs", "connect_readonly", "default_as_of", "load_screen_inputs", "load_coverage", "load_coverage_scoped",
-           "load_halts", "load_symbol_inputs", "max_fetched_at",
+           "load_halts", "load_symbol_inputs", "max_fetched_at", "ModeInputs", "load_mode_inputs", "load_income_statements",
            "COVERAGE_TABLE", "HALTS_TABLE", "COVERAGE_SCOPES"]
 
 # 覆蓋起日表（負責人 2026-11-10 決定欄位為 market, action_kind, coverage_start；由資料工程建立）
@@ -374,3 +374,49 @@ def load_symbol_inputs(db_path: str | Path, symbol: str, as_of: Optional[str] = 
                              coverage_scope=coverage_scope)
     return dict(prices=inp.prices, actions=inp.actions, calendar=inp.calendar, symbol=str(symbol),
                 as_of=inp.as_of, actions_coverage=inp.actions_coverage, securities=inp.securities)
+
+
+# ---- 篩選中心模式 M9～M21（analysis-0.10.0；modes.evaluate_modes）----
+_INCOME_SQL = ("SELECT symbol, market, fiscal_year, fiscal_quarter, industry_form, report_basis, period_type, eps_twd, "
+               "source, fetched_at, is_current FROM income_statements "
+               "WHERE is_current = 1 AND period_type = '累計' AND report_basis = '合併'")
+
+
+def load_income_statements(db_path: str | Path, symbols: Optional[Iterable[str]] = None) -> Optional[pd.DataFrame]:
+    """唯讀讀 income_statements 現行列（只取 period_type=累計、report_basis=合併）；表不存在回 None。"""
+    from contextlib import closing
+    with closing(connect_readonly(db_path)) as con:
+        if not _table_exists(con, "income_statements"):
+            return None
+        sql, args = _INCOME_SQL, []
+        if symbols is not None:
+            syms = [str(x) for x in symbols]
+            sql += f" AND symbol IN ({','.join('?' * len(syms))})"
+            args = syms
+        return pd.read_sql_query(sql + " ORDER BY symbol, fiscal_year, fiscal_quarter", con, params=args)
+
+
+@dataclass(frozen=True)
+class ModeInputs:
+    screen_inputs: ScreenInputs
+    revenues: Optional[pd.DataFrame]
+    income_statements: Optional[pd.DataFrame]
+
+    def mode_kwargs(self) -> dict[str, Any]:
+        """直接展開給 modes.evaluate_modes()。"""
+        return dict(**self.screen_inputs.screen_kwargs(), revenues=self.revenues, income_statements=self.income_statements)
+
+
+def load_mode_inputs(db_path: str | Path, as_of: Optional[str] = None, symbols: Optional[Iterable[str]] = None,
+                     lookback_trade_days: int = 300, coverage_scope: str = "all") -> ModeInputs:
+    """modes.evaluate_modes() 的輸入：行情等同 load_screen_inputs（預設往前 300 個交易日，足夠完整版 250 日＋缺口），
+    另讀 monthly_revenues 與 income_statements 現行列（唯讀）。"""
+    import revenue as _RV
+    si = load_screen_inputs(db_path, as_of=as_of, symbols=symbols, lookback_trade_days=lookback_trade_days,
+                            coverage_scope=coverage_scope)
+    syms = None if symbols is None else [str(x) for x in symbols]
+    from contextlib import closing
+    with closing(connect_readonly(db_path)) as con:
+        has_rev = _table_exists(con, "monthly_revenues")
+    rv = _RV.load_monthly_revenues(db_path, syms) if has_rev else None
+    return ModeInputs(screen_inputs=si, revenues=rv, income_statements=load_income_statements(db_path, syms))

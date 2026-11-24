@@ -26,6 +26,12 @@ def init_db(conn: sqlite3.Connection) -> None:
     conn.executescript(sql)
     conn.commit()
     migrate(conn)
+    # 2026-11-24：籌碼資料表（三大法人／融資融券／集保股權分散＋抓取狀態、覆蓋表；pipeline/chips_schema.sql）。
+    # CREATE ... IF NOT EXISTS，可重跑、不動既有表、不重新版本化任何既有列
+    chips_sql = Path(__file__).resolve().parent / "chips_schema.sql"
+    if chips_sql.exists():
+        conn.executescript(chips_sql.read_text(encoding="utf-8"))
+        conn.commit()
 
 
 def _cols(conn: sqlite3.Connection, table: str) -> set[str]:

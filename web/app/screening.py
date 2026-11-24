@@ -84,8 +84,10 @@ def _mod():
 
 def clear_cache() -> None:
     _CACHE.clear()
-    from . import analysis_hooks
+    from . import analysis_hooks, hub, modes_hub
     analysis_hooks._FRAME_CACHE.clear()
+    hub.clear_cache()            # 篩選中心 M1～M21 計算結果
+    modes_hub.clear_cache()      # analysis/modes.py evaluate_modes() 結果與登記表
 
 
 # EXCL_SUSPENDED（確認停牌）是事實不是資料缺漏 → 不算覆蓋不足（第六批負責人決定）

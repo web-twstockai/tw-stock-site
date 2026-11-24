@@ -50,6 +50,20 @@
     {% if screen_status.extra is defined and screen_status.extra %}<br><small class="muted" data-testid="screen-extra">{% for e in screen_status.extra %}<span data-extra="{{ e.key }}" data-state="{{ e.state }}"{% if e.title %} title="{{ e.title }}"{% endif %}>{{ e.label }}：{{ e.text }}</span>{% if not loop.last %}；{% endif %}{% endfor %}</small>{% endif %}
     <a href="/screener#exclusion-stats">選股頁 →</a></p>
   {% endif %}
+  {%- if stock_modes is defined and stock_modes %}{% set sm = stock_modes %}
+  <div class="stock-modes" data-testid="stock-modes" data-state="{{ sm.state }}">
+    <p class="sm-h">今天符合的模式{% if sm.as_of and sm.as_of != '—' %}<small class="muted">（{{ sm.as_of }}，篩選中心同一份計算）</small>{% endif %}</p>
+    {%- if sm.state == 'error' %}
+    <p class="sm-none">篩選模式暫時無法計算{% if sm.error is defined and sm.error %}<small class="muted">（{{ sm.error }}）</small>{% endif %}。這不是「沒有符合」。</p>
+    {%- elif sm.hits %}
+    <ul class="sm-list">{% for x in sm.hits %}<li><a href="/hub?mode={{ x.id }}#results" data-mode="{{ x.id }}"><span class="mcode">{{ x.id }}</span> {{ x.name }}</a> <span class="tier {{ x.tier_class }}"><span class="sr">等級：</span>{{ x.tier }}</span></li>{% endfor %}</ul>
+    {%- else %}
+    <p class="sm-none">今天沒有符合的篩選模式。</p>
+    {%- endif %}
+    {%- if sm.insufficient %}<p class="sm-lack"><small class="muted">另有 {{ sm.insufficient }} 個模式今日資料不足（可評估比例未達 95%）或無法計算，未列入判斷。</small></p>{% endif %}
+    <p class="sm-foot"><small class="muted">符合模式只代表今天的條件判斷，不代表優劣；歷史統計，不代表未來，非投資建議。<a href="/hub">篩選中心 →</a></small></p>
+  </div>
+  {%- endif %}
   {% if ph.change_mismatch %}
   <details class="mismatch-list" data-testid="change-mismatch" open>
     <summary>{{ check_labels['mismatch'] }}：近 {{ ph.rows|length }} 個交易日中 {{ ph.change_mismatch|length }} 日（漲跌幅仍為自算正式值，僅標記、不修正）</summary>

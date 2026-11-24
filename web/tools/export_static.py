@@ -43,7 +43,7 @@ SCREENER_SORTS = ("code", "change_pct", "turnover", "vol_ratio", "close")
 STOCK_GROUPS = {"price": ("price",), "fin": ("period", "scope", "basis"), "cat": ("cat",)}
 # 篩選中心／產業頁（app/hub.py、app/industry.py）：靜態版收錄的網址。其他模式（M5、M8）與產業頁的排序連結不匯出，
 # 改寫時拿掉連結（data-static-off，不可點、不是死連結）。
-HUB_MODES = ("M1", "M2", "M3", "M4", "M6", "M7")
+HUB_MODES = ("M1", "M2", "M3", "M4", "M6", "M7") + tuple(f"M{i}" for i in range(9, 22))   # M5、M8 不可點（尚未提供）
 HUB_PAGES = ("/hub",) + tuple(f"/hub?mode={m}" for m in HUB_MODES) + ("/hub?mode=M2&sort=trade_value",)
 INDUSTRY_RE = re.compile(r"/industry/[^/]+")
 

@@ -1,11 +1,12 @@
 # 研究分析模組呼叫方式（給網站工程）
 
-**版本：`analysis-0.9.2`**（`analysis/version.py` 的 `ANALYSIS_VERSION`，寫入 `screen_results.analysis_version`）。每批程式變更完成後版本號加一，並同步更新本檔；`tests/test_usage_doc.py` 檢查本檔的版本號、排除代碼與覆蓋類別是否與程式常數一致。
+**版本：`analysis-0.10.0`**（`analysis/version.py` 的 `ANALYSIS_VERSION`，寫入 `screen_results.analysis_version`）。每批程式變更完成後版本號加一，並同步更新本檔；`tests/test_usage_doc.py` 檢查本檔的版本號、排除代碼與覆蓋類別是否與程式常數一致。
 
 ### 變更紀錄
 
 | 版本 | 日期 | 變更 |
 |---|---|---|
+| analysis-0.10.0 | 2026-11-24 | **篩選中心新增模式 M9～M21＋單一登記表（專案負責人核可 2026-11-24 16:05，暫定分級；docs/indicators.md §12）**：新增 `modes.py`：`evaluate_modes()`（M9 站上季線、M10 營收創高＋站上季線、M11 營收年增加速、M12 短期超跌、M13 接近 120 日高點、M14 趨勢樣板（Minervini 縮短版）、M15 RSI(2) 多頭回檔、M16 多頭回檔月線、M17 均線糾結突破、M18 創 120 日新高、M19 CANSLIM 簡化、M20 三白兵、M21 月線上穿季線），每檔每模式 PASS／FAIL／EXCLUDED＋中文符合／未符合理由＋逐條件明細；排除沿用 screen() 代碼與 NOT_EVALUABLE_CODES、`coverage_stats()` 同 screener；月營收／財報取評估日已過法定期限的最新月份／季度，缺資料記 `REV_*`／`FIN_*`（不回退舊資料）；`REGISTRY`／`registry()`／`analysis/mode_registry.json`（M1～M21 的 id、中文名、一句話說明、條件、參數、完整版參數、暫定等級、勝率顯示「計算中」）；`eps_quarter_state()`（單季 EPS，M5／M8 可用）；`io_sqlite.load_mode_inputs()`／`load_income_statements()`。M1～M8 規則不變，只改登記表上的等級標示。研究稿 docs/rd/SCREEN_MODES_v2.md 新增第 9 節「預先登記」。 |
 | analysis-0.9.2 | 2026-11-24 | **無法評估與 95% 覆蓋率分母（專案負責人轉達 H AO 核可 2026-11-24 13:32；docs/indicators.md §8.7）**：沒成交與停止買賣的股票個別標「無法評估」，不算資料不齊，自 95% 分母移除；篩選門檻與條件不變（視窗合計缺口仍與 `max_gap_days` 比較，無完整視窗仍不能符合）。新增 `EXCL_WINDOW_NO_TRADE`（視窗內官方無成交日單獨已超過門檻）、`EXCL_WINDOW_SUSPENDED`（視窗內確認停牌或減資／變更面額停止買賣日單獨已超過門檻）；`EXCL_WINDOW_GAPS` 改為真正缺資料或資料錯誤（官方有行情但本庫無列／資料錯誤，或與官方事實合計才超過但官方事實單獨未超過）。`NOT_EVALUABLE_CODES`＝`EXCL_NEW_LISTING`、`EXCL_SUSPENDED`、`EXCL_NO_TRADE`、`EXCL_WINDOW_NO_TRADE`、`EXCL_WINDOW_SUSPENDED`；`coverage_stats(summary)`／`ScreenResult.coverage_stats()` 給出分母＝母體−無法評估、可評估比例。停止買賣日取自 `corporate_actions.announced_at_note`「停止買賣日=YYYY-MM-DD」（上櫃 bulletin）；若只有恢復買賣日（上市 TWTAUU 註明 action_date＝恢復買賣日），則由恢復日前連續無列日推定，最多 15 日（`adjust.corp_suspension_dates`）。評估日無列且落在該期間 → `EXCL_SUSPENDED`。`io_sqlite` 補讀窗口外的減資／變更面額事件（恢復日可能晚於 as_of）。`verify_independent` 獨立實作。測試：`tests/test_coverage_denominator.py`。網站分母與標示須同步（本版不改 `web/`，見該測試檔與文件說明）。 |
 | analysis-0.9.1 | 2026-11-17 | **停牌規則（負責人 2026-11-17 18:31 核可；docs/indicators.md「停牌規則」）**：停牌從停牌日開始算；有官方恢復日停到恢復日前一天；沒有恢復日時停到停牌日之後第一個有官方成交列（有收盤價且成交量 > 0 的交易日）的前一天（標「依成交推定」）；之後一直沒有成交視為仍停牌。只用評估日（含）以前的資料，不前視。新增 `adjust.resolve_halts`／`HaltSpan`／`halt_span_on`／`halt_note`、`HALT_SOURCES`（官方恢復日／依成交推定／仍停牌）；`normalize_halts` 回傳 3 欄（多 `trade_resume_date`）；`io_sqlite.load_halts` 在資料庫端算 `trade_resume_date`（停牌日後、評估日以前第一個成交日，只在 resume_date 為 NULL 時）；EXCL_SUSPENDED 明細與 `data_note`（「停牌紀錄：…」）寫明恢復日與來源；`window_halt_days` 依新規則計算；`verify_independent` 獨立實作。screen_results 不加欄（來源寫在 data_note）。**全市場摘要（narrative.py）**：改為「{範圍} N 檔／實際完成條件評估 M 檔／符合 K 檔／未納入評估 X 檔（完成評估但未符合 F 檔）」，排除原因依 `narrative.EXCLUSION_GROUPS` 以中文分類列檔數；`ScreenResult.lagging_symbols`（新欄位，screener 依 AS_OF_RULE 第 4 點計算）非空時加註「最新行情列早於評估日，不能據此判斷當日是否交易」；`volume_basis_status` 非 ok 時加註研究試算、不作正式結果；新增參數 `scope_label`（預設「全市場」，只評估追蹤清單時請傳「追蹤範圍」）。零結果改寫「今日 0 檔符合全部已啟用條件；不放寬條件找替代股。」。測試：新增 `tests/test_halt_rule.py`、`tests/test_narrative_fullmarket.py`。**重做（負責人 2026-11-17 19:41 核可；舊版 patch 改名 analysis_0.9.1_v1.patch 作備援）**：①**停牌 insufficient 規則**：只有推定區間（無官方恢復日的「依成交推定／仍停牌」）內、停牌日之後到評估日為止「整個市場都缺行情」的交易日（該市場當日 `daily_prices` 現行列數 < `adjust.FULL_MARKET_MIN_ROWS`＝100，與管線 `halt_fix.FULL_MARKET_MIN_ROWS` 同值），本股又沒有資料列時不算停牌，改計 `window_missing_days`；評估日遇到則為 `EXCL_NO_ROW_SUSPENDED_OR_MISSING`。停牌日當天仍算停牌；全市場有資料、只是本股沒有列仍照原規則算停牌；本股有（無成交）列仍算停牌。`data_note` 來源多一種「資料不足（insufficient）」（`adjust.HALT_SRC_INSUFFICIENT`），寫明缺行情日數與起訖。不用管線的 `resume_date_inferred` 判定；`trading_halts` 有 `resume_basis`／`resume_date_inferred` 欄時只寫進 `data_note`「管線交叉檢查：…」。`HaltSpan` 多 `n_holes`／`hole_first`／`hole_last`／`holes`；`normalize_halts` 回傳 7 欄；`resolve_halts` 多 `trade_days`／`is_hole`；`halt_span_on`／`is_halt_day` 多 `has_row`；`market_days` 多 `n_rows` 欄（無此欄時 market_days 內的日子都視為全市場有資料＝舊行為）。②**覆蓋表 scope**：`load_screen_inputs`／`load_symbol_inputs` 新參數 `coverage_scope`（`"all"` 預設＝全市場評估，只接受 scope＝all；`"tracked"`＝追蹤清單，接受 sample30 或 all，必須同時給 symbols）。資料庫沒有 scope 欄時維持現狀。不接受的列視為無覆蓋，走原 strict 排除碼（`EXCL_ADJ_COVERAGE_GAP`）。採用的範圍寫在 `ScreenInputs.coverage_scope_note`／`ScreenResult.coverage_scope_note` 與覆蓋有問題各列的 `data_note`。追蹤清單以 `universe_members`（universe_id＝sample30；管線 3b_fix1 定義的權威鏡像）核對，表不存在時保守只認 all；同一區間多個 scope 列（fix1 主鍵含 scope）正確處理，unknown／subset／all_pending_ratio 都不算完整。新增 `io_sqlite.load_coverage_scoped`、`tracked_members`、`COVERAGE_SCOPES`。測試：新增 `tests/test_halt_insufficient.py`、`tests/test_coverage_scope.py`。選股條件與門檻不變 |
 | analysis-0.9.0 | 2026-11-17 | **量額口徑（docs/indicators.md §9，負責人 2026-11-17 16:09 核可，方案 A）**：選股採總量 `volume_basis=incl_block`（兩市場都含鉅額，但組成不完全一致；上櫃是否含盤後定價、零股場次待查證）；`io_sqlite` 只讀 `daily_prices.volume_basis`，不讀 `block_*`；新排除碼 `EXCL_VOLUME_BASIS`——5a 評估日口徑非 `incl_block`（C3 或 C4 啟用時）、9a 均量窗口（評估日前 `volume_lookback` 個有效交易日）任一日非 `incl_block`（C3 啟用時）；summary 新增 `volume_basis`、`window_volume_basis_days`；輸入缺 `volume_basis` 欄時研究照算、`ScreenResult.volume_basis_status`／`ScreenInputs.volume_basis_status`＝`volume_basis_column_missing`，`writer.write_screen_results` 拒寫；`ohlc_series` bars 新增 `volume_basis`（只作標示）；`verify_independent` 獨立實作同一規則。**無成交三項（DECISIONS 2026-11-10 12:05 核可，原 pending 無成交 patch 併入）**：**DECISIONS 2026-11-10 12:05 核可三項**：① 有收盤價但成交量 NULL 的列一律為資料錯誤——評估日 `EXCL_BAD_DATA`；視窗內計入缺口合計（門檻口徑不變），另拆成新欄 `window_bad_data_days`，缺口未超過門檻時 `EXCL_BAD_DATA`（過去算成 `window_no_trade_days`）；`ma_series`／`ohlc_series` 該日仍為 `no_trade`，另標 `unavailable_code=EXCL_BAD_DATA`。② 前一交易日有列但整股無成交時，`change_check` 改為新狀態 `after_no_trade`（不算 mismatch）：來源 X 或 `change_note=無比價` 顯示「無比價」；有官方參考價（選用欄 `daily_prices.next_ref_price_twd`，TPEx 次日參考價）時以「收盤−參考價」比對，超過容許值才標 `mismatch`；無參考價則不比對。自算漲跌幅與基準不變。③ `is_no_trade` 只做交叉檢查，寫入新說明欄 `data_note`，不改結果碼。`writer` 寫入前檢查 `screen_results.change_check` 的 CHECK，未允許 `after_no_trade` 時整批不寫並報錯；`tables_draft.md` 新增 `window_bad_data_days`、`data_note` 並擴充 CHECK（需資料工程遷移）。`verify_independent` 同步。選股條件與門檻不變。測試：合成行情補 `volume_basis=incl_block`（fixture 重產，其他欄不變）、新增 `tests/test_volume_basis.py`。選股條件與門檻不變 |
@@ -34,7 +35,9 @@ Python 環境：`analysis/.venv`（Python 3.13.5；版本鎖定於 `analysis/req
 | `series.py` | 個股圖：`ma_series()`（還原收盤與 MA20／MA60）、`change_series()`（逐日漲跌幅）、`ohlc_series()`（K 線前復權 OHLC＋除權息清單） |
 | `explain.py` | 選股條件白話說明 `condition_explanations()`／`common_explanation()` |
 | `narrative.py` | 規則模板摘要 `summary_narrative()` → 文字＋facts_json |
-| `io_sqlite.py` | 唯讀 SQLite 讀取層 |
+| `io_sqlite.py` | 唯讀 SQLite 讀取層（含 `load_mode_inputs()`） |
+| `modes.py` | 篩選中心模式 M9～M21 `evaluate_modes()` 與 M1～M21 登記表（`mode_registry.json`）；見第 9 節 |
+| `mode_registry.json` | 登記表檔案版（由 `python modes.py --write-registry` 產生，測試檢查與程式一致；網站讀這份） |
 
 ## 1. 最短用法
 
@@ -325,3 +328,39 @@ cd /workspace/tw-stock-site/analysis && .venv/bin/python -m pytest tests -q
 ```
 `tests/test_writer.py` 只用暫存 SQLite 測寫入（絕不寫 data/twstock.db）。`tests/test_usage_doc.py` 檢查本檔版本號、排除代碼、覆蓋類別與程式常數一致；改程式時請同步更新本檔與 `version.py`。
 測試全部使用 `tests/` 下的測試用合成資料（代號 TEST*），不可匯入正式資料庫或網站正式頁面；`screen_results` 草案以 CHECK 擋下 TEST 開頭代號。
+
+## 9. 篩選中心模式 M9～M21（`modes.py`，analysis-0.10.0；docs/indicators.md §12）
+
+專案負責人核可 2026-11-24 16:05，**暫定分級**。規則定義見 docs/indicators.md 第 12 節，研究依據見 docs/rd/SCREEN_MODES_v2.md（含第 9 節「預先登記」）。
+
+```python
+import sys; sys.path.insert(0, "/workspace/tw-stock-site/analysis")
+import io_sqlite, modes
+
+mi = io_sqlite.load_mode_inputs(DB, as_of="2026-11-23")          # 行情往前 300 個交易日＋monthly_revenues＋income_statements（唯讀）
+r = modes.evaluate_modes(**mi.mode_kwargs())                      # 預設 M9～M21、variant="short"（目前上線版本）
+# 已經跑過同一 as_of 的 screen()（預設參數＝M1）時可傳 screen_result=… 省掉約 12 秒；參數不是預設會拋 ValueError
+r.selected("M18")          # 符合（PASS）的股票；0 檔就是空表，顯示「0 檔」，不要放寬
+r.mode_summary("M18")      # 該模式每檔一列：status PASS／FAIL／EXCLUDED、exclusion_code、exclusion_reason、reason_zh、metric
+r.conditions               # 每檔 × 每條件：condition_id、condition_name、actual_text、threshold_text、passed
+r.coverage_stats("M18")    # 與 screener.coverage_stats 相同口徑（NOT_EVALUABLE_CODES 不入分母，網站以 95% 判斷「資料不足」）
+r.counts()                 # {mode_id: PASS 檔數}
+modes.registry()           # 登記表（dict）；檔案版 analysis/mode_registry.json
+```
+
+- `summary` 欄位：`mode_id, symbol, name, market, price_date, status, exclusion_code, exclusion_reason, reason_zh, metric, close_twd, amount_twd, variant`。
+  `reason_zh`：PASS 為「符合：條件（實際值，門檻 …）；…」，FAIL 為「未符合：」只列沒過的條件；EXCLUDED 看 `exclusion_reason`。
+  `metric`：登記表 `metric.key` 指的排序指標（原始比例；顯示時乘 `metric.scale`），只供排序，不代表優劣。
+- 排除碼：screen() 的 `EXCL_*`（同第 5 節）、`revenue.REASON_CODES` 的 `REV_*`、`modes.FIN_CODES` 的 `FIN_*`；全部中文在 `modes.MODE_EXCLUSION_CODES`。
+  模式需要的有效交易日比 screen 多（M13、M14、M18、M19 約 120～140 日）時：上市日在視窗內記 `EXCL_NEW_LISTING`（不入分母），否則 `EXCL_INSUFFICIENT_HISTORY`；
+  前復權可用範圍不夠長記該範圍的原因碼（例如 `EXCL_ADJ_FACTOR_MISSING`）。
+- 營收／財報：評估日已過法定期限的最新月份（次月 10 日）／季度（5/15、8/14、11/14、次年 3/31）；該檔沒有那一期資料就是資料不足（`REV_CURRENT_MISSING`、`FIN_CURRENT_MISSING` 等），**不會改用更舊的月份或季度**。
+- 橫斷面排名（M12、M14、M19）在「本次評估範圍內當日可評估的股票」之間計算：網站應以全市場（`symbols=None`、`coverage_scope="all"`）計算；只評估追蹤清單時排名意義不同，須標示。
+- `variant="full"`：用登記表 `full_params`（M13、M14、M15、M18、M19 的完整版，需 200～251 個有效交易日）；3 年回補前大多是歷史不足，上線版本以登記表 `active_variant` 為準（目前全部 `short`）。
+- 勝率：本模組不算勝率；網站一律顯示登記表 `win_rate.display`（「計算中」；M5、M8 為「樣本不足」），回補重算後才更新。不要顯示研究稿的初步數字。
+- 效能：2026-11-23 唯讀快照全市場 1,956 檔約 58 秒、峰值約 0.7 GB（screen 約 12 秒＋每檔 ohlc_series）；網站應每個 as_of 算一次後快取，不要在請求中即時算。
+- 登記表欄位：`id, tier, tier_prev, name, desc, conditions, research_id, engine, params, full_params, active_variant, history_days, full_history_days, data, metric{key,label,digits,scale}, win_rate{display,note}, cross_sectional, state(existing／production), note`；
+  頂層另有 `registry_version, analysis_version, tier_basis, tiers, winrate_display, winrate_note, disclaimer, sort_note, cross_sectional_note`。
+  M1～M8 的 `state=existing`：規則仍由 screener／revenue（網站 hub）計算，登記表只提供名稱、說明與新的暫定等級（`tier_prev`＝原等級）。
+- 測試：`tests/test_modes.py`（合成資料 `tests/modes_synthetic.py`，代號 TESTM*／TESTF*；含與研究腳本 `research/screen_modes_v2/` 在抽樣日 PASS 名單一致）。
+  真實快照比對：`python research/screen_modes_v2/j_equality.py research …` → `… compare …`，報告在 `docs/rd/screen_modes_v2/equality.txt`。

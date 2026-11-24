@@ -1,0 +1,921 @@
+{
+ "registry_version": "hub-modes-v1",
+ "analysis_version": "analysis-0.10.0",
+ "tier_basis": "暫定分級（專案負責人核可 2026-11-24 16:05）：依每日符合檔數（中位數）與 2026-05-27～2026-11-16 的 5 日歷史統計（docs/rd/SCREEN_MODES_v2.md）；3 年回補後依同檔「預先登記」規則重算再定。等級只是標示，不代表保證或較準。",
+ "tiers": [
+  {
+   "name": "基本",
+   "rule": "每日中位符合檔數約 75 檔以上"
+  },
+  {
+   "name": "進階",
+   "rule": "其餘通過篩選的模式"
+  },
+  {
+   "name": "高級",
+   "rule": "每日中位 15 檔以下，且研究期間 5 日勝率顯著高於同日基準"
+  }
+ ],
+ "winrate_display": "計算中",
+ "winrate_note": "歷史勝率待 3 年行情回補後依 docs/indicators.md §11 重算；初步研究數字不對外顯示。",
+ "disclaimer": "歷史統計，不代表未來，非投資建議",
+ "sort_note": "排序僅為排列方式，不代表優劣。",
+ "cross_sectional_note": "排名在本次評估範圍內計算；評估範圍不是全市場時，排名意義不同。",
+ "modes": [
+  {
+   "id": "M1",
+   "tier": "進階",
+   "tier_prev": "基本",
+   "name": "趨勢＋突破＋量能",
+   "desc": "網站預設的四個條件同時成立",
+   "conditions": [
+    "收盤 > MA20 > MA60",
+    "收盤 > 前 20 個交易日最高價（不含當日）",
+    "成交量 ≥ 前 20 日均量 × 1.5（不含當日）",
+    "成交金額 ≥ 1 億元"
+   ],
+   "research_id": null,
+   "engine": "analysis/screener.py screen()（預設參數）",
+   "params": {},
+   "full_params": null,
+   "active_variant": "short",
+   "history_days": 60,
+   "full_history_days": null,
+   "data": [
+    "daily_prices",
+    "corporate_actions",
+    "trading_calendar",
+    "securities"
+   ],
+   "metric": {
+    "key": "volume_ratio",
+    "label": "量比（倍）",
+    "digits": 2,
+    "scale": 1
+   },
+   "win_rate": {
+    "display": "計算中",
+    "note": "歷史勝率待 3 年行情回補後依 docs/indicators.md §11 重算；初步研究數字不對外顯示。"
+   },
+   "cross_sectional": false,
+   "state": "existing",
+   "note": "這段研究期間相對基準沒有優勢；規則不變"
+  },
+  {
+   "id": "M2",
+   "tier": "基本",
+   "tier_prev": "基本",
+   "name": "均線多頭排列",
+   "desc": "股價在 5、20、60 日均線之上且均線由短到長依序排列",
+   "conditions": [
+    "收盤 > MA5 > MA20 > MA60",
+    "成交金額 ≥ 1 億元"
+   ],
+   "research_id": null,
+   "engine": "analysis/screener.py screen() 兩次（web/app/hub.py）",
+   "params": {},
+   "full_params": null,
+   "active_variant": "short",
+   "history_days": 60,
+   "full_history_days": null,
+   "data": [
+    "daily_prices",
+    "corporate_actions",
+    "trading_calendar",
+    "securities"
+   ],
+   "metric": {
+    "key": "dist_ma60",
+    "label": "收盤距 60 日均線（%）",
+    "digits": 2,
+    "scale": 100
+   },
+   "win_rate": {
+    "display": "計算中",
+    "note": "歷史勝率待 3 年行情回補後依 docs/indicators.md §11 重算；初步研究數字不對外顯示。"
+   },
+   "cross_sectional": false,
+   "state": "existing",
+   "note": ""
+  },
+  {
+   "id": "M3",
+   "tier": "基本",
+   "tier_prev": "基本",
+   "name": "月營收創 12 個月新高",
+   "desc": "最新可得月營收比前 12 個月都高",
+   "conditions": [
+    "最新可得月份營收嚴格大於前 12 個月最高（rev_12m_high-v1）"
+   ],
+   "research_id": null,
+   "engine": "analysis/revenue.py evaluate_revenue()",
+   "params": {},
+   "full_params": null,
+   "active_variant": "short",
+   "history_days": 60,
+   "full_history_days": null,
+   "data": [
+    "monthly_revenues"
+   ],
+   "metric": {
+    "key": "yoy",
+    "label": "月營收年增率（%）",
+    "digits": 2,
+    "scale": 100
+   },
+   "win_rate": {
+    "display": "計算中",
+    "note": "歷史勝率待 3 年行情回補後依 docs/indicators.md §11 重算；初步研究數字不對外顯示。"
+   },
+   "cross_sectional": false,
+   "state": "existing",
+   "note": ""
+  },
+  {
+   "id": "M4",
+   "tier": "基本",
+   "tier_prev": "進階",
+   "name": "營收連續 3 個月年增",
+   "desc": "最近 3 個月營收都比去年同月高",
+   "conditions": [
+    "最近可得連續 3 個月年增率都 > 0（rev_yoy-v1）"
+   ],
+   "research_id": null,
+   "engine": "analysis/revenue.py evaluate_revenue()",
+   "params": {},
+   "full_params": null,
+   "active_variant": "short",
+   "history_days": 60,
+   "full_history_days": null,
+   "data": [
+    "monthly_revenues"
+   ],
+   "metric": {
+    "key": "yoy",
+    "label": "最近月年增率（%）",
+    "digits": 2,
+    "scale": 100
+   },
+   "win_rate": {
+    "display": "計算中",
+    "note": "歷史勝率待 3 年行情回補後依 docs/indicators.md §11 重算；初步研究數字不對外顯示。"
+   },
+   "cross_sectional": false,
+   "state": "existing",
+   "note": ""
+  },
+  {
+   "id": "M5",
+   "tier": "基本",
+   "tier_prev": "進階",
+   "name": "單季 EPS 年增",
+   "desc": "最新一季每股盈餘為正且高於去年同季",
+   "conditions": [
+    "單季 EPS > 0 且 > 去年同季單季 EPS"
+   ],
+   "research_id": null,
+   "engine": "尚未提供（可用 analysis/modes.py eps_quarter_state()）",
+   "params": {},
+   "full_params": null,
+   "active_variant": "short",
+   "history_days": 60,
+   "full_history_days": null,
+   "data": [
+    "income_statements"
+   ],
+   "metric": {},
+   "win_rate": {
+    "display": "樣本不足",
+    "note": "季頻訊號，一年約 4 個訊號日（indicators.md §11.6.1）"
+   },
+   "cross_sectional": false,
+   "state": "existing",
+   "note": ""
+  },
+  {
+   "id": "M6",
+   "tier": "進階",
+   "tier_prev": "進階",
+   "name": "創 250 日新高",
+   "desc": "收盤創 250 個交易日新高",
+   "conditions": [
+    "收盤 > 前 250 個交易日最高價（不含當日）",
+    "成交金額 ≥ 1 億元"
+   ],
+   "research_id": null,
+   "engine": "analysis/screener.py screen()（突破 250 日）",
+   "params": {},
+   "full_params": null,
+   "active_variant": "short",
+   "history_days": 251,
+   "full_history_days": null,
+   "data": [
+    "daily_prices",
+    "corporate_actions",
+    "trading_calendar",
+    "securities"
+   ],
+   "metric": {
+    "key": "dist_high",
+    "label": "收盤距前高（%）",
+    "digits": 2,
+    "scale": 100
+   },
+   "win_rate": {
+    "display": "計算中",
+    "note": "歷史勝率待 3 年行情回補後依 docs/indicators.md §11 重算；初步研究數字不對外顯示。"
+   },
+   "cross_sectional": false,
+   "state": "existing",
+   "note": "行情回補前無法評估；等級待回補後依預先登記規則判定（暫維持原等級）"
+  },
+  {
+   "id": "M7",
+   "tier": "基本",
+   "tier_prev": "高級",
+   "name": "營收創高＋趨勢",
+   "desc": "營收創 12 個月新高且股價在均線之上",
+   "conditions": [
+    "M3 為真",
+    "收盤 > MA20 > MA60"
+   ],
+   "research_id": null,
+   "engine": "analysis/revenue.py evaluate_revenue() ＋ analysis/screener.py screen()",
+   "params": {},
+   "full_params": null,
+   "active_variant": "short",
+   "history_days": 60,
+   "full_history_days": null,
+   "data": [
+    "daily_prices",
+    "corporate_actions",
+    "trading_calendar",
+    "securities",
+    "monthly_revenues"
+   ],
+   "metric": {
+    "key": "yoy",
+    "label": "月營收年增率（%）",
+    "digits": 2,
+    "scale": 100
+   },
+   "win_rate": {
+    "display": "計算中",
+    "note": "歷史勝率待 3 年行情回補後依 docs/indicators.md §11 重算；初步研究數字不對外顯示。"
+   },
+   "cross_sectional": false,
+   "state": "existing",
+   "note": ""
+  },
+  {
+   "id": "M8",
+   "tier": "基本",
+   "tier_prev": "高級",
+   "name": "EPS 成長＋營收連續成長＋趨勢",
+   "desc": "EPS 年增、營收連 3 月年增且股價在均線之上",
+   "conditions": [
+    "M5 為真",
+    "M4 為真",
+    "收盤 > MA20 > MA60"
+   ],
+   "research_id": null,
+   "engine": "尚未提供（可用 analysis/modes.py eps_quarter_state()）",
+   "params": {},
+   "full_params": null,
+   "active_variant": "short",
+   "history_days": 60,
+   "full_history_days": null,
+   "data": [
+    "daily_prices",
+    "corporate_actions",
+    "trading_calendar",
+    "securities",
+    "monthly_revenues",
+    "income_statements"
+   ],
+   "metric": {},
+   "win_rate": {
+    "display": "樣本不足",
+    "note": "季頻訊號，一年約 4 個訊號日（indicators.md §11.6.1）"
+   },
+   "cross_sectional": false,
+   "state": "existing",
+   "note": ""
+  },
+  {
+   "id": "M9",
+   "tier": "基本",
+   "tier_prev": null,
+   "name": "站上季線",
+   "desc": "股價在 60 日均線之上、成交金額 1 億元以上",
+   "conditions": [
+    "收盤 > MA60",
+    "成交金額 ≥ 1 億元"
+   ],
+   "research_id": "C28",
+   "engine": "analysis/modes.py evaluate_modes()",
+   "params": {
+    "ma": 60,
+    "min_turnover": 100000000.0
+   },
+   "full_params": null,
+   "active_variant": "short",
+   "history_days": 60,
+   "full_history_days": null,
+   "data": [
+    "daily_prices",
+    "corporate_actions",
+    "trading_calendar",
+    "securities"
+   ],
+   "metric": {
+    "key": "dist_ma",
+    "label": "收盤距 60 日均線（%）",
+    "digits": 2,
+    "scale": 100
+   },
+   "win_rate": {
+    "display": "計算中",
+    "note": "歷史勝率待 3 年行情回補後依 docs/indicators.md §11 重算；初步研究數字不對外顯示。"
+   },
+   "cross_sectional": false,
+   "state": "production",
+   "note": ""
+  },
+  {
+   "id": "M10",
+   "tier": "基本",
+   "tier_prev": null,
+   "name": "營收創高＋站上季線",
+   "desc": "最新月營收創 12 個月新高，股價在季線之上",
+   "conditions": [
+    "最新可得月營收創 12 個月新高（rev_12m_high-v1）",
+    "收盤 > MA60",
+    "成交金額 ≥ 1 億元"
+   ],
+   "research_id": "C29",
+   "engine": "analysis/modes.py evaluate_modes()",
+   "params": {
+    "ma": 60,
+    "min_turnover": 100000000.0
+   },
+   "full_params": null,
+   "active_variant": "short",
+   "history_days": 60,
+   "full_history_days": null,
+   "data": [
+    "daily_prices",
+    "corporate_actions",
+    "trading_calendar",
+    "securities",
+    "monthly_revenues"
+   ],
+   "metric": {
+    "key": "yoy",
+    "label": "最新月營收年增率（%）",
+    "digits": 2,
+    "scale": 100
+   },
+   "win_rate": {
+    "display": "計算中",
+    "note": "歷史勝率待 3 年行情回補後依 docs/indicators.md §11 重算；初步研究數字不對外顯示。"
+   },
+   "cross_sectional": false,
+   "state": "production",
+   "note": ""
+  },
+  {
+   "id": "M11",
+   "tier": "基本",
+   "tier_prev": null,
+   "name": "營收年增加速",
+   "desc": "最近 3 個月營收年增率一個月比一個月高",
+   "conditions": [
+    "最近 3 個可得月份年增率 y(m) > y(m−1) > y(m−2)，且 y(m) > 0",
+    "收盤 > MA20",
+    "成交金額 ≥ 1 億元"
+   ],
+   "research_id": "C31",
+   "engine": "analysis/modes.py evaluate_modes()",
+   "params": {
+    "ma": 20,
+    "min_turnover": 100000000.0
+   },
+   "full_params": null,
+   "active_variant": "short",
+   "history_days": 60,
+   "full_history_days": null,
+   "data": [
+    "daily_prices",
+    "corporate_actions",
+    "trading_calendar",
+    "securities",
+    "monthly_revenues"
+   ],
+   "metric": {
+    "key": "yoy",
+    "label": "最新月營收年增率（%）",
+    "digits": 2,
+    "scale": 100
+   },
+   "win_rate": {
+    "display": "計算中",
+    "note": "歷史勝率待 3 年行情回補後依 docs/indicators.md §11 重算；初步研究數字不對外顯示。"
+   },
+   "cross_sectional": false,
+   "state": "production",
+   "note": ""
+  },
+  {
+   "id": "M12",
+   "tier": "基本",
+   "tier_prev": null,
+   "name": "短期超跌",
+   "desc": "近 5 日跌幅在評估範圍最深的 10%（逆勢，可能續跌）",
+   "conditions": [
+    "近 5 個有效交易日漲跌幅排名在當日可評估股票最低 10%",
+    "成交金額 ≥ 1 億元"
+   ],
+   "research_id": "C24",
+   "engine": "analysis/modes.py evaluate_modes()",
+   "params": {
+    "ret_days": 5,
+    "max_pct_rank": 0.1,
+    "min_turnover": 100000000.0
+   },
+   "full_params": null,
+   "active_variant": "short",
+   "history_days": 60,
+   "full_history_days": null,
+   "data": [
+    "daily_prices",
+    "corporate_actions",
+    "trading_calendar",
+    "securities"
+   ],
+   "metric": {
+    "key": "ret",
+    "label": "近 5 日漲跌幅（%）",
+    "digits": 2,
+    "scale": 100
+   },
+   "win_rate": {
+    "display": "計算中",
+    "note": "歷史勝率待 3 年行情回補後依 docs/indicators.md §11 重算；初步研究數字不對外顯示。"
+   },
+   "cross_sectional": true,
+   "state": "production",
+   "note": ""
+  },
+  {
+   "id": "M13",
+   "tier": "進階",
+   "tier_prev": null,
+   "name": "接近 120 日高點",
+   "desc": "收盤在近 120 日最高價 5% 以內，且在季線之上",
+   "conditions": [
+    "收盤 ≥ 近 120 個有效交易日最高價（含當日）× 0.95",
+    "收盤 > MA60",
+    "成交金額 ≥ 1 億元"
+   ],
+   "research_id": "C05",
+   "engine": "analysis/modes.py evaluate_modes()",
+   "params": {
+    "high_days": 120,
+    "near": 0.95,
+    "ma": 60,
+    "min_turnover": 100000000.0
+   },
+   "full_params": {
+    "high_days": 250,
+    "near": 0.95,
+    "ma": 60,
+    "min_turnover": 100000000.0
+   },
+   "active_variant": "short",
+   "history_days": 120,
+   "full_history_days": 250,
+   "data": [
+    "daily_prices",
+    "corporate_actions",
+    "trading_calendar",
+    "securities"
+   ],
+   "metric": {
+    "key": "dist_high",
+    "label": "收盤距 120 日高（%）",
+    "digits": 2,
+    "scale": 100
+   },
+   "win_rate": {
+    "display": "計算中",
+    "note": "歷史勝率待 3 年行情回補後依 docs/indicators.md §11 重算；初步研究數字不對外顯示。"
+   },
+   "cross_sectional": false,
+   "state": "production",
+   "note": "縮短版：原策略為 52 週高點（250 日）"
+  },
+  {
+   "id": "M14",
+   "tier": "進階",
+   "tier_prev": null,
+   "name": "趨勢樣板（Minervini 縮短版）",
+   "desc": "均線由短到長依序排列、長均線上升、離低點夠遠、離高點夠近、相對強勢",
+   "conditions": [
+    "收盤 > MA20 > MA60 > MA120",
+    "MA120 > 20 個有效交易日前的 MA120",
+    "收盤 ≥ 近 120 日最低價 × 1.3",
+    "收盤 ≥ 近 120 日最高價 × 0.75",
+    "近 60 日漲幅排名前 30%（評估範圍內）",
+    "成交金額 ≥ 1 億元"
+   ],
+   "research_id": "C01",
+   "engine": "analysis/modes.py evaluate_modes()",
+   "params": {
+    "ma_s": 20,
+    "ma_m": 60,
+    "ma_l": 120,
+    "slope_days": 20,
+    "range_days": 120,
+    "above_low": 1.3,
+    "below_high": 0.75,
+    "rs_days": 60,
+    "min_rs_pct": 0.7,
+    "min_turnover": 100000000.0
+   },
+   "full_params": {
+    "ma_s": 50,
+    "ma_m": 150,
+    "ma_l": 200,
+    "slope_days": 20,
+    "range_days": 250,
+    "above_low": 1.3,
+    "below_high": 0.75,
+    "rs_days": 250,
+    "min_rs_pct": 0.7,
+    "min_turnover": 100000000.0
+   },
+   "active_variant": "short",
+   "history_days": 140,
+   "full_history_days": 250,
+   "data": [
+    "daily_prices",
+    "corporate_actions",
+    "trading_calendar",
+    "securities"
+   ],
+   "metric": {
+    "key": "ret",
+    "label": "近 60 日漲幅（%）",
+    "digits": 2,
+    "scale": 100
+   },
+   "win_rate": {
+    "display": "計算中",
+    "note": "歷史勝率待 3 年行情回補後依 docs/indicators.md §11 重算；初步研究數字不對外顯示。"
+   },
+   "cross_sectional": true,
+   "state": "production",
+   "note": "縮短版：原版為 50／150／200 日均線、52 週高低與 12 個月相對強度"
+  },
+  {
+   "id": "M15",
+   "tier": "進階",
+   "tier_prev": null,
+   "name": "RSI(2) 多頭回檔",
+   "desc": "季線之上的股票短線急跌（RSI(2) ≤ 10）",
+   "conditions": [
+    "收盤 > MA60",
+    "RSI(2) ≤ 10（Wilder 平滑，取最近 60 個有效交易日計算）",
+    "成交金額 ≥ 1 億元"
+   ],
+   "research_id": "C09",
+   "engine": "analysis/modes.py evaluate_modes()",
+   "params": {
+    "ma": 60,
+    "rsi_n": 2,
+    "rsi_max": 10.0,
+    "min_turnover": 100000000.0
+   },
+   "full_params": {
+    "ma": 200,
+    "rsi_n": 2,
+    "rsi_max": 10.0,
+    "min_turnover": 100000000.0
+   },
+   "active_variant": "short",
+   "history_days": 60,
+   "full_history_days": 200,
+   "data": [
+    "daily_prices",
+    "corporate_actions",
+    "trading_calendar",
+    "securities"
+   ],
+   "metric": {
+    "key": "rsi",
+    "label": "RSI(2)",
+    "digits": 1,
+    "scale": 1
+   },
+   "win_rate": {
+    "display": "計算中",
+    "note": "歷史勝率待 3 年行情回補後依 docs/indicators.md §11 重算；初步研究數字不對外顯示。"
+   },
+   "cross_sectional": false,
+   "state": "production",
+   "note": "縮短版：原版（Connors）用 200 日均線"
+  },
+  {
+   "id": "M16",
+   "tier": "進階",
+   "tier_prev": null,
+   "name": "多頭回檔月線",
+   "desc": "上升中的月線，量縮回檔碰到月線後收紅",
+   "conditions": [
+    "MA20 > MA60",
+    "MA20 > 5 個有效交易日前的 MA20",
+    "最低價 ≤ MA20 × 1.01",
+    "收盤 > MA20",
+    "收盤 > 開盤（紅 K）",
+    "成交量 < 前 20 日均量（不含當日）",
+    "成交金額 ≥ 1 億元"
+   ],
+   "research_id": "C13",
+   "engine": "analysis/modes.py evaluate_modes()",
+   "params": {
+    "ma_s": 20,
+    "ma_l": 60,
+    "slope_days": 5,
+    "touch": 1.01,
+    "vol_days": 20,
+    "min_turnover": 100000000.0
+   },
+   "full_params": null,
+   "active_variant": "short",
+   "history_days": 60,
+   "full_history_days": null,
+   "data": [
+    "daily_prices",
+    "corporate_actions",
+    "trading_calendar",
+    "securities"
+   ],
+   "metric": {
+    "key": "dist_ma",
+    "label": "收盤距 20 日均線（%）",
+    "digits": 2,
+    "scale": 100
+   },
+   "win_rate": {
+    "display": "計算中",
+    "note": "歷史勝率待 3 年行情回補後依 docs/indicators.md §11 重算；初步研究數字不對外顯示。"
+   },
+   "cross_sectional": false,
+   "state": "production",
+   "note": ""
+  },
+  {
+   "id": "M17",
+   "tier": "進階",
+   "tier_prev": null,
+   "name": "均線糾結突破",
+   "desc": "5／10／20 日均線糾結後，帶量站上三條均線",
+   "conditions": [
+    "前 5 個有效交易日 MA5／MA10／MA20 最大÷最小 − 1 都 < 2%",
+    "收盤 > max(MA5, MA10, MA20)",
+    "收盤 > 前一日收盤",
+    "成交量 ≥ 前 20 日均量 × 1.25（不含當日）",
+    "成交金額 ≥ 1 億元"
+   ],
+   "research_id": "C17",
+   "engine": "analysis/modes.py evaluate_modes()",
+   "params": {
+    "mas": [
+     5,
+     10,
+     20
+    ],
+    "spread_max": 0.02,
+    "spread_days": 5,
+    "vol_days": 20,
+    "vol_mult": 1.25,
+    "min_turnover": 100000000.0
+   },
+   "full_params": null,
+   "active_variant": "short",
+   "history_days": 60,
+   "full_history_days": null,
+   "data": [
+    "daily_prices",
+    "corporate_actions",
+    "trading_calendar",
+    "securities"
+   ],
+   "metric": {
+    "key": "volume_ratio",
+    "label": "量比（倍）",
+    "digits": 2,
+    "scale": 1
+   },
+   "win_rate": {
+    "display": "計算中",
+    "note": "歷史勝率待 3 年行情回補後依 docs/indicators.md §11 重算；初步研究數字不對外顯示。"
+   },
+   "cross_sectional": false,
+   "state": "production",
+   "note": ""
+  },
+  {
+   "id": "M18",
+   "tier": "高級",
+   "tier_prev": null,
+   "name": "創 120 日新高",
+   "desc": "收盤創 120 個交易日新高（M6 的縮短版）",
+   "conditions": [
+    "收盤 > 前 120 個有效交易日最高價（不含當日）",
+    "成交金額 ≥ 1 億元"
+   ],
+   "research_id": "M6s",
+   "engine": "analysis/modes.py evaluate_modes()",
+   "params": {
+    "high_days": 120,
+    "min_turnover": 100000000.0
+   },
+   "full_params": {
+    "high_days": 250,
+    "min_turnover": 100000000.0
+   },
+   "active_variant": "short",
+   "history_days": 121,
+   "full_history_days": 251,
+   "data": [
+    "daily_prices",
+    "corporate_actions",
+    "trading_calendar",
+    "securities"
+   ],
+   "metric": {
+    "key": "dist_high",
+    "label": "收盤距前高（%）",
+    "digits": 2,
+    "scale": 100
+   },
+   "win_rate": {
+    "display": "計算中",
+    "note": "歷史勝率待 3 年行情回補後依 docs/indicators.md §11 重算；初步研究數字不對外顯示。"
+   },
+   "cross_sectional": false,
+   "state": "production",
+   "note": "縮短版；完整版（250 日）即現有 M6 的定義"
+  },
+  {
+   "id": "M19",
+   "tier": "高級",
+   "tier_prev": null,
+   "name": "CANSLIM 簡化",
+   "desc": "EPS 年增 25% 以上、股價接近高點且相對強勢，今天帶量突破",
+   "conditions": [
+    "最新已過申報期限的單季 EPS > 0、去年同季 > 0，且 ≥ 去年同季 × 1.25",
+    "收盤 ≥ 近 120 日最高價 × 0.85",
+    "近 60 日漲幅排名前 20%（評估範圍內）",
+    "收盤 > 前 20 日最高價（不含當日）",
+    "成交量 ≥ 前 50 日均量 × 1.4（不含當日）",
+    "成交金額 ≥ 1 億元"
+   ],
+   "research_id": "C35",
+   "engine": "analysis/modes.py evaluate_modes()",
+   "params": {
+    "eps_growth": 1.25,
+    "high_days": 120,
+    "near": 0.85,
+    "rs_days": 60,
+    "min_rs_pct": 0.8,
+    "breakout_days": 20,
+    "vol_days": 50,
+    "vol_mult": 1.4,
+    "min_turnover": 100000000.0
+   },
+   "full_params": {
+    "eps_growth": 1.25,
+    "high_days": 250,
+    "near": 0.85,
+    "rs_days": 250,
+    "min_rs_pct": 0.8,
+    "breakout_days": 20,
+    "vol_days": 50,
+    "vol_mult": 1.4,
+    "min_turnover": 100000000.0
+   },
+   "active_variant": "short",
+   "history_days": 120,
+   "full_history_days": 250,
+   "data": [
+    "daily_prices",
+    "corporate_actions",
+    "trading_calendar",
+    "securities",
+    "income_statements"
+   ],
+   "metric": {
+    "key": "eps_yoy",
+    "label": "單季 EPS 年增率（%）",
+    "digits": 1,
+    "scale": 100
+   },
+   "win_rate": {
+    "display": "計算中",
+    "note": "歷史勝率待 3 年行情回補後依 docs/indicators.md §11 重算；初步研究數字不對外顯示。"
+   },
+   "cross_sectional": true,
+   "state": "production",
+   "note": "縮短版：原版用 52 週高與 12 個月相對強度"
+  },
+  {
+   "id": "M20",
+   "tier": "高級",
+   "tier_prev": null,
+   "name": "三白兵（低檔轉強）",
+   "desc": "連 3 天紅 K 收高，站上月線但仍在季線下",
+   "conditions": [
+    "連續 3 個有效交易日收盤 > 前一日收盤且收盤 > 開盤",
+    "收盤 > MA20",
+    "收盤 < MA60",
+    "成交金額 ≥ 1 億元"
+   ],
+   "research_id": "C26",
+   "engine": "analysis/modes.py evaluate_modes()",
+   "params": {
+    "days": 3,
+    "ma_s": 20,
+    "ma_l": 60,
+    "min_turnover": 100000000.0
+   },
+   "full_params": null,
+   "active_variant": "short",
+   "history_days": 60,
+   "full_history_days": null,
+   "data": [
+    "daily_prices",
+    "corporate_actions",
+    "trading_calendar",
+    "securities"
+   ],
+   "metric": {
+    "key": "ret",
+    "label": "近 3 日漲幅（%）",
+    "digits": 2,
+    "scale": 100
+   },
+   "win_rate": {
+    "display": "計算中",
+    "note": "歷史勝率待 3 年行情回補後依 docs/indicators.md §11 重算；初步研究數字不對外顯示。"
+   },
+   "cross_sectional": false,
+   "state": "production",
+   "note": ""
+  },
+  {
+   "id": "M21",
+   "tier": "高級",
+   "tier_prev": null,
+   "name": "月線上穿季線",
+   "desc": "20 日均線今天由下往上穿過 60 日均線",
+   "conditions": [
+    "MA20 > MA60",
+    "前一有效交易日 MA20 ≤ MA60",
+    "成交金額 ≥ 1 億元"
+   ],
+   "research_id": "C06",
+   "engine": "analysis/modes.py evaluate_modes()",
+   "params": {
+    "ma_s": 20,
+    "ma_l": 60,
+    "min_turnover": 100000000.0
+   },
+   "full_params": null,
+   "active_variant": "short",
+   "history_days": 61,
+   "full_history_days": null,
+   "data": [
+    "daily_prices",
+    "corporate_actions",
+    "trading_calendar",
+    "securities"
+   ],
+   "metric": {
+    "key": "dist_ma",
+    "label": "收盤距 60 日均線（%）",
+    "digits": 2,
+    "scale": 100
+   },
+   "win_rate": {
+    "display": "計算中",
+    "note": "歷史勝率待 3 年行情回補後依 docs/indicators.md §11 重算；初步研究數字不對外顯示。"
+   },
+   "cross_sectional": false,
+   "state": "production",
+   "note": ""
+  }
+ ]
+}

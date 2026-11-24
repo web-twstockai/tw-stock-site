@@ -39,8 +39,9 @@ def home_counts(index_html: str) -> dict:
     return out
 
 
-HUB_REQUIRED = ("/hub", "/hub?mode=M1", "/hub?mode=M2", "/hub?mode=M3", "/hub?mode=M4", "/hub?mode=M6", "/hub?mode=M7",
-                "/hub?mode=M2&sort=trade_value", "/industry")
+HUB_REQUIRED = (("/hub", "/hub?mode=M1", "/hub?mode=M2", "/hub?mode=M3", "/hub?mode=M4", "/hub?mode=M6", "/hub?mode=M7")
+                + tuple(f"/hub?mode=M{i}" for i in range(9, 22))   # analysis-0.10.0 M9～M21
+                + ("/hub?mode=M2&sort=trade_value", "/industry"))
 IND_LINK_RE = re.compile(r'<a class="ind-tile[^"]*" href="([^"]+)"')
 
 
@@ -68,6 +69,43 @@ def check_extra_pages(out: Path, info: dict) -> list[str]:
                 dead.append(t)
         if dead:
             problems.append(f"產業總覽有 {len(dead)} 個產業連結開不到（例：{', '.join(dead[:3])}）")
+    return problems
+
+
+LEGACY_NEED = ('name="robots" content="noindex"', 'http-equiv="refresh"', 'rel="canonical"')
+
+
+def check_legacy_redirects(out: Path, info: dict, stocks: list) -> list[str]:
+    """v2 舊網址轉址頁 stock/<代號>/index.html：每個都要轉到存在的殼頁 stock/?code=<同代號>、有 noindex／canonical／
+    可點連結、代號在搜尋清單內；build-info 記錄的個數要與實際一致。目錄裡不能有其他檔案（不是 v1 個股頁殘留）。"""
+    problems: list[str] = []
+    want = info.get("legacy_redirects")
+    root = out / "stock"
+    stubs = sorted(p for p in root.glob("*/index.html")) if root.is_dir() else []
+    if want is None:
+        return problems if not stubs else [f"build-info 沒記 legacy_redirects，卻有 {len(stubs):,} 個 stock/<代號>/ 轉址頁"]
+    if len(stubs) != int(want):
+        problems.append(f"舊網址轉址頁 {len(stubs):,} 個，與 build-info.legacy_redirects {want} 不一致")
+    if stubs and not (root / "index.html").is_file():
+        problems.append("舊網址轉址頁的目標殼頁 stock/index.html 不存在")
+    codes = {str(s["code"]) for s in stocks}
+    bad, extra, unknown = [], [], []
+    for f in stubs:
+        code = f.parent.name
+        t = f.read_text("utf-8", errors="replace")
+        tgt = f'../?code={code}'
+        if not all(x in t for x in LEGACY_NEED) or f'url={tgt}"' not in t or f'<a href="{tgt}"' not in t:
+            bad.append(code)
+        if code not in codes:
+            unknown.append(code)
+        if any(p.name != "index.html" for p in f.parent.iterdir()):
+            extra.append(code)
+    if bad:
+        problems.append(f"舊網址轉址頁有 {len(bad):,} 個內容不完整（缺 noindex／refresh／canonical／連結；例：{', '.join(bad[:5])}）")
+    if unknown:
+        problems.append(f"舊網址轉址頁有 {len(unknown):,} 個代號不在搜尋清單（例：{', '.join(unknown[:5])}）")
+    if extra:
+        problems.append(f"舊網址轉址目錄有其他檔案（例：{', '.join(extra[:5])}）")
     return problems
 
 
@@ -121,6 +159,8 @@ def check(out: Path) -> list[str]:
     if outside:
         problems.append(f"搜尋清單有 {len(outside):,} 檔不在追蹤範圍（例：{', '.join(outside[:5])}）")
     problems += check_extra_pages(out, info)
+    if v2:
+        problems += check_legacy_redirects(out, info, stocks)
     try:
         man = json.loads((out / "manifest.json").read_text("utf-8"))
         if v2:

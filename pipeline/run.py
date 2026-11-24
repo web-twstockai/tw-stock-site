@@ -183,6 +183,19 @@ def run_job(job: str, symbols_mode: str, *, stop_before_s: str | None = None, bu
                 failed.append(f"indices:{e}")
                 log.exception("indices")
 
+        if job == "evening":
+            # 2026-11-24 籌碼增量：最近 3 個交易日未完成的資料集各 1 個請求（正常每交易日 4 個：TWSE T86＋MI_MARGN、TPEx 法人＋融資融券），
+            # TDCC 股權分散最新已存週距今 ≥8 天才抓 opendata（約每週 1 個）。融資融券約 21:00 後才公布，所以只放 evening（22:00）。
+            try:
+                from pipeline.fetchers import chips
+                st = chips.fetch_recent(conn, days=3, stop_before=stop_before)
+                success.append(f"chips:requests={st.get('requests_by_host')}:tdcc={(st.get('tdcc') or {}).get('status')}")
+                if st.get("stopped_hosts"):
+                    failed.append(f"chips:stopped_hosts={st['stopped_hosts']}")
+            except Exception as e:
+                failed.append(f"chips:{e}")
+                log.exception("chips")
+
         if job == "evening" or job == "daily":
             # daily：營收只試近 2 月、重訊短窗；財報歷史回補僅 evening（避免每次重抓季報）
             try:
@@ -291,12 +304,12 @@ def main(argv: list[str] | None = None) -> int:
     p = argparse.ArgumentParser(description="台股官方資料管線")
     p.add_argument("--job", choices=["daily", "evening", "tpex_volume_fix", "screen_results_migrate", "halt_fix", "next_ref_fix",
                                       "market_backfill", "corp_backfill", "revenue_backfill", "financials_backfill", "halts_backfill", "delist_backfill",
-                                      "calendar_backfill"], required=False)
+                                      "calendar_backfill", "chips_backfill", "tdcc_backfill"], required=False)
     p.add_argument("--symbols", choices=["sample30", "all"], required=False)
-    p.add_argument("--fix-from", default=None, help="起始日 YYYY-MM-DD：tpex_volume_fix／halt_fix／next_ref_fix／market_backfill／corp_backfill／revenue_backfill／financials_backfill／halts_backfill／delist_backfill／calendar_backfill（歷史回補到 2023-11-01 用）")
-    p.add_argument("--fix-to", default=None, help="tpex_volume_fix／halt_fix／next_ref_fix／market_backfill：結束日 YYYY-MM-DD（market_backfill 預設昨日）")
-    p.add_argument("--max-dates", type=int, default=None, help="tpex_volume_fix／next_ref_fix／market_backfill：本次最多處理幾個交易日（market_backfill 每日每缺的市場各 1 個請求）；halt_fix：最多處理幾個全市場日")
-    p.add_argument("--budget-min", type=float, default=None, help="時間預算（分鐘），到時收尾並標 partial（market_backfill）；daily／evening 換算成 stop-before（interrupted，可續跑）")
+    p.add_argument("--fix-from", default=None, help="起始日 YYYY-MM-DD：tpex_volume_fix／halt_fix／next_ref_fix／market_backfill／corp_backfill／revenue_backfill／financials_backfill／halts_backfill／delist_backfill／calendar_backfill／chips_backfill／tdcc_backfill（歷史回補到 2023-11-01 用）")
+    p.add_argument("--fix-to", default=None, help="tpex_volume_fix／halt_fix／next_ref_fix／market_backfill／chips_backfill／tdcc_backfill：結束日 YYYY-MM-DD（market_backfill／chips_backfill 預設昨日）")
+    p.add_argument("--max-dates", type=int, default=None, help="tpex_volume_fix／next_ref_fix／market_backfill：本次最多處理幾個交易日（market_backfill 每日每缺的市場各 1 個請求）；halt_fix：最多處理幾個全市場日；chips_backfill：最多處理幾個交易日（每日最多 4 個請求）；tdcc_backfill：最多處理幾週")
+    p.add_argument("--budget-min", type=float, default=None, help="時間預算（分鐘），到時收尾並標 partial（market_backfill／chips_backfill／tdcc_backfill）；daily／evening 換算成 stop-before（interrupted，可續跑）")
     p.add_argument("--months", type=int, default=None, help="revenue_backfill：回補最近幾個月（預設 24）")
     p.add_argument("--quarters", type=int, default=None, help="financials_backfill：回補最近幾季（預設 8）")
     p.add_argument("--max-pages", type=int, default=None, help="revenue_backfill／financials_backfill：本次最多送出幾頁請求")
@@ -359,6 +372,15 @@ def main(argv: list[str] | None = None) -> int:
         from pipeline import calendar_backfill
         setup_logging()
         return calendar_backfill.main_job(date_from=args.fix_from)
+    if args.job == "chips_backfill":
+        from pipeline import chips_backfill
+        setup_logging()
+        return chips_backfill.main_job(date_from=args.fix_from, date_to=args.fix_to, max_dates=args.max_dates, budget_min=args.budget_min)
+    if args.job == "tdcc_backfill":
+        from pipeline import chips_backfill
+        setup_logging()
+        return chips_backfill.main_tdcc(scope=args.symbols, date_from=args.fix_from, date_to=args.fix_to, max_dates=args.max_dates,
+                                        budget_min=args.budget_min)
     if not args.job or not args.symbols:
         p.error("--job 與 --symbols 為必要參數（除非使用 --init-db-only）")
     return run_job(args.job, args.symbols, stop_before_s=args.stop_before, budget_min=args.budget_min)

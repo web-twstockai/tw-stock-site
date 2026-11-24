@@ -194,3 +194,24 @@ th.sorted .sort-ic{color:var(--brand)}
 @media (prefers-reduced-motion:reduce){*{scroll-behavior:auto!important}}
 .sec-acts{display:flex;gap:8px;flex-wrap:wrap}
 @media (max-width:640px){.sec-acts{width:100%}.sec-acts .btn{flex:1 1 100%;text-align:center}}
+
+/* ===== analysis-0.10.0：M9～M21、個股頁「今天符合的模式」（HANDOFF §30） ===== */
+.mode-note{display:block;font-size:12.5px;color:var(--warn);line-height:1.45;margin-top:2px}
+.res-note{font-size:13.5px;color:var(--warn);margin:4px 0 0}
+.rt th.why,.rt td.why{font-size:12.5px;color:var(--ink2);line-height:1.45;min-width:16em;max-width:28em;white-space:normal;text-align:left}
+.excl-detail{margin-top:12px;font-size:13.5px}
+.excl-detail summary{cursor:pointer;font-weight:700;color:var(--ink2)}
+.excl-rows{margin:6px 0 0;padding-left:1.2em;color:var(--ink2);max-height:22em;overflow:auto}
+.excl-rows li{margin:2px 0}
+.stock-modes{margin:10px 0 0;padding:10px 12px;border:1px solid var(--line2);border-radius:var(--r);background:#fbfaf7}
+.stock-modes p{margin:2px 0}
+.sm-h{font-weight:700}
+.sm-list{list-style:none;margin:4px 0;padding:0;display:flex;flex-wrap:wrap;gap:6px 14px}
+.sm-list a{font-weight:700}
+.sm-list .mcode{font:700 12.5px/1 var(--sans);color:var(--muted)}
+.sm-none{color:var(--ink2)}
+@media (max-width:640px){
+  .hubpg .rt td.why{grid-column:1/-1;max-width:none;min-width:0;padding-top:4px}
+  .hubpg .rt td.why::before{content:attr(data-l) "：";color:var(--muted)}
+  .sm-list{flex-direction:column;gap:4px}
+}

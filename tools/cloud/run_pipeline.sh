@@ -1,11 +1,11 @@
 #!/usr/bin/env bash
 # 【Actions 用】執行 pipeline，整體時間預算內。用法：run_pipeline.sh <job>
 # job 白名單：daily｜evening｜tpex_volume_fix｜screen_results_migrate｜halt_fix｜next_ref_fix｜market_backfill｜corp_backfill｜
-#            revenue_backfill｜financials_backfill｜halts_backfill｜delist_backfill｜calendar_backfill（名稱＝pipeline/run.py --job）
+#            revenue_backfill｜financials_backfill｜halts_backfill｜delist_backfill｜calendar_backfill｜chips_backfill｜tdcc_backfill（名稱＝pipeline/run.py --job）
 # 選用參數（環境變數，皆由 update.yml 的 workflow_dispatch 輸入帶入；空值＝不傳，用 pipeline 預設）：
 #   IN_MAX_DATES→--max-dates  IN_BUDGET_MIN→--budget-min  IN_FIX_FROM→--fix-from  IN_FIX_TO→--fix-to
 #   IN_MAX_PAGES→--max-pages  IN_MAX_ENRICH→--max-enrich  IN_MONTHS→--months  IN_QUARTERS→--quarters
-#   IN_NO_FETCH=true→--no-fetch  IN_SYMBOLS（daily／evening 的 --symbols：sample30｜all；預設 sample30）
+#   IN_NO_FETCH=true→--no-fetch  IN_SYMBOLS（daily／evening／tdcc_backfill 的 --symbols：sample30｜all；預設 sample30）
 #   IN_UNIVERSE→TWSITE_UNIVERSE（sample30｜all；預設 sample30）
 # 參數只接受該 job 用得到的，給了用不到的直接拒絕（避免以為有生效）。格式不對也拒絕。
 # 重試：daily／evening／tpex_volume_fix 最多 3 次；回補類 job 只跑 1 次（被擋或限流不重打）。
@@ -28,6 +28,8 @@ case "$JOB" in
   halts_backfill)      BUDGET_MIN=${BUDGET_MIN:-60};  ALLOW="fix_from no_fetch";;
   delist_backfill)     BUDGET_MIN=${BUDGET_MIN:-60};  ALLOW="fix_from";;
   calendar_backfill)   BUDGET_MIN=${BUDGET_MIN:-60};  ALLOW="fix_from";;
+  chips_backfill)      BUDGET_MIN=${BUDGET_MIN:-100}; ALLOW="fix_from fix_to max_dates budget_min";;
+  tdcc_backfill)       BUDGET_MIN=${BUDGET_MIN:-100}; ALLOW="symbols fix_from fix_to max_dates budget_min";;
   *) die "job 不在白名單：$JOB";;
 esac
 allowed(){ [[ " $ALLOW " == *" $1 "* ]]; }
@@ -55,11 +57,11 @@ esac
 SYMBOLS="${IN_SYMBOLS:-}"
 if [ -n "$SYMBOLS" ]; then
   [[ "$SYMBOLS" =~ ^(sample30|all)$ ]] || die "參數 symbols 只能是 sample30／all：$SYMBOLS"
-  # market_backfill 一律是全市場（pipeline 內建），symbols=all 只是確認用；其他回補類 job 不接受
+  # market_backfill 一律是全市場（pipeline 內建），symbols=all 只是確認用；tdcc_backfill 接受 sample30｜all
   if [ "$JOB" = market_backfill ]; then [ "$SYMBOLS" = all ] || die "market_backfill 一律全市場，symbols 只能是 all"
   elif ! allowed symbols; then die "job=$JOB 不接受參數 symbols"; fi
 fi
-case "$JOB" in daily|evening) EXTRA+=(--symbols "${SYMBOLS:-sample30}");; esac
+case "$JOB" in daily|evening|tdcc_backfill) EXTRA+=(--symbols "${SYMBOLS:-sample30}");; esac
 UNIVERSE="${IN_UNIVERSE:-sample30}"
 [[ "$UNIVERSE" =~ ^(sample30|all)$ ]] || die "參數 universe 只能是 sample30／all：$UNIVERSE"
 # pipeline 的 --budget-min 之外，外層再留 15 分鐘收尾（寫摘要、停牌重算）

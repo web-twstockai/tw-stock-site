@@ -9,7 +9,7 @@ on:
       job:
         description: "pipeline 工作（白名單，名稱＝pipeline/run.py --job；回補類只跑 1 次不重試）"
         type: choice
-        options: [daily, evening, tpex_volume_fix, screen_results_migrate, next_ref_fix, halt_fix, market_backfill, corp_backfill, revenue_backfill, financials_backfill, halts_backfill, delist_backfill, calendar_backfill]
+        options: [daily, evening, tpex_volume_fix, screen_results_migrate, next_ref_fix, halt_fix, market_backfill, corp_backfill, revenue_backfill, financials_backfill, halts_backfill, delist_backfill, calendar_backfill, chips_backfill, tdcc_backfill]
         default: daily
       deploy:
         description: "成功後是否部署到 GitHub Pages（試跑請選 false）"
@@ -29,7 +29,7 @@ on:
         default: src
       # 以下為回補／修正參數（空白＝不傳，用 pipeline 預設；job 用不到的參數 run_pipeline.sh 會拒絕）
       symbols:
-        description: "daily／evening 的 --symbols（sample30｜all；手動空白＝sample30；排程 schedule 強制 all）。匯出 universe 仍預設 sample30。market_backfill 一律全市場，只能填 all 或空白"
+        description: "daily／evening／tdcc_backfill 的 --symbols（sample30｜all；手動空白＝sample30；排程 schedule 強制 all，只作用於 daily／evening）。匯出 universe 仍預設 sample30。market_backfill 一律全市場，只能填 all 或空白；tdcc_backfill 預設 sample30，不建議 all"
         type: string
         default: ""
       universe:
@@ -37,7 +37,7 @@ on:
         type: string
         default: sample30
       max_dates:
-        description: "--max-dates：本次最多處理幾個交易日（market_backfill／tpex_volume_fix／halt_fix／next_ref_fix）"
+        description: "--max-dates：本次最多處理幾個交易日（market_backfill／chips_backfill／tpex_volume_fix／halt_fix／next_ref_fix）；tdcc_backfill 為週數"
         type: string
         default: ""
       budget_min:

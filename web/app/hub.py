@@ -32,7 +32,7 @@ DISCLAIMER = "歷史統計，不代表未來，非投資建議"
 SORT_NOTE = "排序僅為排列方式，不代表優劣。"
 M2_SORT_NOTE = ("依收盤價高於 60 日均線的幅度排列；幅度大代表股價離均線較遠（乖離較大），"
                 "不代表較強、較好或較值得關注；排序可切換。")
-LAUNCH_NOTE = "上線初期：歷史勝率回補中，所有模式的 5 日勝率暫時顯示「計算中」，不顯示任何比例；今日檔數與名單照常。"
+LAUNCH_NOTE = "5 日勝率尚在計算，樣本不足的模式另標示；今日檔數與名單照常。"   # 2026-11-24 專案負責人文案決定
 
 # 研究分析 §11.1 的 8 個模式（文字取自 docs/indicators.md §11.1；計算方式見 _compute_* ）
 MODES: list[dict] = [
@@ -71,7 +71,92 @@ MODES: list[dict] = [
          desc="單季 EPS 年增、營收連續 3 個月年增，且收盤 > MA20 > MA60",
          na="需要單季 EPS 年增（M5），研究分析模組尚未提供，本站不自行計算", quarterly=True),
 ]
-MODE_IDS = [m["id"] for m in MODES]
+BASE_IDS = [m["id"] for m in MODES]
+NEW_MODE_IDS = [f"M{i}" for i in range(9, 22)]   # analysis-0.10.0 modes.evaluate_modes()（docs/indicators.md §12）
+MODE_IDS = BASE_IDS + NEW_MODE_IDS
+TIER_CLASS = {"基本": "t1", "進階": "t2", "高級": "t3"}
+RANK_NOTE = "排名在全市場當日可評估的 {n:,} 檔之間計算。"
+NEW_ENGINE_ZH = "研究分析的模式評估（analysis/modes.py，登記表 {ver}）"
+
+
+_DOC_RE = __import__("re").compile(r"（docs/[\w./-]+\.md）|(?:docs/)?indicators\.md\s*§\s*(\d+(?:\.\d+)*)\s?|docs/[\w./-]+\.md")
+
+
+_CODE_RE = __import__("re").compile(r"（[a-z][a-z0-9_]*-v\d+）")
+# 內部核可字樣不上畫面（2026-11-24 專案負責人文案決定）：「（專案負責人核可 2026-11-24 16:05）」這類括號整段移除，
+# 括號外的「專案負責人核可 2026-11-24 16:05，」「負責人 2026-11-17 18:31 核可」「H AO 核可」等片語也移除；其餘文字保留。
+_APPROVAL_PAREN_RE = __import__("re").compile(r"[（(][^（）()]*核可[^（）()]*[）)]")
+_APPROVAL_RE = __import__("re").compile(
+    r"(?:(?:專案)?負責人|H\s?AO)(?:轉達)?(?:\s*H\s?AO)?\s*(?:\d{4}-\d{2}-\d{2})?\s*(?:\d{1,2}:\d{2})?\s*"
+    r"(?:已)?核可(?:\s*\d{4}-\d{2}-\d{2})?(?:\s*\d{1,2}:\d{2})?[，,、；;：:]?\s*")
+
+
+def strip_approval(t: str) -> str:
+    """移除內部核可字樣（人名、日期時間、「核可」），保留其他說明。"""
+    t = _APPROVAL_PAREN_RE.sub("", t)
+    return _APPROVAL_RE.sub("", t)
+
+
+def public_text(t: Optional[str]) -> str:
+    """登記表文字上畫面前：文件路徑換成中文（網站不顯示英文檔名）。例：「依 docs/indicators.md §11 重算」→「依指標說明第 11 節重算」。"""
+    if not t:
+        return ""
+    def rep(m):
+        if m.group(0).startswith("（"):
+            return ""
+        if m.group(1):
+            return f"指標說明第 {m.group(1)} 節"
+        return "研究文件"
+    t = _DOC_RE.sub(rep, str(t)).replace("依 指標說明", "依指標說明")
+    return strip_approval(_CODE_RE.sub("", t))   # 「（rev_12m_high-v1）」這類內部定義代碼、內部核可字樣不上畫面
+
+
+def _rate(r: Optional[dict], fallback_few: bool) -> dict:
+    """勝率只取登記表 win_rate.display／note（「計算中」；M5、M8「樣本不足」）；登記表沒有 → 舊規則。不輸出任何比例。"""
+    w = (r or {}).get("win_rate") or {}
+    disp = w.get("display") or ("樣本不足" if fallback_few else "計算中")
+    return dict(rate_status="rate_few" if disp == "樣本不足" else "rate_pending", rate_display=disp,
+                rate_note=public_text(w.get("note")))
+
+
+def mode_specs() -> list[dict]:
+    """M1～M21 的卡片設定：等級、名稱、說明、排序指標、勝率文字取 analysis 模式登記表（mode_registry）；
+    M1～M8 的計算方式與說明沿用本檔 MODES（登記表 state=existing）。登記表沒有的新模式不出現（不放不可用的按鈕）。"""
+    from . import modes_hub as MH
+    reg = MH.registry_modes()
+    out = []
+    for m in MODES:
+        d = dict(m)
+        r = reg.get(m["id"])
+        if r:
+            d.update(tier=r.get("tier") or d["tier"], tier_prev=r.get("tier_prev"), note=public_text(r.get("note")))
+        d.update(_rate(r, bool(m.get("quarterly"))))
+        out.append(d)
+    ver = (MH.registry() or {}).get("registry_version", "")
+    for mid in NEW_MODE_IDS:
+        r = reg.get(mid)
+        if not r or r.get("state") not in (None, "production"):
+            continue
+        met = r.get("metric") or {}
+        d = dict(id=mid, tier=r.get("tier") or "進階", name=public_text(r.get("name")) or mid, desc=public_text(r.get("desc")),
+                 conditions=[public_text(x) for x in r.get("conditions") or []], note=public_text(r.get("note")), new=True,
+                 engine=r.get("engine") or "analysis/modes.py evaluate_modes()", engine_zh=NEW_ENGINE_ZH.format(ver=ver),
+                 metric=met.get("key"), metric_label=met.get("label") or "排序指標",
+                 metric_digits=int(met.get("digits") if met.get("digits") is not None else 2),
+                 metric_scale=float(met.get("scale") if met.get("scale") is not None else 1),
+                 history_days=r.get("history_days"), cross_sectional=bool(r.get("cross_sectional")),
+                 variant=r.get("active_variant") or "short")
+        d.update(_rate(r, False))
+        out.append(d)
+    return sorted(out, key=lambda d: int(d["id"][1:]))
+
+
+def tiers() -> list[tuple]:
+    """等級分區（基本／進階／高級）：說明文字＝登記表各級 rule；沒有登記表 → 舊 TIERS。"""
+    from . import modes_hub as MH
+    reg = MH.registry() or {}
+    t = [(x["name"], TIER_CLASS.get(x["name"], "t1"), public_text(x.get("rule"))) for x in reg.get("tiers") or [] if x.get("name")]
+    return t or TIERS
 
 # 各模式交給 analysis ScreenParams 的參數（只用 analysis 已有的參數；驗證交給 analysis）
 P_M1: dict = {}
@@ -248,10 +333,10 @@ def _excl_reasons(maps: list[dict], symbols: list[str], ok_fn, labels: dict) -> 
 
 
 def build(src: DataSource, selected: Optional[str] = None, sort: Optional[str] = None) -> dict:
-    """篩選中心頁面資料。selected＝模式代號（M1…M8）或 None（未選）。"""
+    """篩選中心頁面資料。selected＝模式代號（M1…M21）或 None（未選）。各模式的計算結果依資料版本快取（_core）。"""
     view: dict[str, Any] = dict(
-        modes=[], tiers=TIERS, tier_note=TIER_NOTE, free_note=FREE_NOTE, windef=WINDEF, disclaimer=DISCLAIMER,
-        launch_note=LAUNCH_NOTE, sort_note=SORT_NOTE, m2_sort_note=M2_SORT_NOTE, selected=None, error="", as_of="—", universe_label="",
+        modes=[], tiers=tiers(), tier_note=_tier_note(), free_note=FREE_NOTE, windef=WINDEF, disclaimer=_disclaimer(),
+        launch_note=LAUNCH_NOTE, sort_note=_sort_note(), m2_sort_note=M2_SORT_NOTE, selected=None, error="", as_of="—", universe_label="",
         universe_text="", is_test=src.is_test, revenue_month=None, cover=COVER)
     try:
         uni = src.universe
@@ -259,16 +344,160 @@ def build(src: DataSource, selected: Optional[str] = None, sort: Optional[str] =
     except Exception as e:
         view["error"] = f"追蹤範圍設定錯誤：{e}"
         return view
+    core = _core(src)
+    if core.get("fatal"):
+        view["error"] = core["fatal"]
+        _fill_modes(view, {}, selected)
+        return view
+    view.update(as_of=core["as_of"], revenue_month=core["revenue_month"], price=core["price"])
+    computed = {k: dict(v) for k, v in core["computed"].items()}   # 複本：選取／排序不改到快取
+    _fill_modes(view, computed, selected, sort, src)
+    return view
+
+
+_CORE: dict[tuple, tuple] = {}
+_CORE_LOCK = __import__("threading").RLock()
+
+
+def _core_key(src: DataSource) -> tuple:
+    from .analysis_hooks import _universe_key, data_version
+    from .screening import ANALYSIS_DIR
+    # 測試會 monkeypatch 本模組的計算函式 → 函式 id 也進快取鍵
+    return (id(src), data_version(src), _universe_key(src), str(ANALYSIS_DIR), id(_screen), id(_mode_counts),
+            id(_mode_result), id(_rev_eval))
+
+
+def clear_cache() -> None:
+    _CORE.clear()
+
+
+def _core(src: DataSource) -> dict:
+    """M1～M21 的計算結果（檔數、名單、指標、原因），同一（來源, 資料版本, 範圍）只算一次。"""
+    k = _core_key(src)
+    hit = _CORE.get(k)
+    if hit is not None and hit[0] is src:
+        return hit[1]
+    with _CORE_LOCK:   # 背景預熱與請求同時到：只算一次
+        hit = _CORE.get(k)
+        if hit is not None and hit[0] is src:
+            return hit[1]
+        out = _compute_core(src)
+        while len(_CORE) >= 4:
+            _CORE.pop(next(iter(_CORE)))
+        _CORE[k] = (src, out, (_screen, _mode_counts, _mode_result, _rev_eval))   # 留住函式參照：id 不會被重用
+        return out
+
+
+def _reg_text(key: str, default: str) -> str:
+    from . import modes_hub as MH
+    return public_text((MH.registry() or {}).get(key)) or default
+
+
+def _tier_note() -> str:
+    return _reg_text("tier_basis", TIER_NOTE)
+
+
+def _disclaimer() -> str:
+    return _reg_text("disclaimer", DISCLAIMER)
+
+
+def _sort_note() -> str:
+    return _reg_text("sort_note", SORT_NOTE)
+
+
+def _mode_result(src: DataSource, as_of: str, screen_result=None):
+    """analysis/modes.py evaluate_modes()（M9～M21）；每個評估日只算一次（modes_hub 快取）。"""
+    from . import modes_hub as MH
+    return MH.result(src, as_of, screen_result)
+
+
+def _new_modes(computed: dict, src: DataSource, symbols: list[str], labels: dict, as_of: str, r1) -> None:
+    """M9～M21：每個模式用自己的 coverage_stats（只算追蹤範圍內的股票）判斷 95%；0 檔就是 0 檔。"""
+    from . import modes_hub as MH
+    from .models import zh_text
+    from .screening import analysis_module
+    specs = {d["id"]: d for d in mode_specs() if d.get("new")}
+    if not specs:
+        return
+    try:
+        res = _mode_result(src, as_of, (r1.extra or {}).get("analysis_result"))
+        S = analysis_module("screener")
+    except Exception as e:
+        for mid in specs:
+            computed[mid] = dict(error=f"analysis/modes.py 無法計算（{type(e).__name__}：{e}）")
+        return
+    codes = MH.exclusion_codes()
+    lab = dict(labels)
+    lab.update({c: zh_text(t, c)["text"] for c, t in codes.items()})
+    sym_set = set(symbols)
+    for mid, spec in specs.items():
+        try:
+            summ = res.mode_summary(mid, sym_set)
+            if not len(summ):
+                raise RuntimeError("analysis 沒有回傳此模式的結果")
+            st = S.coverage_stats(summ)
+            counts = _mode_counts(int(st["universe"]), int(st["evaluable"]), st.get("not_evaluable_by_code") or {})
+            mp = {str(r["symbol"]): r for r in summ.to_dict("records")}
+            ok = lambda s, mp=mp: (mp.get(s) or {}).get("status") not in (None, "EXCLUDED")
+            passed = [s for s in symbols if (mp.get(s) or {}).get("status") == "PASS"]
+            scale = spec.get("metric_scale", 1)
+            metric = {s: (_num(mp[s].get("metric")) * scale if _num(mp[s].get("metric")) is not None else None)
+                      for s in passed}
+            reasons = {s: (mp[s].get("reason_zh") if isinstance(mp[s].get("reason_zh"), str) else "") for s in passed}
+            excluded = []
+            for s in symbols:
+                r = mp.get(s) or {}
+                if r.get("status") != "EXCLUDED":
+                    continue
+                code = r.get("exclusion_code") if isinstance(r.get("exclusion_code"), str) else ""
+                why = r.get("exclusion_reason") if isinstance(r.get("exclusion_reason"), str) else ""
+                if not code or code not in lab:   # 未知代碼：全站備援格式（不直接顯示英文代碼字樣）
+                    why = UNKNOWN_CODE_LABEL.format(raw=code or "—")
+                else:
+                    why = zh_text(why or lab[code], code)["text"]
+                excluded.append(dict(code=s, name=r.get("name") if isinstance(r.get("name"), str) else s,
+                                     reason=why, excl_code=code))
+            notes = []
+            if spec.get("cross_sectional"):
+                notes.append(RANK_NOTE.format(n=res.ranked_counts.get(mid, 0)) if res.scope_all
+                             else _reg_text("cross_sectional_note", "排名在本次評估範圍內計算。"))
+            computed[mid] = dict(counts, passed=passed, metric=metric, reasons=reasons, excluded_rows=excluded,
+                                 excluded_reasons=_excl_reasons([mp], symbols, ok, lab), notes=notes)
+        except Exception as e:   # 單一模式失敗 → 只有該模式顯示錯誤
+            computed[mid] = dict(error=f"{type(e).__name__}：{e}")
+
+
+def today_modes(src: DataSource, code: str) -> dict:
+    """個股頁「今天符合的模式」：與篩選中心同一份計算（_core），只列覆蓋率足夠（95%）且此股 PASS 的模式。
+    state：ok（有符合）／none（沒有符合）／error（篩選中心無法計算）。"""
+    core = _core(src)
+    if core.get("fatal"):
+        return dict(state="error", hits=[], insufficient=0, as_of="—", error=core["fatal"])
+    items, lack = [], 0
+    for m in mode_specs():
+        if "na" in m:
+            continue
+        c = core["computed"].get(m["id"])
+        if not c or "error" in c:
+            lack += 1
+            continue
+        state, _n = mode_state(c)
+        if state == "insufficient_data":
+            lack += 1
+            continue
+        if code in set(c["passed"]):
+            items.append(dict(id=m["id"], name=m["name"], tier=m["tier"], tier_class=TIER_CLASS.get(m["tier"], "t1")))
+    return dict(state="ok" if items else "none", hits=items, insufficient=lack, as_of=core["as_of"])
+
+
+def _compute_core(src: DataSource) -> dict:
     try:
         r1, s1 = _screen(src, P_M1)
     except Exception as e:
-        view["error"] = f"選股引擎無法執行（{e}）"
-        _fill_modes(view, {}, selected)
-        return view
+        return dict(fatal=f"選股引擎無法執行（{e}）")
     from .screening import exclusion_labels
     labels = dict(exclusion_labels())
     as_of = r1.trade_date
-    view["as_of"] = as_of
     m1 = _status_map(s1)
     symbols = sorted(m1)
     price = _price_map(src, m1, as_of)
@@ -317,7 +546,6 @@ def build(src: DataSource, selected: Optional[str] = None, sort: Optional[str] =
     safe("M6", m6f)
 
     month = available_month(as_of)
-    view["revenue_month"] = month
     rev: dict = {}
     rev_err = ""
     if month:
@@ -366,9 +594,8 @@ def build(src: DataSource, selected: Optional[str] = None, sort: Optional[str] =
             _excl_reasons([rm, mt], symbols, ok, labels), rnote)
     safe("M7", m7f)
 
-    view["price"] = price
-    _fill_modes(view, computed, selected, sort, src)
-    return view
+    _new_modes(computed, src, symbols, labels, as_of, r1)
+    return dict(as_of=as_of, revenue_month=month, price=price, computed=computed, symbols=symbols)
 
 
 def _price_map(src: DataSource, m1: dict, as_of: str) -> dict:
@@ -396,11 +623,10 @@ def _fill_modes(view: dict, computed: dict, selected: Optional[str], sort: Optio
     as_of = view.get("as_of") or "—"
     test = bool(view.get("is_test"))
     out = []
-    for m in MODES:
+    for m in mode_specs():
         d = dict(m)
         c = computed.get(m["id"])
         d["available"] = "na" not in m
-        d["rate_status"] = "rate_few" if m.get("quarterly") else "rate_pending"
         if not d["available"]:
             d["mode_status"] = "mode_na"
         elif c is None or "error" in c:
@@ -422,7 +648,7 @@ def _fill_modes(view: dict, computed: dict, selected: Optional[str], sort: Optio
 
 def _rows(view: dict, m: dict, test: bool, as_of: str) -> list[dict]:
     price = view.get("price") or {}
-    src_label = TEST_LABEL if test else "analysis/screener.py screen()（daily_prices）"
+    src_label = TEST_LABEL if test else (m.get("engine") if m.get("new") else "analysis/screener.py screen()（daily_prices）")
     rows = []
     for s in m["passed"]:
         p = price.get(s) or {}
@@ -441,7 +667,8 @@ def _rows(view: dict, m: dict, test: bool, as_of: str) -> list[dict]:
                          metric=Val(mv, "", m.get("engine", ""), as_of, is_test=test, digits=m.get("metric_digits", 2),
                                     status=STATUS_OK if mv is not None else STATUS_INSUFFICIENT,
                                     note="" if mv is not None else "analysis 沒有提供此列的指標值"),
-                         _mv=mv, _amt=p.get("amount")))
+                         _mv=mv, _amt=p.get("amount"), **({"reason": (m.get("reasons") or {}).get(s) or ""}
+                                                          if m.get("new") else {})))
     if m.get("sort_key") == "trade_value":
         rows.sort(key=lambda r: (r["_amt"] is None, -(r["_amt"] or 0), r["code"]))
     else:

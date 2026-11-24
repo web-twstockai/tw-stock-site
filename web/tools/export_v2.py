@@ -195,7 +195,7 @@ class Linker:
 
 # ---------------- 篩選中心／產業頁 ----------------
 def render_extra_pages(client, log=print) -> dict:
-    """/hub（預設＋M1～M4、M6、M7、M2 依成交金額）、/industry 與產業總覽連到的每個產業頁（預設排序）。
+    """/hub（預設＋M1～M4、M6、M7、M9～M21、M2 依成交金額）、/industry 與產業總覽連到的每個產業頁（預設排序）。
     回傳 {網址鍵: 原始 HTML}；任何一頁非 200 或出現測試資料標記就中止。"""
     keys = list(V1.HUB_PAGES) + ["/industry"]
     out: dict = {}
@@ -704,7 +704,28 @@ def _extra_symbols(src, page_extra, spec: str | None = None) -> set:
     return out
 
 
-def page_symbols(mode: str, universe: set, tracking: set, base_res, src, page_extra=None) -> tuple[set, str]:
+MODE_PAGES_MAX = 300   # 單一模式符合超過這個檔數（例：M4 營收連續 3 個月年增 1,039 檔）不另外為它產生個股頁；TWSITE_MODE_PAGES_MAX 可調
+
+
+def mode_hits(src, cap: int | None = None) -> set:
+    """篩選中心 M1～M21 今天符合（PASS）的股票（app/hub.py 同一份快取計算；名單上的股票才有可點的個股頁）。
+    覆蓋率不足的模式不算；符合檔數 > cap 的模式不算（避免全市場匯出個股頁暴增，名單上未收錄的照舊標「未收錄個股頁」）。"""
+    from app import hub as H
+    if cap is None:
+        cap = int(os.environ.get("TWSITE_MODE_PAGES_MAX") or MODE_PAGES_MAX)
+    core = H._core(src)
+    out: set = set()
+    for c in (core.get("computed") or {}).values():
+        if "error" in c or "coverage_ratio" not in c:
+            continue
+        state, n = H.mode_state(c)
+        if state == "ok" and n <= cap:
+            out |= {str(x) for x in c.get("passed") or []}
+    return out
+
+
+def page_symbols(mode: str, universe: set, tracking: set, base_res, src, page_extra=None,
+                 modes: set | None = None) -> tuple[set, str]:
     """要產生個股頁的股票（回傳 (集合, 說明)）。
     - "all"：匯出範圍全部；
     - "hits"：符合任一篩選條件的股票（_hits）＋另外指定的（PAGE_EXTRA_PROVIDERS／page_extra／TWSITE_PAGE_EXTRA）；
@@ -718,10 +739,51 @@ def page_symbols(mode: str, universe: set, tracking: set, base_res, src, page_ex
         return set(universe), f"匯出範圍全部 {len(universe):,} 檔"
     spec = page_extra_spec(full)
     hits = _hits(base_res) & universe
-    extra = _extra_symbols(src, page_extra, spec) & universe
-    return hits | extra, (f"符合任一篩選條件 {len(hits):,} 檔＋另外指定 {len(extra - hits):,} 檔"
-                          f"（{spec or '無另外指定'}）"
-                          f"（預設參數；其餘 {len(universe - hits - extra):,} 檔未收錄個股頁）")
+    mh = (set(modes or ()) & universe) - hits
+    extra = (_extra_symbols(src, page_extra, spec) & universe) - hits - mh
+    return hits | mh | extra, (f"符合任一篩選條件 {len(hits):,} 檔＋篩選中心模式 {len(mh):,} 檔＋另外指定 {len(extra):,} 檔"
+                               f"（{spec or '無另外指定'}）"
+                               f"（預設參數；其餘 {len(universe - hits - mh - extra):,} 檔未收錄個股頁）")
+
+
+# ---------------- 舊網址轉址頁 ----------------
+LEGACY_STUB = """<!doctype html>
+<html lang="zh-Hant-TW"><head><meta charset="utf-8">
+<title>{name} {code}｜台股盤後研究</title>
+<meta name="robots" content="noindex">
+<meta http-equiv="refresh" content="0; url=../?code={code}">
+<link rel="canonical" href="{canonical}">
+</head><body>
+<p>個股頁網址已更新：<a href="../?code={code}">前往 {name} {code} 個股頁</a>。</p>
+<script>location.replace("../?code={code}"+location.hash)</script>
+</body></html>
+"""
+
+
+def legacy_stub_html(code: str, name: str, base: str) -> str:
+    import html as _h
+    return LEGACY_STUB.format(code=_h.escape(code), name=_h.escape(name or code),
+                              canonical=_h.escape(f"{base}stock/?code={code}"))
+
+
+def write_legacy_redirects(stage: Path, stocks: list, base: str) -> int:
+    """v1 舊網址 stock/<代號>/（外部書籤、搜尋引擎）→ 每檔一個小轉址頁（HTTP 200；meta refresh＋canonical＋noindex＋可點連結），
+    轉到 v2 殼頁 stock/?code=<代號>。追蹤範圍內每檔都產生（含未收錄個股頁的股票：殼頁會說明）；已存在的檔案不覆蓋。
+    TWSITE_LEGACY_STUBS=0 關閉。"""
+    if os.environ.get("TWSITE_LEGACY_STUBS", "1") == "0":
+        return 0
+    n = 0
+    for s_ in stocks:
+        code = str(s_["code"])
+        if not re.fullmatch(r"[A-Za-z0-9]+", code):
+            continue
+        f = stage / "stock" / code / "index.html"
+        if f.exists():
+            continue
+        f.parent.mkdir(parents=True, exist_ok=True)
+        f.write_text(legacy_stub_html(code, s_.get("name") or "", base), "utf-8")
+        n += 1
+    return n
 
 
 # ---------------- 主流程 ----------------
@@ -787,7 +849,13 @@ def export_v2(out: Path, db: Path, base: str = "/tw-stock-site/", log=print, sym
 
         # 2b) 要產生個股頁的股票（見 page_symbols()）；其餘追蹤範圍內的股票連到殼頁並標「未收錄個股頁」
         base_res = M.run_screen(src, M.ScreenParams()).extra.get("analysis_result")
-        page_set, page_why = page_symbols(pages, universe, tracking, base_res, src, page_extra)
+        # 篩選中心 M1～M21（含 analysis/modes.py evaluate_modes() 全市場一次，約 1 分鐘、0.7 GB）：在主行程先算好並快取，
+        # 之後 hub 網址與工作行程的個股頁「今天符合的模式」都讀同一份（fork 繼承），工作行程不重算；輸入資料算完即釋放
+        t1 = time.time()
+        hits_m = mode_hits(src)
+        timing["modes"] = round(time.time() - t1, 1)
+        mem["modes"] = _rss_mb()
+        page_set, page_why = page_symbols(pages, universe, tracking, base_res, src, page_extra, hits_m)
         nopage = frozenset(universe - page_set)   # symbols（測試縮小範圍）以外的股票維持「靜態版未提供」
         G.update(stocks=page_set, nopage=nopage)
         log(f"個股頁：{len(page_set):,} 檔（{page_why}）；未收錄個股頁 {len(nopage):,} 檔")
@@ -947,6 +1015,8 @@ def export_v2(out: Path, db: Path, base: str = "/tw-stock-site/", log=print, sym
         p404.write_text(p404.read_text("utf-8").replace("</body>", (
             "<script>(function(){var m=location.pathname.match(/\\/stock\\/([A-Za-z0-9]+)\\/(?:index\\.html|q_[^\\/]*)?$/);"
             f"if(m) location.replace({json.dumps(base)}+'stock/?code='+m[1]+location.hash)}})();</script>\n</body>"), 1), "utf-8")
+        n_legacy = write_legacy_redirects(stage, stocks, base)
+        log(f"舊網址轉址頁 stock/<代號>/：{n_legacy:,} 個")
         (stage / ".nojekyll").write_text("", "utf-8")
         (stage / ".github" / "workflows").mkdir(parents=True, exist_ok=True)
         shutil.copy2(ASSETS / "pages.yml", stage / ".github" / "workflows" / "pages.yml")
@@ -969,7 +1039,7 @@ def export_v2(out: Path, db: Path, base: str = "/tw-stock-site/", log=print, sym
              "source": "sqlite（data/twstock.db 快照）", "universe": sorted(universe),
              "tracking_universe": sorted(tracking), "universe_label": src.universe.label,
              "trade_days": V1._trade_days_around(src, meta.get("data_date")), "quotes_ready": "18:30",
-             "extra_pages": dict(sorted(G["extra"].items()))},
+             "extra_pages": dict(sorted(G["extra"].items())), "legacy_redirects": n_legacy},
             ensure_ascii=False, indent=1), "utf-8")
         timing["write"] = round(time.time() - t1, 1)
         mem["end"] = _rss_mb()
