@@ -203,7 +203,7 @@ th.sorted .sort-ic{color:var(--brand)}
 .ind-heat .sec-h h2{margin:0;font-size:18px}
 .hm-legend{margin:0 0 12px;font-size:13.5px;color:var(--ink2);line-height:1.55}
 .hm-grid{list-style:none;margin:0;padding:0;display:flex;flex-wrap:wrap;gap:10px;align-items:stretch}
-.hm-cell{flex:1 1 168px;min-width:168px;max-width:100%}
+.hm-cell{min-width:154px;max-width:100%}
 .hm-tile{min-height:140px;border-top-width:4px}
 .hm-tile.up{border-top-color:var(--up)}
 .hm-tile.down{border-top-color:var(--down)}
