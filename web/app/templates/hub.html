@@ -24,13 +24,16 @@
 <span class="na-why">{{ m.error }}</span>
 {%- elif m.mode_status == 'insufficient_data' -%}
 <span class="cnt"><span class="cnt-l">今日</span><span class="pill pill-muted big">{{ STATUS_LABELS.insufficient_data }}</span></span>
-<span class="lack">! 可評估 {{ n0(m.evaluable_count) }}／{{ n0(m.denominator) }} 檔（{{ pctx(m.coverage_ratio) }}），未達 95%</span>
-{%- if m.young_excluded_count %}<span class="young">{{ n0(m.young_excluded_count) }} 檔上市未滿，未納入</span>{% endif -%}
+{%- if m.coverage_line is defined %}<span class="lack">! {{ m.coverage_line }}（{{ pctx(m.coverage_ratio) }}），未達 95%</span>
+{%- if m.not_evaluable_count %}<span class="young">{{ n0(m.not_evaluable_count) }} 檔無法評估（{% for x in m.not_evaluable_kinds %}{{ '／' if not loop.first }}{{ x.kind }} {{ n0(x.count) }}{% endfor %}），未納入</span>{% endif -%}
+{%- else %}<span class="lack">! 可評估 {{ n0(m.evaluable_count) }}／{{ n0(m.denominator) }} 檔（{{ pctx(m.coverage_ratio) }}），未達 95%</span>
+{%- if m.young_excluded_count %}<span class="young">{{ n0(m.young_excluded_count) }} 檔上市未滿，未納入</span>{% endif -%}{% endif -%}
 {%- else -%}
 <span class="cnt{{ ' zero' if m.today_count == 0 }}"><span class="cnt-l">今日</span><b class="cnt-v num">{{ n0(m.today_count) }}</b><span class="cnt-u">檔</span><span class="cnt-of">／可評估 {{ n0(m.evaluable_count) }} 檔</span></span>
 {%- if m.excluded_count %}<span class="lack">! {{ n0(m.excluded_count) }} 檔資料不足，未納入</span>{% endif -%}
-{%- if m.young_excluded_count %}<span class="young">{{ n0(m.young_excluded_count) }} 檔上市未滿，未納入</span>{% endif -%}
-{%- if m.halted_count %}<span class="young">{{ n0(m.halted_count) }} 檔停牌，未納入</span>{% endif -%}
+{%- if m.not_evaluable_kinds is defined %}{% if m.not_evaluable_count %}<span class="young">{{ n0(m.not_evaluable_count) }} 檔無法評估（{% for x in m.not_evaluable_kinds %}{{ '／' if not loop.first }}{{ x.kind }} {{ n0(x.count) }}{% endfor %}），未納入</span>{% endif -%}
+{%- else %}{%- if m.young_excluded_count %}<span class="young">{{ n0(m.young_excluded_count) }} 檔上市未滿，未納入</span>{% endif -%}
+{%- if m.halted_count %}<span class="young">{{ n0(m.halted_count) }} 檔停牌，未納入</span>{% endif -%}{% endif -%}
 {%- endif -%}
 {%- endmacro -%}
 {% block content %}
@@ -107,7 +110,7 @@
       <div class="state st-fail" role="alert"><p><b>✕ 無法計算</b>：{{ m.error }}</p><p>這不是 0 檔。<a href="/status">看資料狀態 →</a></p></div>
       {%- elif m.mode_status == 'insufficient_data' %}
       <div class="state st-nodata" role="status" data-state="insufficient_data"><p class="st-big"><span class="pill pill-muted big">{{ STATUS_LABELS.insufficient_data }}</span></p>
-        <p><b>這不是 0 檔。</b>今日可評估 {{ n0(m.evaluable_count) }}／{{ n0(m.denominator) }} 檔（{{ pctx(m.coverage_ratio) }}），未達 95%，名單與 5 日勝率都不顯示。{% if m.young_excluded_count %}另有 {{ n0(m.young_excluded_count) }} 檔上市未滿，未納入（不計入分母）。{% endif %}{% if m.halted_count %}{{ n0(m.halted_count) }} 檔停牌，未納入（不計入分母）。{% endif %}</p>
+        <p><b>這不是 0 檔。</b>{% if m.coverage_line is defined %}今日{{ m.coverage_line }}（{{ pctx(m.coverage_ratio) }}），未達 95%，名單與 5 日勝率都不顯示。{% if m.not_evaluable_text %}{{ m.not_evaluable_text }}。{% endif %}{% else %}今日可評估 {{ n0(m.evaluable_count) }}／{{ n0(m.denominator) }} 檔（{{ pctx(m.coverage_ratio) }}），未達 95%，名單與 5 日勝率都不顯示。{% if m.young_excluded_count %}另有 {{ n0(m.young_excluded_count) }} 檔上市未滿，未納入（不計入分母）。{% endif %}{% if m.halted_count %}{{ n0(m.halted_count) }} 檔停牌，未納入（不計入分母）。{% endif %}{% endif %}</p>
         {%- if m.excluded_reasons %}<p>未能評估的原因（分析引擎判定）：</p><ul class="excl-list">{% for x in m.excluded_reasons[:6] %}<li title="{{ x.code }}">{{ x.label }}：{{ n0(x.count) }} 檔</li>{% endfor %}</ul>{% endif %}
         <p class="st-meta"><a href="/status">看資料狀態 →</a></p></div>
       {%- else %}
@@ -118,8 +121,9 @@
         {%- else %}
       <div class="res-sum" role="note"><p class="sum-1"><span><b class="num">{{ n0(m.rows|length) }}</b> 檔</span><span>排序：{{ '成交金額（億元）' if by_amt else m.metric_label }} ↓</span><span class="sum-word">5 日勝率 {{ STATUS_LABELS.rate_few if m.rate_status == 'rate_few' else STATUS_LABELS.rate_pending }}（{{ '季頻訊號樣本不足' if m.rate_status == 'rate_few' else '歷史勝率回補中' }}）</span></p></div>
         {%- endif %}
-        {%- if m.excluded_count %}<p class="lack-note">! <b>{{ n0(m.excluded_count) }} 檔資料不足，未納入</b>（可評估 {{ n0(m.evaluable_count) }}／{{ n0(m.denominator) }} 檔，{{ pctx(m.coverage_ratio) }}）</p>{% endif %}
-        {%- if m.young_excluded_count %}<p class="young-note"><b>{{ n0(m.young_excluded_count) }} 檔上市未滿，未納入</b>：上市時間不夠本模式需要的歷史長度，不計入覆蓋率分母（母體 {{ n0(m.universe_count) }} 檔 − {{ n0(m.young_excluded_count) }} 檔{% if m.halted_count %} − 停牌 {{ n0(m.halted_count) }} 檔{% endif %} ＝ {{ n0(m.denominator) }} 檔）。</p>
+        {%- if m.excluded_count %}<p class="lack-note">! <b>{{ n0(m.excluded_count) }} 檔資料不足，未納入</b>（{% if m.coverage_line is defined %}{{ m.coverage_line }}{% else %}可評估 {{ n0(m.evaluable_count) }}／{{ n0(m.denominator) }} 檔{% endif %}，{{ pctx(m.coverage_ratio) }}）</p>{% endif %}
+        {%- if m.not_evaluable_kinds is defined %}{% if m.not_evaluable_count %}<p class="young-note"><b>{{ n0(m.not_evaluable_count) }} 檔無法評估，未納入</b>（{% for x in m.not_evaluable_kinds %}{{ '／' if not loop.first }}{{ x.kind }} {{ n0(x.count) }}{% endfor %}）：無成交、停止買賣屬官方事實，上市未滿是上市時間不夠本模式需要的歷史長度，都不計入覆蓋率分母（母體 {{ n0(m.universe_count) }} 檔 − {{ n0(m.not_evaluable_count) }} 檔 ＝ {{ n0(m.denominator) }} 檔）。</p>{% endif %}
+        {%- elif m.young_excluded_count %}<p class="young-note"><b>{{ n0(m.young_excluded_count) }} 檔上市未滿，未納入</b>：上市時間不夠本模式需要的歷史長度，不計入覆蓋率分母（母體 {{ n0(m.universe_count) }} 檔 − {{ n0(m.young_excluded_count) }} 檔{% if m.halted_count %} − 停牌 {{ n0(m.halted_count) }} 檔{% endif %} ＝ {{ n0(m.denominator) }} 檔）。</p>
         {%- elif m.halted_count %}<p class="young-note"><b>{{ n0(m.halted_count) }} 檔停牌，未納入</b>：不計入覆蓋率分母（母體 {{ n0(m.universe_count) }} 檔 − {{ n0(m.halted_count) }} 檔 ＝ {{ n0(m.denominator) }} 檔）。</p>{% endif %}
         {%- for t in m.notes %}<p class="sort-note">{{ t }}</p>{% endfor %}
         {%- if m.rows %}
@@ -150,7 +154,7 @@
   </div>
   <aside class="topics" aria-labelledby="h-top">
     <div class="sec-h sm"><h2 id="h-top">近期話題</h2></div>
-    <div class="later" role="note"><p class="later-h">重大訊息則數排行 <span class="later-tag">之後提供</span></p><p>近 7 個交易日重大訊息則數最多的個股（只算普通股、排除例行公告）。例行公告的排除規則仍待核可，目前還沒有這項功能。</p></div>
+    <div class="later" role="note"><p class="later-h">重大訊息則數排行 <span class="later-tag">之後提供</span></p><p>近 7 個交易日重大訊息則數最多的個股（只算普通股、排除例行公告）。例行公告的排除規則已核可，目前還沒有這項功能。</p></div>
     <div class="later" role="note"><p class="later-h">主題話題 <span class="later-tag">之後提供</span></p><p>例如把同一主題的多檔股票歸在一起；目前還沒有這項功能。</p></div>
   </aside>
 </div>

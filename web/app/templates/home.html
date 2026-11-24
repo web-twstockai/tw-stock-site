@@ -49,16 +49,25 @@
         </li>
         {#- 2 技術篩選 -#}
         {%- set ss = SEC.screen %}
+        {#- M1 狀態與篩選中心同一個判斷（app/hub.py m1_card → mode_state；覆蓋率未達 95% 為「資料不足」） -#}
+        {%- set m1 = summary.m1 if summary.m1 is defined else none %}
         <li class="lg-row" id="sum-screen">
           <h3 class="lg-k">技術篩選（預設條件）</h3>
-          <div class="lg-v">
+          <div class="lg-v"{% if m1 %} data-testid="home-m1" data-state="{{ m1.mode_status }}"{% if m1.today_count is not none %} data-count="{{ m1.today_count }}"{% endif %}{% endif %}>
             {%- set pf = F['入選檔數'] %}{% set ef = F['排除檔數'] %}
+            {% if m1 and m1.mode_status == 'insufficient_data' %}
+            <p class="lg-line"><span class="lg-l">入選檔數</span> <span class="pill pill-muted big">{{ STATUS_LABELS.insufficient_data }}</span>
+              <a class="more" href="/hub?mode=M1#results">看篩選中心 M1 →</a>{% if ss.more %} <a class="more" href="{{ ss.more[1] }}">看今日選股表 ↓</a>{% endif %}</p>
+            <div class="state state-coverage" data-state="insufficient_data"><p><b>這不是 0 檔。</b>{% if m1.coverage_line is defined %}今日{{ m1.coverage_line }}（{{ '%.1f' % (m1.coverage_ratio * 100) }}%），未達 {{ '%g' % (m1.cover * 100) }}%，名單不顯示。{% if m1.not_evaluable_text %}{{ m1.not_evaluable_text }}。{% endif %}{% else %}今日可評估 {{ '{:,}'.format(m1.evaluable_count) }}／{{ '{:,}'.format(m1.denominator) }} 檔（{{ '%.1f' % (m1.coverage_ratio * 100) }}%），未達 {{ '%g' % (m1.cover * 100) }}%，名單不顯示。{% if m1.young_excluded_count %}另有 {{ '{:,}'.format(m1.young_excluded_count) }} 檔上市未滿，未納入（不計入分母）。{% endif %}{% if m1.halted_count %}{{ '{:,}'.format(m1.halted_count) }} 檔停牌，未納入（不計入分母）。{% endif %}{% endif %}<a href="/status#coverage">查看覆蓋起日 →</a></p></div>
+            {% else %}
             <p class="lg-line"><span class="lg-l">入選檔數</span> <b class="big">{{ val(pf.val) if pf else '—' }}</b>{% if pf and pf.val.ok %} 檔{% endif %}{% if ef %}<span class="sep">｜</span><span class="lg-l">排除檔數</span> <b>{{ val(ef.val) }}</b>{% if ef.val.ok %} 檔{% endif %}{% endif %}
+              {%- if m1 and m1.mode_status in ('ok', 'zero') %}<span class="muted" data-testid="home-m1-evaluable">（{% if m1.coverage_line is defined %}{{ m1.coverage_line }}{% else %}可評估 {{ '{:,}'.format(m1.evaluable_count) }} 檔{% endif %}{% if m1.excluded_count %}；{{ '{:,}'.format(m1.excluded_count) }} 檔資料不足，未納入{% endif %}{% if m1.not_evaluable_text is defined and m1.not_evaluable_text %}；{{ m1.not_evaluable_text }}{% endif %}）</span>{% endif %}
               {% if ss.more %}<a class="more" href="{{ ss.more[1] }}">看今日選股表 ↓</a>{% endif %}</p>
             {% if ss.zero and ss.zero_kind == 'coverage' %}
             <div class="state state-coverage" data-state="zero-coverage"><p class="state-big">0 檔</p><p><b>0 檔是因為資料覆蓋不足，不是沒有股票符合條件。</b><a href="/status#coverage">查看覆蓋起日 →</a></p></div>
             {% elif ss.zero %}
             <div class="state state-zero" data-state="zero"><p class="state-big">0 檔</p><p>條件下無符合標的（不放寬條件）。</p></div>
+            {% endif %}
             {% endif %}
           </div>
         </li>
@@ -142,15 +151,19 @@
 <section class="block" id="today" aria-labelledby="today-h">
   <header class="sec-h sec-h-row">
     <div>
-      <h2 id="today-h">今日選股：趨勢＋突破＋量能 <small>{{ result.rows|length }} 檔／檢查 {{ result.universe_count }} 檔</small></h2>
-      <p class="sec-sub">預設四條件全部同時成立{% if result.rows %}；排序依成交金額（大到小），點欄名可改排序{% endif %}。</p>
+      <h2 id="today-h">今日選股：趨勢＋突破＋量能 <small>{% if summary.m1 is defined and summary.m1.mode_status == 'insufficient_data' %}{{ STATUS_LABELS.insufficient_data }}{% else %}{{ result.rows|length }} 檔／檢查 {{ result.universe_count }} 檔{% endif %}</small></h2>
+      <p class="sec-sub">預設四條件全部同時成立{% if result.rows and not (summary.m1 is defined and summary.m1.mode_status == 'insufficient_data') %}；排序依成交金額（大到小），點欄名可改排序{% endif %}。</p>
     </div>
     <span class="sec-acts"><a class="btn" href="/hub">到篩選中心看全部模式 →</a> <a class="btn" href="/screener">到自訂條件調整 →</a></span>
   </header>
   <ul class="chips" aria-label="使用中的條件">
     <li>① 收盤 &gt; MA20 &gt; MA60</li><li>② 收盤 &gt; 前 20 日最高</li><li>③ 成交量 ≥ 前 20 日均量 × 1.5</li><li>④ 成交金額 ≥ 1 億元</li>
   </ul>
+  {% if summary.m1 is defined and summary.m1.mode_status == 'insufficient_data' %}
+  <div class="state state-coverage" data-state="insufficient_data" data-testid="today-insufficient"><p><b>{{ STATUS_LABELS.insufficient_data }}：</b>今日可評估比例未達 {{ '%g' % (summary.m1.cover * 100) }}%，與篩選中心 M1 相同，名單不顯示（這不是 0 檔）。<a href="/hub?mode=M1#results">看篩選中心 M1 →</a></p></div>
+  {% else %}
   {{ screen_table(result, compact=True) }}
+  {% endif %}
   {{ srcline(result.engine, result.trade_date, result.is_test) }}
 </section>
 

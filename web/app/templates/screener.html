@@ -93,7 +93,7 @@
     <thead><tr><th>代碼</th><th>說明</th><th class="r">檔數</th><th>類型</th></tr></thead>
     <tbody>{% for e in result.extra.exclusion_stats %}<tr class="{{ 'cov' if e.coverage }}">
       <td class="stack-h"><code>{{ e.code }}</code></td><td class="wrap">{{ e.label }}</td><td class="r">{{ e.count }}</td>
-      <td>{% if e.code == 'EXCL_VOLUME_BASIS' %}<a href="/status#coverage">資料覆蓋不足</a><span data-type="volume-basis">（量額口徑）</span>{% elif e.coverage %}<a href="/status#coverage">資料覆蓋不足</a>{% elif e.code == 'EXCL_SUSPENDED' %}<span data-type="suspended">確認停牌</span>{% else %}資料品質／其他{% endif %}</td>
+      <td>{% if e.not_evaluable is defined and e.not_evaluable %}<span data-type="{{ 'suspended' if e.code in ('EXCL_SUSPENDED', 'EXCL_WINDOW_SUSPENDED') else 'not-evaluable' }}">{{ e.not_evaluable }}</span>{% elif e.code == 'EXCL_VOLUME_BASIS' %}<a href="/status#coverage">資料覆蓋不足</a><span data-type="volume-basis">（量額口徑）</span>{% elif e.coverage %}<a href="/status#coverage">資料覆蓋不足</a>{% elif e.code == 'EXCL_SUSPENDED' %}<span data-type="suspended">確認停牌</span>{% else %}資料品質／其他{% endif %}</td>
     </tr>{% endfor %}</tbody>
   </table></div>
   {% else %}<p class="muted">無排除。</p>{% endif %}

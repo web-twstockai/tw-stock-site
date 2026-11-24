@@ -8,6 +8,7 @@
 from __future__ import annotations
 
 import bisect
+import re
 import math
 from dataclasses import dataclass
 from types import MappingProxyType
@@ -164,7 +165,76 @@ def normalize_actions(actions: Optional[pd.DataFrame]) -> pd.DataFrame:
     })
     for c in ACT_NUMERIC:
         out[c] = _numeric(df, c)
+    if "announced_at_note" in df.columns:
+        out["announced_at_note"] = df["announced_at_note"].where(pd.notna(df["announced_at_note"]), None).values
     return out.reset_index(drop=True)
+
+
+# 減資／變更面額「停止買賣日～恢復買賣日前一日」（indicators.md §8.7；H AO 核可 2026-11-24 13:32）
+SUSPENSION_ACTION_TYPES = frozenset({"capital_reduction", "par_value_change"})
+STOP_TRADE_DATE_RE = re.compile(r"停止買賣日=(\d{4}-\d{2}-\d{2})")
+MAX_INFERRED_SUSPENSION_DAYS = 15  # 無停止買賣日時，只向前連續推算無列日的上限
+
+
+def corp_suspension_dates(
+    actions: Optional[pd.DataFrame],
+    symbol: str,
+    trade_days: Sequence,
+    has_row: Iterable,
+    as_of: Any,
+) -> set[pd.Timestamp]:
+    """該股因減資或變更面額而官方停止買賣的交易日（恢復買賣日不含）。
+
+    區間來源：`announced_at_note` 的「停止買賣日=YYYY-MM-DD」（上櫃 bulletin 有此欄）。
+    若只有恢復買賣日（上市 TWTAUU 註明 action_date＝恢復買賣日、非停止買賣日），則把恢復日前、連續且本股無行情列的交易日視為停止買賣期間，最多 ``MAX_INFERRED_SUSPENSION_DAYS`` 日，遇到有列的日子即停。
+    推算只涵蓋無列日，不會把「官方有列但本庫缺漏」標成停止買賣。
+    """
+    out: set[pd.Timestamp] = set()
+    if actions is None or len(actions) == 0:
+        return out
+    as_of_ts = pd.Timestamp(as_of).normalize()
+    trade = [pd.Timestamp(d).normalize() for d in trade_days if pd.notna(d) and pd.Timestamp(d).normalize() <= as_of_ts]
+    if not trade:
+        return out
+    rows = {pd.Timestamp(d).normalize() for d in has_row if pd.notna(d)}
+    df = actions
+    if "symbol" in df.columns:
+        df = df[df["symbol"].astype(str).str.strip() == str(symbol).strip()]
+    if "action_type" not in df.columns or "action_date" not in df.columns:
+        return out
+    has_note = "announced_at_note" in df.columns
+    for _, r in df.iterrows():
+        typ = canonical_action_type(r.get("action_type"))
+        if typ not in SUSPENSION_ACTION_TYPES:
+            continue
+        resume = r.get("action_date")
+        if pd.isna(resume):
+            continue
+        resume = pd.Timestamp(resume).normalize()
+        stop = None
+        if has_note and pd.notna(r.get("announced_at_note")):
+            m = STOP_TRADE_DATE_RE.search(str(r.get("announced_at_note")))
+            if m:
+                try:
+                    stop = pd.Timestamp(m.group(1)).normalize()
+                except (ValueError, TypeError):
+                    stop = None
+        if stop is not None and stop < resume:
+            for d in trade:
+                if stop <= d < resume:
+                    out.add(d)
+            continue
+        i = bisect.bisect_left(trade, resume) - 1
+        n = 0
+        while i >= 0 and n < MAX_INFERRED_SUSPENSION_DAYS:
+            d = trade[i]
+            if d in rows:
+                break
+            out.add(d)
+            i -= 1
+            n += 1
+    return out
+
 
 
 HALT_REQUIRED = ("symbol", "halt_date")

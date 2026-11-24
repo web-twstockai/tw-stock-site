@@ -16,7 +16,8 @@ import math
 from typing import Any, Optional
 
 from .data_source import DataSource, DataUnavailable, source_href
-from .models import (STATUS_INSUFFICIENT, STATUS_OK, TEST_LABEL, UNKNOWN_CODE_LABEL, ScreenParams, Val)
+from .models import (NOT_EVALUABLE_KIND_ORDER, NOT_EVALUABLE_KINDS, STATUS_INSUFFICIENT, STATUS_OK, TEST_LABEL,
+                     UNKNOWN_CODE_LABEL, ScreenParams, Val)
 
 COVER = 0.95            # 覆蓋率門檻（HUB_HANDOFF §4.1；分母＝母體−上市未滿−停牌）
 TIERS = [
@@ -141,18 +142,90 @@ def _rev_eval(src: DataSource, targets: list[str], months: list[str]):
     return out, R
 
 
-def _mode_counts(universe: int, evaluable: int, young: int, halted: int) -> dict:
-    den = universe - young - halted
+def _mode_counts(universe: int, evaluable: int, not_evaluable_by_code: Optional[dict] = None) -> dict:
+    """95% 覆蓋率口徑（docs/indicators.md §8.7，analysis-0.9.2）：分母＝母體 − 無法評估（NOT_EVALUABLE_CODES：
+    上市未滿、確認停牌／停止買賣、無成交、視窗內無成交或停止買賣過多）；其餘排除（EXCL_WINDOW_GAPS 等）留在分母＝資料不齊。"""
+    by = {str(k): int(v) for k, v in (not_evaluable_by_code or {}).items() if int(v)}
+    ne = sum(by.values())
+    den = universe - ne
     cov = (evaluable / den) if den > 0 else 0.0
-    return dict(universe_count=universe, evaluable_count=evaluable, young_excluded_count=young, halted_count=halted,
-                excluded_count=max(den - evaluable, 0), coverage_ratio=cov, denominator=den)
+    kinds: dict[str, int] = {}
+    for c, n in by.items():
+        k = NOT_EVALUABLE_KINDS.get(c, "其他")
+        kinds[k] = kinds.get(k, 0) + n
+    kinds_l = [dict(kind=k, count=kinds[k]) for k in NOT_EVALUABLE_KIND_ORDER if kinds.get(k)]
+    kinds_txt = "／".join(f"{x['kind']} {x['count']:,}" for x in kinds_l)
+    return dict(universe_count=universe, evaluable_count=evaluable, denominator=den, coverage_ratio=cov,
+                excluded_count=max(den - evaluable, 0),   # 資料不齊（留在分母、未能評估）
+                not_evaluable_count=ne, not_evaluable_by_code=by, not_evaluable_kinds=kinds_l,
+                young_excluded_count=by.get(YOUNG_CODE, 0),
+                halted_count=sum(by.get(c, 0) for c in ("EXCL_SUSPENDED", "EXCL_WINDOW_SUSPENDED")),
+                coverage_line=f"可評估 {evaluable:,}／分母 {den:,} 檔",
+                not_evaluable_text=(f"另有 {ne:,} 檔無法評估（{kinds_txt}），不計入分母" if ne else ""))
 
 
-def _screen_counts(summ_map: dict, symbols: list[str], ok_fn) -> dict:
-    young = sum(1 for s in symbols if (summ_map.get(s) or {}).get("exclusion_code") == YOUNG_CODE)
-    halted = sum(1 for s in symbols if (summ_map.get(s) or {}).get("exclusion_code") == HALT_CODE)
-    ev = sum(1 for s in symbols if ok_fn(s))
-    return _mode_counts(len(symbols), ev, young, halted)
+def _screen_counts(maps, symbols: list[str], ok_fn) -> dict:
+    """maps：一個或多個 analysis summary 的 {代號: 列}。未能評估（ok_fn 為假）的股票，只要任一份結果是
+    無法評估代碼（screener.NOT_EVALUABLE_CODES）就算無法評估、不入分母；否則算資料不齊。"""
+    from .screening import not_evaluable_codes
+    maps = maps if isinstance(maps, list) else [maps]
+    ne_codes = not_evaluable_codes()
+    by: dict[str, int] = {}
+    ev = 0
+    for s in symbols:
+        if ok_fn(s):
+            ev += 1
+            continue
+        for mp in maps:
+            r = mp.get(s) or {}
+            c = r.get("exclusion_code")
+            if r.get("status") == "EXCLUDED" and c in ne_codes:
+                by[c] = by.get(c, 0) + 1
+                break
+    return _mode_counts(len(symbols), ev, by)
+
+
+def mode_state(c: dict) -> tuple[str, Optional[int]]:
+    """模式狀態（篩選中心卡片與首頁 M1 共用同一個判斷）：可評估比例未達 COVER（95%）→ insufficient_data（不給檔數）；
+    否則依符合檔數 ok／zero。回傳 (mode_status, today_count)。"""
+    if c["coverage_ratio"] < COVER:
+        return "insufficient_data", None
+    n = len(c["passed"])
+    return ("ok" if n else "zero"), n
+
+
+def _m1_parts(m1: dict, symbols: list[str], labels: dict, summary=None) -> tuple:
+    """M1（analysis 預設篩選）的檔數、符合名單、量比、未能評估原因；篩選中心與首頁共用。
+    覆蓋率優先用 analysis 的 screener.coverage_stats(summary)（0.9.2 起）；舊版沒有時用 NOT_EVALUABLE_CODES 自行歸類。"""
+    ok = lambda s: m1[s].get("status") != "EXCLUDED"
+    passed = [s for s in symbols if m1[s].get("status") == "PASS"]
+    counts = None
+    if summary is not None:
+        try:
+            from .screening import analysis_module
+            st = analysis_module("screener").coverage_stats(summary)
+            counts = _mode_counts(int(st["universe"]), int(st["evaluable"]), st.get("not_evaluable_by_code") or {})
+        except AttributeError:
+            counts = None
+    if counts is None or counts["universe_count"] != len(symbols):
+        counts = _screen_counts(m1, symbols, ok)
+    return (counts, passed, {s: _num(m1[s].get("volume_ratio")) for s in passed},
+            _excl_reasons([m1], symbols, ok, labels))
+
+
+def m1_card(src: DataSource) -> dict:
+    """首頁「技術篩選（預設條件）」用：與 /hub?mode=M1 同一份計算（_screen(P_M1) → _m1_parts → mode_state）。
+    回傳 mode_status（ok／zero／insufficient_data／error）、today_count、evaluable_count、denominator、coverage_ratio…"""
+    try:
+        r1, s1 = _screen(src, P_M1)
+        from .screening import exclusion_labels
+        m1 = _status_map(s1)
+        counts, passed, _metric, reasons = _m1_parts(m1, sorted(m1), dict(exclusion_labels()), s1)
+    except Exception as e:
+        return dict(mode_status="error", error=f"{type(e).__name__}：{e}", today_count=None)
+    d = dict(counts, passed=passed, excluded_reasons=reasons, as_of=r1.trade_date, cover=COVER)
+    d["mode_status"], d["today_count"] = mode_state(d)
+    return d
 
 
 def _excl_reasons(maps: list[dict], symbols: list[str], ok_fn, labels: dict) -> list[dict]:
@@ -214,10 +287,7 @@ def build(src: DataSource, selected: Optional[str] = None, sort: Optional[str] =
 
     # M1：analysis 預設篩選
     def m1f():
-        ok = lambda s: m1[s].get("status") != "EXCLUDED"
-        passed = [s for s in symbols if m1[s].get("status") == "PASS"]
-        add("M1", _screen_counts(m1, symbols, ok), passed, {s: _num(m1[s].get("volume_ratio")) for s in passed},
-            _excl_reasons([m1], symbols, ok, labels))
+        add("M1", *_m1_parts(m1, symbols, labels, s1))
     safe("M1", m1f)
 
     def m2f():
@@ -231,7 +301,7 @@ def build(src: DataSource, selected: Optional[str] = None, sort: Optional[str] =
         for s in passed:   # 收盤距 MA60（%）＝(收盤 ÷ analysis 的 MA60 − 1)×100；兩個值都來自 analysis 輸出
             c, m = _num(mb[s].get("close_twd")), _num(mb[s].get("ma_long"))
             metric[s] = (c / m - 1) * 100 if c is not None and m else None
-        add("M2", _screen_counts(mb, symbols, ok), passed, metric, _excl_reasons([mb, ma], symbols, ok, labels))
+        add("M2", _screen_counts([mb, ma], symbols, ok), passed, metric, _excl_reasons([mb, ma], symbols, ok, labels))
     safe("M2", m2f)
 
     def m6f():
@@ -266,7 +336,7 @@ def build(src: DataSource, selected: Optional[str] = None, sort: Optional[str] =
         rm = rev[month]
         ok = lambda s: (rm.get(s) or {}).get("rev_12m_high_status") in ("true", "false")
         passed = [s for s in symbols if (rm.get(s) or {}).get("rev_12m_high_status") == "true"]
-        add("M3", _mode_counts(len(symbols), sum(1 for s in symbols if ok(s)), 0, 0), passed,
+        add("M3", _mode_counts(len(symbols), sum(1 for s in symbols if ok(s))), passed,
             {s: _num(rm[s].get("yoy_pct")) for s in passed}, _excl_reasons([rm], symbols, ok, labels), rnote)
     safe("M3", m3f)
 
@@ -277,7 +347,7 @@ def build(src: DataSource, selected: Optional[str] = None, sort: Optional[str] =
         ok = lambda s: all((rev[mo].get(s) or {}).get("yoy_status") == "ok" for mo in ms)
         passed = [s for s in symbols if ok(s) and all((_num(rev[mo][s].get("yoy_pct")) or 0) > 0 for mo in ms)]
         maps = [rev[mo] for mo in ms]
-        add("M4", _mode_counts(len(symbols), sum(1 for s in symbols if ok(s)), 0, 0), passed,
+        add("M4", _mode_counts(len(symbols), sum(1 for s in symbols if ok(s))), passed,
             {s: _num(rev[month][s].get("yoy_pct")) for s in passed}, _excl_reasons(maps, symbols, ok, labels),
             [f"營收月份 {ms[2]}～{ms[0]}（連續 3 個月，依法定期限可得）。"])
     safe("M4", m4f)
@@ -339,12 +409,7 @@ def _fill_modes(view: dict, computed: dict, selected: Optional[str], sort: Optio
             d["available"] = bool(c)   # 引擎整體失敗時卡片不可點
         else:
             d.update(c)
-            if c["coverage_ratio"] < COVER:
-                d["mode_status"] = "insufficient_data"
-                d["today_count"] = None
-            else:
-                d["today_count"] = len(c["passed"])
-                d["mode_status"] = "ok" if c["passed"] else "zero"
+            d["mode_status"], d["today_count"] = mode_state(c)
         d["selected"] = selected == m["id"] and d["available"]
         out.append(d)
     view["modes"] = out

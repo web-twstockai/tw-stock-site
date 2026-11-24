@@ -645,16 +645,61 @@ def _hits(base_res) -> set:
     return {str(x) for x in s.loc[ok & anyp, "symbol"]}
 
 
-def _extra_symbols(src, page_extra) -> set:
+def top_value_symbols(src, n: int = 300) -> set:
+    """當日成交金額前 n 名：只算追蹤範圍內的股票，取範圍內最新交易日（daily_prices，is_current=1）的
+    amount_twd 由大到小（同額依代號）；沒有成交金額的列不算。唯讀查詢（SqliteSource._q，mode=ro）。"""
+    if n <= 0:
+        return set()
+    q = getattr(src, "_q", None)
+    if q is None:
+        raise ExportError("top_value 需要 SQLite 資料來源")
+    uni = {str(s["code"]) for s in src.universe_stocks()}
+    latest = [r for r in q("SELECT symbol, MAX(price_date) AS d FROM daily_prices WHERE is_current=1 GROUP BY symbol")
+              if str(r["symbol"]) in uni and r["d"]]
+    if not latest:
+        return set()
+    day = max(r["d"] for r in latest)
+    rows = [r for r in q("SELECT symbol, amount_twd FROM daily_prices WHERE is_current=1 AND price_date=? "
+                         "AND amount_twd IS NOT NULL", (day,)) if str(r["symbol"]) in uni]
+    rows.sort(key=lambda r: (-float(r["amount_twd"]), str(r["symbol"])))
+    return {str(r["symbol"]) for r in rows[:n]}
+
+
+# TWSITE_PAGE_EXTRA 可用的具名提供者（「名稱:參數」）；預設不啟用，例：TWSITE_PAGE_EXTRA=top_value:300
+NAMED_PAGE_EXTRA = {"top_value": lambda src, arg: top_value_symbols(src, int(arg or 300))}
+
+
+# 全市場（追蹤範圍 > AUTO_ALL_PAGES_MAX）且沒設 TWSITE_PAGE_EXTRA 時的預設；TWSITE_PAGE_EXTRA=none 關閉
+DEFAULT_FULLMARKET_EXTRA = "top_value:300"
+
+
+def page_extra_spec(full_market: bool) -> str:
+    """實際使用的 TWSITE_PAGE_EXTRA：有設就用（none／off／空字串＝不加）；沒設時全市場用 DEFAULT_FULLMARKET_EXTRA。"""
+    v = os.environ.get("TWSITE_PAGE_EXTRA")
+    if v is None:
+        return DEFAULT_FULLMARKET_EXTRA if full_market else ""
+    return "" if v.strip().lower() in ("", "none", "off", "0") else v.strip()
+
+
+def _extra_symbols(src, page_extra, spec: str | None = None) -> set:
+    """另外要產生個股頁的代號：PAGE_EXTRA_PROVIDERS、page_extra，以及 spec（預設＝page_extra_spec(False)，即環境變數
+    TWSITE_PAGE_EXTRA）。spec 以逗號分隔多項；每項是具名提供者（NAMED_PAGE_EXTRA，例 top_value:300）或清單檔路徑。"""
+    if spec is None:
+        spec = page_extra_spec(False)
     out: set = set()
     for prov in list(PAGE_EXTRA_PROVIDERS) + ([page_extra] if page_extra is not None else []):
         v = prov(src) if callable(prov) else prov
         out |= {str(x).strip() for x in (v or []) if str(x).strip()}
-    f = os.environ.get("TWSITE_PAGE_EXTRA", "").strip()
-    if f:
+    for f in [x.strip() for x in spec.split(",") if x.strip()]:
+        name, _, arg = f.partition(":")
+        if name in NAMED_PAGE_EXTRA:
+            if arg and not arg.isdigit():
+                raise ExportError(f"TWSITE_PAGE_EXTRA={f}：{name} 的參數要是正整數")
+            out |= NAMED_PAGE_EXTRA[name](src, arg)
+            continue
         p = Path(f) if Path(f).is_absolute() else ROOT / f
         if not p.is_file():
-            raise ExportError(f"TWSITE_PAGE_EXTRA={f}：找不到清單檔")
+            raise ExportError(f"TWSITE_PAGE_EXTRA={f}：不是具名提供者（{'／'.join(NAMED_PAGE_EXTRA)}），也找不到清單檔")
         out |= {ln.split("#", 1)[0].strip() for ln in p.read_text("utf-8").splitlines()} - {""}
     return out
 
@@ -666,13 +711,16 @@ def page_symbols(mode: str, universe: set, tracking: set, base_res, src, page_ex
     - "auto"（預設）：追蹤範圍 ≤ AUTO_ALL_PAGES_MAX 檔 → all，否則 hits（全市場）。"""
     if mode not in ("auto", "all", "hits"):
         raise ExportError(f"pages 只能是 auto／all／hits，收到 {mode!r}")
+    full = len(tracking) > AUTO_ALL_PAGES_MAX   # 全市場：預設另收當日成交金額前 300 名（TWSITE_PAGE_EXTRA=none 關閉）
     if mode == "auto":
-        mode = "all" if len(tracking) <= AUTO_ALL_PAGES_MAX else "hits"
+        mode = "hits" if full else "all"
     if mode == "all":
         return set(universe), f"匯出範圍全部 {len(universe):,} 檔"
+    spec = page_extra_spec(full)
     hits = _hits(base_res) & universe
-    extra = _extra_symbols(src, page_extra) & universe
+    extra = _extra_symbols(src, page_extra, spec) & universe
     return hits | extra, (f"符合任一篩選條件 {len(hits):,} 檔＋另外指定 {len(extra - hits):,} 檔"
+                          f"（{spec or '無另外指定'}）"
                           f"（預設參數；其餘 {len(universe - hits - extra):,} 檔未收錄個股頁）")
 
 

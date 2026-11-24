@@ -132,6 +132,8 @@ def build_daily_summary(src: DataSource) -> dict:
         facts.append(_fact("排除檔數", V(len(res.excluded), "檔", res.trade_date, "/screener#excluded",
                                        "analysis/screener.py 輸出", f"as_of={res.trade_date}, status=EXCLUDED"),
                            unit_label="檔"))
+    from .hub import m1_card   # 首頁 M1 狀態與篩選中心同一個判斷（覆蓋率 95% 規則在 hub.mode_state）
+    m1 = m1_card(src)
     sections.append({"id": "screen", "title": "技術篩選（預設條件）", "facts": facts,
                      "more": ("看完整「今日入選」表 ↓", "#today"),
                      "zero": (not res.error and not res.rows), "zero_kind": res.extra.get("zero_kind", ""),
@@ -192,7 +194,7 @@ def build_daily_summary(src: DataSource) -> dict:
         uni_all = src.universe_symbols() is None
     except Exception:
         uni_all = False
-    return {"date": dd, "sections": sections, "universe_label": uni_label, "universe_all": uni_all,
+    return {"date": dd, "sections": sections, "universe_label": uni_label, "universe_all": uni_all, "m1": m1,
             "narrative": narrative, "is_test": test,
             "disclaimer": "技術條件僅為篩選結果，非投資建議；只有技術訊號時不推論漲跌原因。"}
 

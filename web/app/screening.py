@@ -89,10 +89,12 @@ def clear_cache() -> None:
 
 
 # EXCL_SUSPENDED（確認停牌）是事實不是資料缺漏 → 不算覆蓋不足（第六批負責人決定）
+# analysis-0.9.2（§8.7）：無成交、停止買賣（含 EXCL_WINDOW_NO_TRADE／EXCL_WINDOW_SUSPENDED）是「無法評估」，也不算覆蓋不足；
+# EXCL_WINDOW_GAPS 只代表真正缺資料或資料錯誤，仍算。
 # 「資料覆蓋不足」類排除代碼（0 檔時用來判斷是資料問題還是真的沒人符合）
 COVERAGE_CODES = {
     "EXCL_ADJ_COVERAGE_GAP", "EXCL_NO_DATA", "EXCL_INSUFFICIENT_HISTORY", "EXCL_NO_ROW_SUSPENDED_OR_MISSING",
-    "EXCL_NO_TRADE", "EXCL_WINDOW_GAPS", "EXCL_ADJ_FACTOR_MISSING",
+    "EXCL_WINDOW_GAPS", "EXCL_ADJ_FACTOR_MISSING",
     "EXCL_VOLUME_BASIS",   # analysis-0.9.0：量額口徑非總量＝資料口徑問題（資料工程補 dailyQuotes 後恢復）
 }
 _PARAM_RE = None
@@ -129,6 +131,23 @@ def exclusion_labels() -> dict:
         out.setdefault(c, lab)
     # analysis 說明裡的表名／欄名換中文；換不完 → 未知代碼備援格式
     return {c: zh_text(lab, c)["text"] for c, lab in out.items()}
+
+
+def not_evaluable_codes() -> frozenset:
+    """95% 分母要移除的「無法評估」代碼：analysis screener.NOT_EVALUABLE_CODES（0.9.2 起），舊版用網站備援。"""
+    from .models import NOT_EVALUABLE_FALLBACK
+    try:
+        return frozenset(_mod().NOT_EVALUABLE_CODES)
+    except Exception:
+        return NOT_EVALUABLE_FALLBACK
+
+
+def not_evaluable_label(code: str) -> str:
+    """無法評估代碼的畫面短標，例「無法評估（無成交）」；不是無法評估 → 空字串。"""
+    from .models import NOT_EVALUABLE_KINDS
+    if not code or code not in not_evaluable_codes():
+        return ""
+    return f"無法評估（{NOT_EVALUABLE_KINDS.get(code, '其他')}）"
 
 
 def exclusion_label(code: str) -> str:
@@ -251,7 +270,8 @@ def _compute(source: DataSource, p: ScreenParams) -> ScreenResult:
     res.extra["exclusion_counts"] = counts
     res.extra["exclusion_labels"] = {c: labels.get(c) or UNKNOWN_CODE_LABEL.format(raw=c) for c in counts}
     res.extra["exclusion_stats"] = sorted(
-        [{"code": c, "label": labels.get(c) or UNKNOWN_CODE_LABEL.format(raw=c), "count": int(n), "coverage": c in COVERAGE_CODES}
+        [{"code": c, "label": labels.get(c) or UNKNOWN_CODE_LABEL.format(raw=c), "count": int(n), "coverage": c in COVERAGE_CODES,
+          "not_evaluable": not_evaluable_label(c)}
          for c, n in counts.items()], key=lambda x: -x["count"])
     res.extra["params"] = dict(out.params)
     n_cov = sum(n for c, n in counts.items() if c in COVERAGE_CODES)

@@ -318,7 +318,19 @@ EXCLUSION_FALLBACK = {
     "EXCL_NO_ROW_SUSPENDED_OR_MISSING": "停牌或資料缺漏，待確認（評估日本股無資料列，尚無官方停牌資料可確認）",
     # analysis-0.9.0 新碼；analysis 仍是舊版時不會出現，但 CSV／統計遇到時仍顯示中文（docs/indicators.md §9.3）
     "EXCL_VOLUME_BASIS": "量額口徑非總量（不含鉅額或口徑不明）",
+    # analysis-0.9.2 新碼（docs/indicators.md §8.7）：無法評估，不算資料不齊、不入 95% 分母
+    "EXCL_WINDOW_NO_TRADE": "無法評估（無成交）：計算視窗內官方無成交的交易日過多（流動性不足，不算資料不齊）",
+    "EXCL_WINDOW_SUSPENDED": "無法評估（停止買賣）：計算視窗內官方停牌或減資／變更面額停止買賣的交易日過多（不算資料不齊）",
 }
+
+# 「無法評估」（analysis screener.NOT_EVALUABLE_CODES；§8.7）：自 95% 覆蓋率分母移除。analysis 舊版沒有此常數時用這份
+NOT_EVALUABLE_FALLBACK = frozenset({"EXCL_NEW_LISTING", "EXCL_SUSPENDED", "EXCL_NO_TRADE",
+                                    "EXCL_WINDOW_NO_TRADE", "EXCL_WINDOW_SUSPENDED"})
+# 無法評估的類別（畫面短標）；未列在這裡的無法評估代碼顯示「其他」
+NOT_EVALUABLE_KINDS = {"EXCL_NO_TRADE": "無成交", "EXCL_WINDOW_NO_TRADE": "無成交",
+                       "EXCL_SUSPENDED": "停止買賣", "EXCL_WINDOW_SUSPENDED": "停止買賣", "EXCL_NEW_LISTING": "上市未滿"}
+NOT_EVALUABLE_KIND_ORDER = ("無成交", "停止買賣", "上市未滿", "其他")
+SUSPEND_CODES = ("EXCL_SUSPENDED", "EXCL_WINDOW_SUSPENDED", "EXCL_NO_ROW_SUSPENDED_OR_MISSING")   # 資料狀態頁「停牌」分類
 
 # ---- 量額口徑與鉅額（daily_prices.volume_basis／block_*；docs/indicators.md §9.4、docs/schema.md §3.4）----
 # 舊庫沒有這四欄、或欄位為 NULL → 一律「口徑不明」／「未知」，不得顯示 0。

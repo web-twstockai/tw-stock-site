@@ -38,7 +38,7 @@ COVERAGE_SCOPE_LABELS = {"all": "全市場", "tracked": "追蹤清單"}
 
 _PRICE_SQL_COLS = ("symbol, market, price_date, open_twd, high_twd, low_twd, close_twd, change_twd, change_sign, "
                    "volume_shares, amount_twd, source, fetched_at, version, is_current")
-_ACTION_OPTIONAL = ("cash_subscription_ratio", "share_exchange_ratio")
+_ACTION_OPTIONAL = ("cash_subscription_ratio", "share_exchange_ratio", "announced_at_note")
 _ACTION_SQL_COLS = ("symbol, market, action_date, action_type, ex_type_raw, prev_close_twd, reference_twd, "
                     "dividend_value_twd, cash_dividend_twd, rights_dividend_sum_twd, stock_dividend_per_thousand, "
                     "capital_reduction_ratio, refund_per_share_twd, source, fetched_at, version, is_current")
@@ -173,6 +173,17 @@ def load_screen_inputs(
         actions = pd.read_sql_query(
             f"SELECT {_ACTION_SQL_COLS}{aextra} FROM corporate_actions WHERE is_current = 1 AND action_date BETWEEN ? AND ?"
             f"{sym_sql} ORDER BY symbol, action_date", con, params=[start, as_of, *sym_args])
+        # 減資／變更面額的恢復買賣日可能晚於 as_of（評估日尚在停止買賣期間），仍須讀入供停止買賣判定。
+        # 還原因子只用 action_date <= as_of（screener 再篩）；此處不改既有窗口列，只補窗口外的這兩類事件。
+        susp_types = ("capital_reduction", "par_value_change")
+        later = pd.read_sql_query(
+            f"SELECT {_ACTION_SQL_COLS}{aextra} FROM corporate_actions WHERE is_current = 1"
+            f" AND action_type IN ({','.join('?' * len(susp_types))})"
+            f" AND (action_date < ? OR action_date > ?)"
+            f"{sym_sql} ORDER BY symbol, action_date",
+            con, params=[*susp_types, start, as_of, *sym_args])
+        if len(later):
+            actions = pd.concat([actions, later], ignore_index=True)
         securities = pd.read_sql_query(
             f"SELECT symbol, market, name, listed_date, is_common, data_date, fetched_at FROM securities "
             f"WHERE is_current = 1 AND is_common = 1{sym_sql} ORDER BY symbol", con, params=sym_args)

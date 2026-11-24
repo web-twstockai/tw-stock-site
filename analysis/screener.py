@@ -38,6 +38,7 @@ import adjust as A
 __all__ = [
     "ANALYSIS_VERSION", "EXCLUSION_CODES", "CONDITION_NAMES", "PARAM_RANGES", "SUMMARY_COLUMNS",
     "CONDITION_COLUMNS", "ScreenParams", "ScreenResult", "screen", "params_hash",
+    "NOT_EVALUABLE_CODES", "coverage_stats",
 ]
 
 from version import ANALYSIS_VERSION  # 版本號集中於 version.py
@@ -46,18 +47,41 @@ EXCLUSION_CODES = MappingProxyType({
     "EXCL_NOT_COMMON_STOCK": "不在普通股清單（securities）中：第一版排除 ETF、權證、特別股、存託憑證等",
     "EXCL_BAD_DATA": "資料異常（價格關係不合理、負值、重複列、非交易日卻有行情）",
     "EXCL_NO_DATA": "評估日該市場無任何行情資料（尚未更新或抓取失敗），資料不足",
-    "EXCL_SUSPENDED": "停牌（經 trading_halts 或 daily_prices.is_halted 確認）",
+    "EXCL_SUSPENDED": "停牌（經 trading_halts 或 daily_prices.is_halted 確認，或減資／變更面額停止買賣期間）",
     "EXCL_NO_ROW_SUSPENDED_OR_MISSING": "停牌或資料缺漏，待確認（評估日為交易日，但本股無資料列，且無法確認停牌：無停牌紀錄，或推定停牌區間內該市場當日整個市場都缺行情）",
     "EXCL_NO_TRADE": "評估日有行情列但無成交（成交量為零或無收盤價）",
     "EXCL_VOLUME_BASIS": "量額口徑非總量（不含鉅額或口徑不明），量能／成交金額條件無法評估",
     "EXCL_NEW_LISTING": "新上市／上櫃未滿最低交易日數",
     "EXCL_INSUFFICIENT_HISTORY": "有效交易日歷史不足（含交易日曆或行情資料未涵蓋）",
-    "EXCL_WINDOW_GAPS": "計算視窗內停牌、無資料列或無成交的交易日過多",
+    "EXCL_WINDOW_GAPS": "計算視窗內缺資料的交易日過多（官方有行情但本庫無資料列或資料錯誤，屬資料不齊）",
+    "EXCL_WINDOW_NO_TRADE": "無法評估：計算視窗內官方無成交的交易日過多（流動性不足，不算資料不齊）",
+    "EXCL_WINDOW_SUSPENDED": "無法評估：計算視窗內官方停牌或減資／變更面額停止買賣的交易日過多（不算資料不齊）",
     "EXCL_ADJ_COVERAGE_GAP": "除權息／減資資料（corporate_actions）未完整涵蓋計算視窗，無法確認期間內有無調整事件",
     "EXCL_ADJ_FACTOR_MISSING": "視窗內有除權息／減資事件但無法取得價格或股數調整因子",
     "EXCL_ADJ_FACTOR_INCONSISTENT": "調整事件資料與行情不一致（來源前收不符、換股率或參考價不合理、同日重複事件）",
     "EXCL_UNEXPLAINED_GAP": "視窗內出現 corporate_actions 無法解釋且超過漲跌幅門檻的價格跳動（疑似缺調整事件）",
 })
+
+# 「無法評估」：官方事實造成、不算資料不齊，個別標示並自 95% 覆蓋率分母移除（indicators.md §8.7；H AO 核可 2026-11-24 13:32）
+NOT_EVALUABLE_CODES = frozenset({
+    "EXCL_NEW_LISTING", "EXCL_SUSPENDED", "EXCL_NO_TRADE", "EXCL_WINDOW_NO_TRADE", "EXCL_WINDOW_SUSPENDED",
+})
+
+
+def coverage_stats(summary: pd.DataFrame) -> dict:
+    """95% 覆蓋率口徑：分母＝母體 − 無法評估（NOT_EVALUABLE_CODES）；可評估＝status 不是 EXCLUDED。
+    其餘排除（資料缺漏、調整因子、資料錯誤等）留在分母，算資料不齊。不改任何篩選結果。"""
+    st = summary["status"].astype(str)
+    code = summary["exclusion_code"]
+    universe = int(len(summary))
+    evaluable = int((st != "EXCLUDED").sum())
+    ne_mask = (st == "EXCLUDED") & code.isin(NOT_EVALUABLE_CODES)
+    by = {c: int(n) for c, n in code[ne_mask].value_counts().sort_index().items()}
+    den = universe - int(ne_mask.sum())
+    return dict(universe=universe, evaluable=evaluable, not_evaluable=int(ne_mask.sum()), not_evaluable_by_code=by,
+                denominator=den, data_incomplete=max(den - evaluable, 0),
+                coverage_ratio=(evaluable / den) if den > 0 else 0.0)
+
 
 CONDITION_NAMES = MappingProxyType({
     "C1_TREND": "趨勢：收盤 > MA短 > MA長",
@@ -164,6 +188,10 @@ class ScreenResult:
         """通過全部已啟用條件的股票；零檔時回傳空表（不放寬）。"""
         return self.summary[self.summary["status"] == "PASS"].reset_index(drop=True)
 
+    def coverage_stats(self) -> dict:
+        """95% 覆蓋率口徑（見模組函式 coverage_stats）。"""
+        return coverage_stats(self.summary)
+
     def exclusion_counts(self) -> dict[str, int]:
         s = self.summary
         return {str(k): int(v) for k, v in
@@ -234,8 +262,8 @@ def screen(
     cal_start = cal["calendar_date"].min()
 
     px = px[(px["date"] <= as_of_ts) & (px["date"] >= cal_start)]
-    acts = A.normalize_actions(actions)
-    acts = acts[acts["action_date"] <= as_of_ts]
+    acts_all = A.normalize_actions(actions)
+    acts = acts_all[acts_all["action_date"] <= as_of_ts]
     secs = A.normalize_securities(securities)
     coverage = A.normalize_coverage(actions_coverage)
     halt_map = A.normalize_halts(halts)
@@ -264,9 +292,10 @@ def screen(
     lagging = tuple(sorted(sid for sid in ids if latest_by_sym.get(sid) != as_of_ts))
     pgroups = {k: g for k, g in px.groupby("symbol", sort=False)}
     agroups = {k: g for k, g in acts.groupby("symbol", sort=False)}
+    sgroups = {k: g for k, g in acts_all[acts_all["action_type"].isin(A.SUSPENSION_ACTION_TYPES)].groupby("symbol", sort=False)}
     ctx = dict(p=p, as_of=as_of_ts, trade=trade, tpos=tpos, non_trade=non_trade, coverage=coverage,
                mkt_dates=mkt_dates, mkt_full=mkt_full, halts=halt_map, vb=vb_present,
-               cov_scope_note=coverage_scope_note)
+               cov_scope_note=coverage_scope_note, susp_acts=sgroups)
     summaries, conds = [], []
     for sid in ids:
         sec = None if secs is None else (secs.loc[sid] if sid in secs.index else None)
@@ -366,6 +395,8 @@ def _evaluate(sid: str, g: pd.DataFrame, acts: pd.DataFrame, sec: Any, has_secs:
     hnotes = [A.halt_note(h) for h in hiv if h.resume is None or h.resume > ctx["trade"][0]]
     if hnotes:
         base["data_note"] = "停牌紀錄：" + "；".join(hnotes)
+    sa = ctx["susp_acts"].get(sid)
+    susp = A.corp_suspension_dates(sa, sid, trade, g["date"], as_of) if sa is not None else set()
     today = g[g["date"] == as_of]
     no_trade_today = today.empty or pd.isna(today["close"].iloc[0]) or (
         pd.notna(today["volume"].iloc[0]) and today["volume"].iloc[0] == 0)
@@ -378,6 +409,8 @@ def _evaluate(sid: str, g: pd.DataFrame, acts: pd.DataFrame, sec: Any, has_secs:
             if hi is not None:   # 推定區間內、評估日整個市場都缺行情 → 不算停牌（insufficient）
                 return X("EXCL_NO_ROW_SUSPENDED_OR_MISSING",
                          f"{as_of.date()} 本股無資料列，且該市場當日整個市場都缺行情；trading_halts {A.halt_note(hi)}")
+            if as_of in susp:
+                return X("EXCL_SUSPENDED", f"{as_of.date()} 本股無資料列；減資／變更面額停止買賣期間（corporate_actions）")
             return X("EXCL_NO_ROW_SUSPENDED_OR_MISSING", f"{as_of.date()} 同市場有行情但本股無資料列")
         return X("EXCL_NO_DATA", f"{as_of.date()} 市場 {market or '未知'} 無行情資料")
     t = today.iloc[0]
@@ -420,7 +453,7 @@ def _evaluate(sid: str, g: pd.DataFrame, acts: pd.DataFrame, sec: Any, has_secs:
     # 缺口拆解（只供說明；門檻仍以合計 gaps 判斷，邏輯不變）
     rows_by_date = {d: r for d, r in zip(g["date"], g.itertuples(index=False))}
     vset = set(valid["date"])
-    n_halt = n_miss = n_nt = n_bad = 0
+    n_halt = n_miss = n_nt = n_bad = n_corp = 0
     first_bad = None
     flag_conflicts = []
     for d in trade[tpos[w0]:tpos[as_of] + 1]:
@@ -436,6 +469,8 @@ def _evaluate(sid: str, g: pd.DataFrame, acts: pd.DataFrame, sec: Any, has_secs:
             n_halt += 1
         elif r is None:
             n_miss += 1
+            if d in susp:
+                n_corp += 1
         else:
             n_nt += 1
     if flag_conflicts:
@@ -445,7 +480,15 @@ def _evaluate(sid: str, g: pd.DataFrame, acts: pd.DataFrame, sec: Any, has_secs:
              "window_halt_days": n_halt, "window_missing_days": n_miss, "window_no_trade_days": n_nt,
              "window_bad_data_days": n_bad}
     if gaps > p.max_gap_days:
-        return X("EXCL_WINDOW_GAPS", f"視窗 {w0.date()}～{as_of.date()} 內 {gaps} 個交易日無資料列或無成交 > {p.max_gap_days}", **extra)
+        # 篩選門檻不變（合計 gaps 仍與 max_gap_days 比）。只區分原因：官方無成交＋確認停牌＋減資／變更面額停止買賣
+        # 單獨已超過門檻 → 無法評估（不進 95% 分母）；否則（真缺資料／資料錯誤造成或合併才超過）→ 資料不齊
+        detail = (f"視窗 {w0.date()}～{as_of.date()} 內 {gaps} 個交易日非有效日 > {p.max_gap_days}"
+                  f"（確認停牌 {n_halt}、減資／變更面額停止買賣 {n_corp}、無成交 {n_nt}、其他缺列 {n_miss - n_corp}、資料錯誤 {n_bad}）")
+        official = n_halt + n_corp + n_nt
+        if official > p.max_gap_days:
+            code = "EXCL_WINDOW_SUSPENDED" if (n_halt + n_corp) >= n_nt else "EXCL_WINDOW_NO_TRADE"
+            return X(code, detail, **extra)
+        return X("EXCL_WINDOW_GAPS", detail, **extra)
     if first_bad is not None:
         return X("EXCL_BAD_DATA", f"{first_bad.date()} 有收盤價但成交量缺漏（NULL）（視窗內，共 {n_bad} 日）", **extra)
     for r in W.itertuples(index=False):

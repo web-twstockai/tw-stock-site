@@ -43,6 +43,9 @@ EXACT_FIELDS = ("status", "exclusion_code", "pass_trend", "pass_breakout", "pass
                 "window_no_trade_days", "window_bad_data_days", "volume_basis", "window_volume_basis_days")
 # 獨立寫一份對映（不 import adjust）
 TYPE_ALIAS = {"ex_dividend": "cash_dividend", "ex_rights": "stock_dividend"}
+_SUSP_TYPES = frozenset({"capital_reduction", "par_value_change"})
+_STOP_RE = re.compile(r"停止買賣日=(\d{4}-\d{2}-\d{2})")
+_MAX_INF_SUSP = 15
 DIVIDEND_TYPES = ("cash_dividend", "stock_dividend", "ex_both")
 KINDS6 = ("cash_dividend", "stock_dividend", "ex_both", "capital_reduction", "par_value_change", "stock_split")
 COV_ALIAS = {k: (k,) for k in KINDS6}
@@ -115,16 +118,20 @@ def load_db(db_path: Path, as_of: Optional[str] = None, lookback: int = 250, cov
                                "vb": (row[14] or "").strip() or None})
         actions = []
         ac = [r[1] for r in con.execute("PRAGMA table_info(corporate_actions)")]
-        opt = [(c if c in ac else "NULL") for c in ("cash_subscription_ratio", "share_exchange_ratio")]
+        opt = [(c if c in ac else "NULL") for c in ("cash_subscription_ratio", "share_exchange_ratio", "announced_at_note")]
         for row in con.execute("SELECT symbol, action_date, action_type, prev_close_twd, reference_twd, "
                                "dividend_value_twd, stock_dividend_per_thousand, capital_reduction_ratio, "
                                "refund_per_share_twd, " + ", ".join(opt) + " FROM corporate_actions WHERE is_current=1"):
             d = _d(row[1])
-            if start <= d <= as_of_d:
-                t = row[2].strip()
-                actions.append({"symbol": row[0], "date": d, "type": TYPE_ALIAS.get(t, t), "prev": _f(row[3]),
+            typ = TYPE_ALIAS.get(row[2].strip(), row[2].strip())
+            # 減資／變更面額：恢復買賣日可能在 as_of 之後，仍須讀入供停止買賣判定（還原只用 date <= as_of）
+            in_window = d is not None and start <= d <= as_of_d
+            is_susp = typ in _SUSP_TYPES
+            if in_window or is_susp:
+                actions.append({"symbol": row[0], "date": d, "type": typ, "prev": _f(row[3]),
                                 "ref": _f(row[4]), "div": _f(row[5]), "spt": _f(row[6]), "ratio": _f(row[7]),
-                                "refund": _f(row[8]), "csr": _f(row[9]), "xr": _f(row[10])})
+                                "refund": _f(row[8]), "csr": _f(row[9]), "xr": _f(row[10]),
+                                "note": (row[11] or "").strip() or None})
         halts = {}
         if con.execute("SELECT 1 FROM sqlite_master WHERE type='table' AND name='trading_halts'").fetchone():
             hc = [r[1] for r in con.execute("PRAGMA table_info(trading_halts)")]
@@ -427,6 +434,40 @@ def ind_resolve_all(acts, valid, p, after):
     return out
 
 
+def _corp_susp(acts, trade, has_row, as_of):
+    """獨立實作：減資／變更面額停止買賣交易日（恢復買賣日不含）。與 adjust.corp_suspension_dates 同規則。"""
+    days = [d for d in trade if d <= as_of]
+    rows = set(has_row)
+    out = set()
+    for a in acts:
+        if a["type"] not in _SUSP_TYPES or a["date"] is None:
+            continue
+        resume = a["date"]
+        stop = None
+        note = a.get("note")
+        if note:
+            m = _STOP_RE.search(str(note))
+            if m:
+                stop = _d(m.group(1))
+        if stop is not None and stop < resume:
+            for d in days:
+                if stop <= d < resume:
+                    out.add(d)
+            continue
+        i = len(days) - 1
+        while i >= 0 and days[i] >= resume:
+            i -= 1
+        n = 0
+        while i >= 0 and n < _MAX_INF_SUSP:
+            d = days[i]
+            if d in rows:
+                break
+            out.add(d)
+            i -= 1
+            n += 1
+    return out
+
+
 def _one(sid, g, acts, data, pos, mkt_days, p, need):
     wx = {}
 
@@ -434,6 +475,8 @@ def _one(sid, g, acts, data, pos, mkt_days, p, need):
         return {"status": "EXCLUDED", "exclusion_code": code, **wx}
 
     as_of = data["as_of"]
+    acts_adj = [a for a in acts if a["date"] is not None and a["date"] <= as_of]
+    susp = _corp_susp(acts, data["trade"], [r["date"] for r in g], as_of)
     sec = data["secs"].get(sid)
     if sec is None:
         return ex("EXCL_NOT_COMMON_STOCK")
@@ -453,7 +496,9 @@ def _one(sid, g, acts, data, pos, mkt_days, p, need):
     if t is None:
         if (market, as_of) not in mkt_days:
             return ex("EXCL_NO_DATA")
-        return ex("EXCL_SUSPENDED") if halted_on(data, sid, as_of, has_row=False) else ex("EXCL_NO_ROW_SUSPENDED_OR_MISSING")
+        if halted_on(data, sid, as_of, has_row=False) or as_of in susp:
+            return ex("EXCL_SUSPENDED")
+        return ex("EXCL_NO_ROW_SUSPENDED_OR_MISSING")
     vbp = data.get("vb_present", False)
     if vbp:
         wx["volume_basis"] = t["vb"]
@@ -484,7 +529,7 @@ def _one(sid, g, acts, data, pos, mkt_days, p, need):
     w0 = W[0]["date"]
     by_date = {r["date"]: r for r in g}
     vd = {r["date"] for r in valid}
-    nh = nm = nn = nb = 0
+    nh = nm = nn = nb = nc = 0
     for d in data["trade"]:
         if w0 <= d <= as_of and d not in vd:
             r = by_date.get(d)
@@ -494,11 +539,16 @@ def _one(sid, g, acts, data, pos, mkt_days, p, need):
                 nh += 1
             elif r is None:
                 nm += 1
+                if d in susp:
+                    nc += 1
             else:
                 nn += 1
     wx.update(window_gap_days=nh + nm + nn + nb, window_halt_days=nh, window_missing_days=nm, window_no_trade_days=nn,
               window_bad_data_days=nb)
     if (pos[as_of] - pos[w0] + 1) - need > p["max_gap_days"]:
+        official = nh + nc + nn
+        if official > p["max_gap_days"]:
+            return ex("EXCL_WINDOW_SUSPENDED" if (nh + nc) >= nn else "EXCL_WINDOW_NO_TRADE")
         return ex("EXCL_WINDOW_GAPS")
     if nb > 0:
         return ex("EXCL_BAD_DATA")
@@ -520,7 +570,7 @@ def _one(sid, g, acts, data, pos, mkt_days, p, need):
         return {"status": "EXCLUDED", "exclusion_code": "EXCL_ADJ_COVERAGE_GAP", "coverage_note": note, **wx}
 
     events = []
-    for (d, code, f, sf) in ind_resolve_all(acts, valid, p, w0):
+    for (d, code, f, sf) in ind_resolve_all(acts_adj, valid, p, w0):
         if code is not None:
             return ex(code)
         events.append((d, f, sf))
@@ -591,7 +641,7 @@ def _one(sid, g, acts, data, pos, mkt_days, p, need):
 def _sym_rows(data, sym):
     g = sorted([r for r in data["prices"] if r["symbol"] == sym], key=lambda r: r["date"])
     valid = [r for r in g if r["volume"] is not None and r["volume"] > 0 and r["close"] is not None]
-    acts = [a for a in data["actions"] if a["symbol"] == sym]
+    acts = [a for a in data["actions"] if a["symbol"] == sym and a["date"] is not None and a["date"] <= data["as_of"]]
     sec = data["secs"].get(sym)
     market = sec["market"] if sec else (g[-1]["market"] if g else None)
     lst = None

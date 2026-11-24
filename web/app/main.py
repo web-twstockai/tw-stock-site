@@ -19,7 +19,7 @@ from .models import (ADVANCED_BOOL_PARAMS, ADVANCED_NUM_PARAMS, ADVANCED_STR_PAR
                      CHANGE_CHECK_LABELS, CHANGE_CHECK_NOTES, CHANGE_CHECK_STATE, VOLUME_BASIS_NOTE,
                      volume_basis_note, volume_basis_policy, source_basis_segments, VOLUME_BASIS_TITLE, VOLUME_BASIS_PENDING,
                      volume_basis_label, block_info, analysis_text_zh, zh_text, change_check_label, basis_segments,
-                     basis_counts_text)
+                     basis_counts_text, SUSPEND_CODES)
 from .screening import (SORT_KEYS, analysis_defaults, exclusion_label, exclusion_label_source, exclusion_labels,
                         run_screen)
 
@@ -531,7 +531,7 @@ def status(request: Request):
     counts = sr.extra.get("exclusion_counts") or {}
     labels = exclusion_labels()
     excl_codes = [{"code": c, "label": lab, "count": (counts.get(c, 0) if not sr.error else None),
-                   "src": exclusion_label_source(c), "suspend": c in ("EXCL_SUSPENDED", "EXCL_NO_ROW_SUSPENDED_OR_MISSING")}
+                   "src": exclusion_label_source(c), "suspend": c in SUSPEND_CODES}
                   for c, lab in labels.items()]
     static_export = os.environ.get("TWSITE_STATIC_EXPORT") == "1"   # 靜態匯出時：顯示本版資訊，不讀本機發布紀錄
     from . import pages_deploy
