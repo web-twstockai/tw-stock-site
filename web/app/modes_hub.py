@@ -15,7 +15,7 @@ from typing import Any, Optional
 
 from .data_source import DataSource
 
-# 等級門檻（H AO 2026-11-24 18:20）：有效 5 日勝率 < 進階門檻不得放進階，< 高級門檻不得放高級。
+# 等級門檻（H AO 2026-11-24 18:20；20:02 加「平均報酬為正」，70%／80% 為暫定，待三年資料重訂）：有效 5 日勝率 < 進階門檻不得放進階，< 高級門檻不得放高級。
 # 有效勝率＝登記表 win_rate 的官方數字，且須符合 docs/indicators.md §11.2.7（N≥100 且 D≥30）；
 # display 為「計算中／樣本不足／資料不足」或沒有數字 → 無有效勝率 → 基本。
 TIER_WINRATE_ADVANCED = 0.70
@@ -28,6 +28,11 @@ _PENDING_DISPLAY = frozenset({"計算中", "樣本不足", "資料不足"})
 _RATE_KEYS = ("rate", "value", "p", "pct", "win", "net", "net_rate")
 _N_KEYS = ("n", "N", "events", "event_count", "n_events")
 _D_KEYS = ("d", "D", "days", "signal_days", "n_days", "signal_day_count")
+# 扣成本後平均報酬與其 95% 信賴區間下限（H AO 2026-11-24 20:02：進階／高級須平均報酬為正，區間下限 >0）
+_MEAN_KEYS = ("mean_return_pct", "avg_return_pct", "mean_net_pct", "avg_net_pct", "mean_return", "avg_return",
+              "net_avg_pct", "avg_pct", "mean", "expectancy")
+_CI_LO_KEYS = ("mean_ci_lo_pct", "mean_return_ci_lo_pct", "avg_return_ci_lo_pct", "mean_ci_lo", "mean_return_ci_lo",
+               "avg_return_ci_lo", "mean_lo_pct", "mean_lo", "ci_lo", "ci_low")
 _TIER_CLASS = {"基本": "t1", "進階": "t2", "高級": "t3"}
 
 
@@ -130,11 +135,40 @@ def effective_win_rate(win_rate: Optional[dict]) -> Optional[float]:
     return rate
 
 
+def mean_return_ok(win_rate: Optional[dict]) -> bool:
+    """扣成本後平均報酬是否「確定為正」（H AO 2026-11-24 20:02）。
+
+    全部條件都要成立，缺任何一項即為 False（→ 基本）：
+    - display 不是「計算中／樣本不足／資料不足」；
+    - 事件數 N 與訊號日數 D 都有提供，且 N≥100、D≥30（§11.2.7）；
+    - 平均報酬（mean_return_pct／avg_return_pct… 任一欄）> 0；
+    - 平均報酬 95% 信賴區間下限（mean_ci_lo_pct／mean_lo… 任一欄）> 0。
+    只看正負號，與單位（比例或百分點）無關。
+    """
+    w = win_rate if isinstance(win_rate, dict) else {}
+    disp = w.get("display")
+    if isinstance(disp, str) and disp.strip() in _PENDING_DISPLAY:
+        return False
+    n = _first_num(w, _N_KEYS)
+    d = _first_num(w, _D_KEYS)
+    if n is None or d is None or n < MIN_WINRATE_N or d < MIN_WINRATE_D:
+        return False
+    mean = _first_num(w, _MEAN_KEYS)
+    lo = _first_num(w, _CI_LO_KEYS)
+    if mean is None or lo is None:
+        return False
+    return mean > 0 and lo > 0
+
+
 def tier_of(mode: Optional[dict], thresholds: Optional[tuple[float, float]] = None) -> str:
-    """依模式登記列的 win_rate 決定等級；不讀 mode['tier']。"""
+    """依模式登記列的 win_rate 決定等級；不讀 mode['tier']。
+
+    進階／高級須同時符合：有效勝率達門檻（effective_win_rate）＋扣成本後平均報酬確定為正（mean_return_ok）。
+    """
     adv, pre = thresholds if thresholds is not None else tier_thresholds()
-    rate = effective_win_rate((mode or {}).get("win_rate"))
-    if rate is None:
+    w = (mode or {}).get("win_rate")
+    rate = effective_win_rate(w)
+    if rate is None or not mean_return_ok(w):
         return "基本"
     if rate + 1e-12 >= pre:
         return "高級"
@@ -143,34 +177,41 @@ def tier_of(mode: Optional[dict], thresholds: Optional[tuple[float, float]] = No
     return "基本"
 
 
+PROVISIONAL_NOTE = "門檻待三年資料重新設定"
+
+
 def tier_rule_text() -> str:
     """篩選中心區塊標頭：新規則說明（含「依事先登記的同一套規則」）。"""
     adv, pre = tier_thresholds()
     return (f"等級依事先登記的同一套規則，以歷史 5 日勝率（扣成本後報酬＞0 的比例；"
-            f"N≥{MIN_WINRATE_N} 且 D≥{MIN_WINRATE_D}）劃分：無有效勝率或未達 {pct_label(adv)} 為基本，"
-            f"達 {pct_label(adv)} 為進階，達 {pct_label(pre)} 為高級。等級只是標示，不代表保證或較準。")
+            f"N≥{MIN_WINRATE_N} 且 D≥{MIN_WINRATE_D}）與扣成本後平均報酬劃分：進階需歷史 5 日勝率 ≥ {pct_label(adv)} "
+            f"且平均報酬為正（95% 信賴區間下限＞0）；高級需 ≥ {pct_label(pre)} 且平均報酬為正；其餘為基本"
+            f"（{PROVISIONAL_NOTE}）。等級只是標示，不代表保證或較準。")
 
 
 def tier_groups() -> list[tuple]:
     """（等級名, CSS class, 各區說明）。說明由門檻產生，不用登記表 rule。"""
     adv, pre = tier_thresholds()
     rules = {
-        "基本": f"無有效歷史 5 日勝率，或勝率未達 {pct_label(adv)}。",
-        "進階": f"歷史 5 日勝率 ≥ {pct_label(adv)}。",
-        "高級": f"歷史 5 日勝率 ≥ {pct_label(pre)}。",
+        "基本": f"無有效歷史 5 日勝率、勝率未達 {pct_label(adv)}，或扣成本後平均報酬未確定為正。",
+        "進階": f"歷史 5 日勝率 ≥ {pct_label(adv)} 且平均報酬為正（{PROVISIONAL_NOTE}）。",
+        "高級": f"歷史 5 日勝率 ≥ {pct_label(pre)} 且平均報酬為正（{PROVISIONAL_NOTE}）。",
     }
     return [(name, _TIER_CLASS[name], rules[name]) for name in ("基本", "進階", "高級")]
 
 
-def empty_tier_message() -> str:
+def tier_requirement_text() -> str:
+    """「進階需歷史 5 日勝率 ≥ 70% 且平均報酬為正；高級 ≥ 80%（門檻待三年資料重新設定）」。"""
     adv, pre = tier_thresholds()
-    return f"目前沒有模式達標（進階需歷史 5 日勝率 ≥ {pct_label(adv)}，高級 ≥ {pct_label(pre)}）"
+    return f"進階需歷史 5 日勝率 ≥ {pct_label(adv)} 且平均報酬為正；高級 ≥ {pct_label(pre)}（{PROVISIONAL_NOTE}）"
+
+
+def empty_tier_message() -> str:
+    return f"目前沒有模式達標。{tier_requirement_text()}"
 
 
 def stock_tier_rule() -> str:
-    adv, pre = tier_thresholds()
-    return (f"模式等級依事先登記的同一套規則，以歷史 5 日勝率劃分：無有效勝率或未達 {pct_label(adv)} 為基本，"
-            f"達 {pct_label(adv)} 為進階，達 {pct_label(pre)} 為高級。")
+    return f"模式等級依事先登記的同一套規則劃分：{tier_requirement_text()}，其餘為基本。"
 
 
 _REG: dict[str, Any] = {}

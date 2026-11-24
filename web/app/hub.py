@@ -609,7 +609,16 @@ def _compute_core(src: DataSource) -> dict:
     safe("M7", m7f)
 
     _new_modes(computed, src, symbols, labels, as_of, r1)
-    return dict(as_of=as_of, revenue_month=month, price=price, computed=computed, symbols=symbols)
+    yoy = {}
+    if month and not rev_err:
+        for sym, rec in (rev.get(month) or {}).items():
+            ys = rec.get("yoy_status")
+            yoy[str(sym)] = dict(
+                yoy_pct=_num(rec.get("yoy_pct")) if ys == "ok" else None,
+                yoy_status=ys or "",
+                yoy_reason=rec.get("yoy_reason") or "",
+            )
+    return dict(as_of=as_of, revenue_month=month, price=price, computed=computed, symbols=symbols, yoy=yoy)
 
 
 def _price_map(src: DataSource, m1: dict, as_of: str) -> dict:

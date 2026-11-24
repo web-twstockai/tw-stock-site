@@ -158,6 +158,34 @@ def check(out: Path) -> list[str]:
     outside = [s["code"] for s in stocks if universe and s["code"] not in universe]
     if outside:
         problems.append(f"搜尋清單有 {len(outside):,} 檔不在追蹤範圍（例：{', '.join(outside[:5])}）")
+    wl = out / "api" / "watchlist.json"
+    if not (out / "watchlist" / "index.html").is_file():
+        problems.append("缺少 watchlist/index.html（自選清單頁）")
+    if not (out / "scorecard" / "index.html").is_file():
+        problems.append("缺少 scorecard/index.html（模式成績單頁）")
+    if not wl.is_file():
+        problems.append("缺少 api/watchlist.json（自選清單資料）")
+    else:
+        try:
+            payload = __import__("json").loads(wl.read_text("utf-8"))
+            rows = payload.get("stocks") or {}
+            if not isinstance(rows, dict):
+                problems.append("api/watchlist.json 的 stocks 不是物件")
+                rows = {}
+            outside = [c for c in rows if universe and c not in universe]
+            if outside:
+                problems.append(f"自選資料有 {len(outside):,} 檔不在追蹤範圍（例：{', '.join(outside[:5])}）")
+            if v2:
+                bad = [c for c, r in rows.items() if r.get("has_page") and not (out / "data" / "stock" / f"{c}.json.gz").is_file()]
+            else:
+                bad = [c for c, r in rows.items() if r.get("has_page") and not (out / "stock" / c / "index.html").is_file()]
+            if bad:
+                problems.append(f"自選資料有 {len(bad):,} 檔標 has_page 但沒有個股頁（例：{', '.join(bad[:5])}）")
+            linked = [c for c, r in rows.items() if r.get("href") and not r.get("has_page")]
+            if linked:
+                problems.append(f"自選資料有 {len(linked):,} 檔未收錄個股頁卻仍有 href（例：{', '.join(linked[:5])}）")
+        except Exception as e:
+            problems.append(f"讀不到 api/watchlist.json：{e}")
     problems += check_extra_pages(out, info)
     if v2:
         problems += check_legacy_redirects(out, info, stocks)

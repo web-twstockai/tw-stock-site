@@ -130,6 +130,12 @@ class Linker:
             return "status/" if not pairs else None
         if path == "/api/stocks":
             return "api/stocks.json" if not pairs else None
+        if path == "/api/watchlist":
+            return "api/watchlist.json" if not pairs else None
+        if path == "/watchlist":
+            return "watchlist/" if not pairs else None
+        if path == "/scorecard":
+            return "scorecard/" if not pairs else None
         if path.startswith("/static/"):
             return path[1:]
         m = re.fullmatch(r"/stock/(\w+)", path)
@@ -826,12 +832,12 @@ def export_v2(out: Path, db: Path, base: str = "/tw-stock-site/", log=print, sym
 
         # 1) 全站頁（首頁、資料狀態、API、404）原樣呈現
         raw = {}
-        for key in ("/", "/status", "/api/stocks"):
+        for key in ("/", "/status", "/api/stocks", "/watchlist", "/api/watchlist", "/scorecard"):
             r = client.get(key)
             if r.status_code != 200:
                 raise ExportError(f"{key} 回 {r.status_code}")
             raw[key] = r
-            if key != "/api/stocks" and ('data-state="test"' in r.text or "（測試資料）</title>" in r.text):
+            if key not in ("/api/stocks", "/api/watchlist") and ('data-state="test"' in r.text or "（測試資料）</title>" in r.text):
                 raise ExportError(f"{key} 出現測試資料標記，中止匯出")
         r404 = client.get("/stock/__not_found__")
         rev_html = client.get("/revenue").text
@@ -984,7 +990,8 @@ def export_v2(out: Path, db: Path, base: str = "/tw-stock-site/", log=print, sym
         generated = datetime.now(TPE).strftime("%Y-%m-%d %H:%M")
         info = dict(data_date=meta.get("data_date"), generated=generated, last_run=meta.get("last_run_finished") or "")
         res = linker.resolver()
-        for key, file in (("/", "index.html"), ("/status", "status/index.html")):
+        for key, file in (("/", "index.html"), ("/status", "status/index.html"), ("/watchlist", "watchlist/index.html"),
+                          ("/scorecard", "scorecard/index.html")):
             (stage / file).parent.mkdir(parents=True, exist_ok=True)
             (stage / file).write_text(V1.rewrite_html(key, file, raw[key].text, {}, info, resolver=res), "utf-8")
         for key, body in extra_raw.items():
@@ -998,6 +1005,16 @@ def export_v2(out: Path, db: Path, base: str = "/tw-stock-site/", log=print, sym
                 s_["page"] = False
         (stage / "api").mkdir(parents=True, exist_ok=True)
         (stage / "api" / "stocks.json").write_text(json.dumps(stocks, ensure_ascii=False), "utf-8")
+        from app import watchlist as WL
+        wl = json.loads(raw["/api/watchlist"].text)
+        def _href(code):
+            return f"stock/?code={code}"
+        def _mode(_mid, path):
+            tgt = linker.target(urlsplit(path))
+            return str(tgt) if tgt is not None else ""
+        WL.clip_to(wl, universe)
+        WL.apply_page_flags(wl, page_set, _href, _mode)
+        (stage / "api" / "watchlist.json").write_text(json.dumps(wl, ensure_ascii=False, separators=(",", ":")), "utf-8")
         first = sorted(page_set or universe)[0]
         src_key = next(iter(items.values()))[2] if items else next((st["src_key"] for st in stats.values()
                                                                     if st.get("src_key")), None)

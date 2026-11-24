@@ -655,6 +655,29 @@ def source_context(src, qs) -> tuple[dict, int]:
                 agg_expr=agg_expr, agg_value=agg_value, related=related), status
 
 
+@app.get("/scorecard", response_class=HTMLResponse)
+def scorecard_page(request: Request):
+    """模式成績單：只讀登記表官方統計；分析端尚未提供時顯示「計算中」。"""
+    from . import scorecard as SC
+    return templates.TemplateResponse(request, "scorecard.html", ctx(request, nav="scorecard", **SC.build()))
+
+
+@app.get("/watchlist", response_class=HTMLResponse)
+def watchlist_page(request: Request):
+    """自選清單頁：內容由前端讀 localStorage 與 /api/watchlist 組出來；這裡只出殼頁與說明文字。"""
+    from . import watchlist as W
+    return templates.TemplateResponse(request, "watchlist.html", ctx(
+        request, nav="watchlist", storage_note=W.STORAGE_NOTE, disclaimer=W.DISCLAIMER,
+        revenue_footnote=W.REV_FOOTNOTE))
+
+
+@app.get("/api/watchlist")
+def api_watchlist():
+    """自選清單用的精簡行情／模式／營收年增（追蹤範圍內全部；線上站每檔都有個股頁）。"""
+    from . import watchlist as W
+    return W.payload(get_source())
+
+
 @app.get("/search", response_class=HTMLResponse)
 def search(request: Request, q: str = ""):
     src = get_source()

@@ -110,7 +110,7 @@ def make_policy(universe: set[str], default_month: str | None = None):
     def allow(key: str) -> bool:
         path, _, query = key.partition("?")
         q = dict(parse_qsl(query))
-        if path in ("/", "/status", "/api/stocks"):
+        if path in ("/", "/status", "/api/stocks", "/watchlist", "/api/watchlist", "/scorecard"):
             return not q
         if path in ("/screener", "/screener.csv"):
             if not set(q) <= {"f", "sort", "order", *TOGGLES}:
@@ -215,7 +215,7 @@ def export(out: Path, db: Path, base: str = "/tw-stock-site/", max_pages: int = 
             universe = set(symbols) & universe
         client = TestClient(app, raise_server_exceptions=True)
 
-        seeds = ["/", "/screener", "/screener.csv", "/revenue", "/revenue.csv", "/status", "/api/stocks"]
+        seeds = ["/", "/screener", "/screener.csv", "/revenue", "/revenue.csv", "/status", "/api/stocks", "/watchlist", "/api/watchlist", "/scorecard"]
         seeds += list(HUB_PAGES) + ["/industry"]   # 各產業頁由產業總覽的連結爬到
         seeds += [f"/stock/{c}" for c in sorted(universe)]
         # 選股表單在靜態版只能開關 4 項條件＋排序：預先算好全部組合（16×5×2），表單送出時查表
@@ -287,6 +287,21 @@ def export(out: Path, db: Path, base: str = "/tw-stock-site/", max_pages: int = 
         # 搜尋清單只列有匯出個股頁的股票（公開站開不了的股票不出現在自動完成／搜尋）
         stocks = [s for s in stocks if canon(f"/stock/{s['code']}", "") in pages]
         (raw_dir / "api/stocks.json").write_text(json.dumps(stocks, ensure_ascii=False), "utf-8")
+        wl_path = raw_dir / "api/watchlist.json"
+        if wl_path.exists():
+            from app import watchlist as WL
+            data = json.loads(wl_path.read_text("utf-8"))
+            page_codes = {m.group(1) for key in pages
+                          if (m := __import__("re").fullmatch(r"/stock/(\w+)", key.split("?", 1)[0])) and "?" not in key}
+            def _href(code):
+                f = url_to_file(f"/stock/{code}")
+                return f[: -len("index.html")] if f.endswith("index.html") else f
+            def _mode(_mid, path):
+                f = url_to_file(path)
+                return f[: -len("index.html")] if f.endswith("index.html") else f
+            WL.clip_to(data, universe)
+            WL.apply_page_flags(data, page_codes, _href, _mode)
+            wl_path.write_text(json.dumps(data, ensure_ascii=False, separators=(",", ":")), "utf-8")
         manifest = {"generated_at": generated, "data_date": meta.get("data_date"), "routes": form_map,
                     "stocks": {s["code"]: url_to_file(f"/stock/{s['code']}") for s in stocks
                                if canon(f"/stock/{s['code']}", "") in pages}}

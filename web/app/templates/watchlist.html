@@ -1,0 +1,62 @@
+{% extends "base.html" %}
+{% block title %}我的自選｜台股盤後研究{% endblock %}
+{% block content %}
+<article class="watch-page" data-testid="watchlist-page">
+  <header class="page-h">
+    <p class="kicker">本機清單</p>
+    <h1>我的自選</h1>
+    <p class="lead">{% if storage_note is defined and storage_note %}{{ storage_note }}{% else %}清單只存在這個瀏覽器，不需要帳號、也不傳到伺服器；清除瀏覽器資料或換裝置就會消失。{% endif %}這不是推薦清單。</p>
+  </header>
+
+  <noscript>
+    <p class="note" data-testid="watch-noscript">自選清單存在這個瀏覽器的本機儲存，需要啟用 JavaScript 才能顯示與編輯。</p>
+  </noscript>
+
+  <div class="watch-tools" data-watch-tools hidden>
+    <button type="button" class="btn" data-watch-export>匯出代號清單</button>
+    <label class="btn watch-import">匯入代號清單
+      <input type="file" accept=".txt,text/plain" data-watch-import hidden>
+    </label>
+    <button type="button" class="btn" data-watch-import-text>貼上代號</button>
+    <p class="watch-msg" data-watch-msg role="status" aria-live="polite"></p>
+  </div>
+  <dialog class="watch-dialog" data-watch-dialog>
+    <form method="dialog">
+      <h2>貼上代號清單</h2>
+      <p class="muted">每行一個代號，或以逗號、空白分隔。只會加入代號，不會上傳到伺服器。</p>
+      <textarea data-watch-paste rows="8" cols="40" placeholder="2330&#10;6488"></textarea>
+      <div class="watch-dialog-actions">
+        <button type="submit" class="primary" value="ok" data-watch-paste-ok>加入</button>
+        <button type="submit" value="cancel">取消</button>
+      </div>
+    </form>
+  </dialog>
+
+  <div class="watch-empty note" data-testid="watch-empty" data-watch-empty hidden>
+    <p>尚未加入任何自選股。</p>
+    <p>可在個股頁按「加入自選」，或用上面的匯入。{% if storage_note is defined and storage_note %}{{ storage_note }}{% endif %}</p>
+  </div>
+
+  <div class="watch-body" data-watch-body hidden>
+    <p class="watch-sum" data-watch-sum></p>
+    <div class="table-wrap stack-wrap">
+      <table class="data stack watch-table" data-testid="watch-table" data-sortable>
+        <thead>
+          <tr>
+            <th data-key="code" data-type="text">股票</th>
+            <th class="r" data-key="close">收盤（元）</th>
+            <th class="r" data-key="change">漲跌（元）</th>
+            <th class="r" data-key="change_pct">漲跌幅</th>
+            <th data-key="modes" data-type="text">今天符合的模式</th>
+            <th class="r" data-key="yoy">營收年增</th>
+            <th data-type="text">操作</th>
+          </tr>
+        </thead>
+        <tbody data-watch-rows></tbody>
+      </table>
+    </div>
+    <p class="note" data-watch-footnote>{% if revenue_footnote is defined and revenue_footnote %}{{ revenue_footnote }}{% else %}營收以本站已入庫資料為準；沒有該月列時顯示資料不足，不代表公司尚未公告。{% endif %}</p>
+    <p class="muted">{% if disclaimer is defined and disclaimer %}{{ disclaimer }}{% else %}這份清單由你在瀏覽器自行加入，不是推薦清單。符合模式只代表今天的條件判斷，不代表優劣。歷史統計，不代表未來，非投資建議。{% endif %}</p>
+  </div>
+</article>
+{% endblock %}

@@ -4,7 +4,10 @@
 {% block content %}
 <header class="stock-head">
   <h1><span class="sh-name">{{ s.name }}</span> <span class="sh-code">{{ s.code }}</span> <small>{{ s.market }}｜{% if s.industry and s.industry != '—' %}<a href="/industry/{{ s.industry|urlencode }}" title="看同產業的股票">{{ s.industry }}</a>{% else %}{{ s.industry }}{% endif %}</small></h1>
-  <nav class="jump" aria-label="本頁段落"><a href="#quote">行情</a><a href="#revenue">月營收</a><a href="#fin">財報</a><a href="#events">事件</a></nav>
+  <div class="sh-tools">
+    <span class="watch-slot" data-watch-code="{{ s.code }}" data-watch-name="{{ s.name }}"></span>
+    <nav class="jump" aria-label="本頁段落"><a href="#quote">行情</a><a href="#revenue">月營收</a><a href="#fin">財報</a><a href="#events">事件</a></nav>
+  </div>
 </header>
 
 <section class="card" id="quote" aria-labelledby="quote-h">

@@ -20,7 +20,7 @@
   <div class="wrap mast">
     <a class="brand" href="/" aria-label="台股盤後研究 首頁"><span class="seal" aria-hidden="true">盤後</span><span class="brand-name">台股盤後研究</span></a>
     <nav class="mainnav" aria-label="主要功能">
-      {%- for key, href, label in [('home', '/', '盤後總覽'), ('hub', '/hub', '篩選中心'), ('industry', '/industry', '產業分類'), ('screener', '/screener', '自訂條件'), ('revenue', '/revenue', '營收'), ('status', '/status', '資料狀態')] %}
+      {%- for key, href, label in [('home', '/', '盤後總覽'), ('hub', '/hub', '篩選中心'), ('watchlist', '/watchlist', '我的自選'), ('scorecard', '/scorecard', '模式成績'), ('industry', '/industry', '產業分類'), ('screener', '/screener', '自訂條件'), ('revenue', '/revenue', '營收'), ('status', '/status', '資料狀態')] %}
       <a href="{{ href }}"{% if nav == key %} class="on" aria-current="page"{% endif %}>{{ label }}</a>
       {%- endfor %}
     </nav>
@@ -65,6 +65,7 @@
 </footer>
 <script src="/static/js/site.js" defer></script>
 <script src="/static/js/nav.js" defer></script>
+<script src="/static/js/watchlist.js" defer></script>
 {% block scripts %}{% endblock %}
 </body>
 </html>

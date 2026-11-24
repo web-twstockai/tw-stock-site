@@ -1,0 +1,91 @@
+{% extends "base.html" %}
+{% block title %}模式成績｜台股盤後研究{% endblock %}
+{% block content %}
+{%- set method = method if method is defined else {} -%}
+<article class="score-page" data-testid="scorecard-page">
+  <header class="page-head">
+    <div>
+      <p class="kicker">官方歷史統計</p>
+      <h1>模式成績單</h1>
+      <p class="ph-lead">列出每個篩選模式的官方歷史 5 日勝率{{ method.windef if method.windef is defined and method.windef else '＝扣成本後 5 個交易日報酬＞0 的比例' }}、平均扣成本報酬，以及與同日基準（隨機買進的官方比較）的對照。數字只來自登記表／分析端的正式產出，不使用研究過程的初步數字。</p>
+    </div>
+  </header>
+
+  <details class="method" id="method">
+    <summary><span aria-hidden="true">?</span> 這些數字怎麼算、何時才顯示</summary>
+    <div class="method-body">
+      <p><b>5 日勝率{{ method.windef if method.windef is defined and method.windef else '＝扣成本後 5 個交易日報酬＞0 的比例' }}。</b>報酬剛好等於 0 算「沒有上漲」。</p>
+      <ul>
+        <li><b>進出場與成本：</b>{{ method.cost if method.cost is defined and method.cost else '次一交易日開盤買進、第 5 個交易日收盤賣出；買賣手續費各 0.1425%，證交稅 0.3%。' }}</li>
+        <li><b>顯示門檻：</b>{{ method.threshold if method.threshold is defined and method.threshold else 'N≥100 且 D≥30 才顯示比例。' }}</li>
+        <li><b>同日基準：</b>{{ method.baseline if method.baseline is defined and method.baseline else '同一批訊號日、所有可評估股票同樣持有 5 日。' }}</li>
+        <li><b>統計期間：</b>{{ method.period if method.period is defined and method.period else '從 2023-11 起。' }}</li>
+        <li><b>等級：</b>{{ method.tier if method.tier is defined and method.tier else '' }}目前進階門檻 {% if adv_label is defined %}{{ adv_label }}{% else %}70%{% endif %}、高級門檻 {% if pre_label is defined %}{{ pre_label }}{% else %}80%{% endif %}，兩者都須扣成本後平均報酬為正（門檻待三年資料重新設定）。</li>
+        <li><b>目前狀態：</b>{% if pending_note is defined and pending_note %}{{ pending_note }}{% else %}官方統計尚未提供，本頁不顯示任何勝率或報酬數字。{% endif %}</li>
+      </ul>
+      <p class="disc">{% if disclaimer is defined and disclaimer %}{{ disclaimer }}。{% else %}歷史統計，不代表未來，非投資建議。{% endif %}</p>
+    </div>
+  </details>
+
+  <p class="score-sum">{% if count is defined %}共 {{ count }} 個模式。{% endif %}分析端提供官方統計之前，勝率、平均報酬與同日基準一律顯示「計算中」（季頻且未達門檻者顯示「樣本不足」）。</p>
+
+  <div class="table-wrap stack-wrap">
+    <table class="data stack score-table" data-testid="score-table">
+      <thead>
+        <tr>
+          <th>模式</th>
+          <th>等級</th>
+          <th>5 日勝率</th>
+          <th>平均扣成本報酬</th>
+          <th>同日基準（隨機買進）</th>
+          <th>為何是此等級</th>
+        </tr>
+      </thead>
+      <tbody>
+      {%- for m in rows|default([]) %}
+        {%- set st = m.stats if m.stats is defined and m.stats else {} %}
+        <tr data-testid="score-row-{{ m.id }}" data-mode="{{ m.id }}" data-status="{{ st.status if st.status is defined else 'pending' }}">
+          <td>
+            {%- if m.href is defined and m.href -%}
+            <a href="{{ m.href }}"><span class="mcode">{{ m.id }}</span> {{ m.name }}</a>
+            {%- else -%}
+            <span class="mcode">{{ m.id }}</span> {{ m.name }}
+            {%- endif -%}
+            {%- if m.available is defined and not m.available %}<div class="muted">篩選中心尚未提供此模式的今日名單，沒有結果頁連結。</div>{% endif %}
+          </td>
+          <td><span class="tier {{ m.tier_class if m.tier_class is defined else 't1' }}"><span class="sr">等級：</span>{{ m.tier if m.tier is defined else '基本' }}</span></td>
+          <td data-col="win">
+            {%- if st.ready is defined and st.ready and st.rate_pct is defined and st.rate_pct is not none -%}
+            <span class="score-val">{{ st.display }}</span>
+            <div class="muted">{{ method.windef if method.windef is defined and method.windef else '＝扣成本後 5 個交易日報酬＞0 的比例' }}
+              {%- if st.n is defined and st.n is not none %}｜N＝{{ st.n }}{% endif -%}
+              {%- if st.d is defined and st.d is not none %}、D＝{{ st.d }}{% endif -%}
+              {%- if st.period_start is defined and st.period_start and st.period_end is defined and st.period_end %}｜{{ st.period_start }}～{{ st.period_end }}{% endif %}</div>
+            {%- else -%}
+            <span class="pill {{ 'pill-few' if st.display is defined and st.display == '樣本不足' else 'pill-pend' }}">{{ st.display if st.display is defined else '計算中' }}</span>
+            {%- endif -%}
+          </td>
+          <td data-col="avg">
+            {%- if st.ready is defined and st.ready and st.avg_return_pct is defined and st.avg_return_pct is not none -%}
+            <span class="score-val">{{ '%+.2f' % st.avg_return_pct }}%</span>
+            {%- else -%}
+            <span class="pill {{ 'pill-few' if st.display is defined and st.display == '樣本不足' else 'pill-pend' }}">{{ st.display if st.display is defined else '計算中' }}</span>
+            {%- endif -%}
+          </td>
+          <td data-col="base">
+            {%- if st.ready is defined and st.ready and st.baseline_pct is defined and st.baseline_pct is not none -%}
+            <span class="score-val">{{ '%.2f' % st.baseline_pct }}%</span>
+            {%- else -%}
+            <span class="pill {{ 'pill-few' if st.display is defined and st.display == '樣本不足' else 'pill-pend' }}">{{ st.display if st.display is defined else '計算中' }}</span>
+            {%- endif -%}
+          </td>
+          <td class="wrap" data-col="why">{{ m.why if m.why is defined else '' }}</td>
+        </tr>
+      {%- endfor %}
+      </tbody>
+    </table>
+  </div>
+
+  <p class="note">{% if disclaimer is defined and disclaimer %}{{ disclaimer }}。{% else %}歷史統計，不代表未來，非投資建議。{% endif %}等級只是標示，不代表保證或較準。想看今天符合的股票，請到「<a href="/hub">篩選中心</a>」。</p>
+</article>
+{% endblock %}

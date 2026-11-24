@@ -592,3 +592,40 @@ td.ev-desc{white-space:normal;min-width:16em;max-width:28em;line-height:1.5;over
 @media (max-width:640px){td.ev-desc{min-width:0;max-width:none}}
 .kline-ev .ev-code{display:block;font:12px var(--mono);color:var(--muted);overflow-wrap:anywhere}
 @media (min-width:641px){td.ev-desc{min-width:12em;max-width:22em}}
+
+/* 自選股清單（HANDOFF §32） */
+.stock-head .sh-tools{display:flex;flex-wrap:wrap;align-items:center;gap:8px 12px}
+.watch-slot{display:inline-flex;align-items:center}
+button.watch-toggle{min-width:40px;min-height:40px;padding:8px 14px}
+button.watch-toggle.on{background:var(--brand-weak)}
+.watch-page .lead{max-width:42em}
+.watch-tools{display:flex;flex-wrap:wrap;align-items:center;gap:8px 10px;margin:var(--s3) 0}
+.watch-tools .btn, .watch-tools button, label.watch-import{
+  min-height:40px;display:inline-flex;align-items:center;cursor:pointer;
+}
+label.watch-import input{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0,0,0,0)}
+.watch-msg{flex:1 1 16em;margin:0;color:var(--muted);font-size:13px}
+.watch-sum{margin:0 0 var(--s2);font-size:14px}
+.watch-table .sm-list{margin:0}
+.watch-table .pill{margin-left:6px}
+.watch-dialog{border:1px solid var(--line);border-radius:var(--r);padding:var(--s4);background:var(--surface,#fff);color:var(--ink);max-width:28em}
+.watch-dialog h2{margin:0 0 var(--s2);font-size:18px}
+.watch-dialog textarea{width:100%;font:inherit;padding:8px;border:1px solid var(--line);border-radius:var(--r)}
+.watch-dialog-actions{display:flex;gap:8px;margin-top:var(--s3);justify-content:flex-end}
+.watch-dialog-actions button{min-height:40px}
+.watch-empty p{margin:0 0 .4em}
+@media (max-width:640px){
+  .stock-head .sh-tools{width:100%;justify-content:space-between}
+  button.watch-toggle{min-height:44px}
+}
+
+/* 模式成績單（HANDOFF §33） */
+.score-page .ph-lead{max-width:46em}
+.score-sum{margin:0 0 var(--s3);font-size:14px;color:var(--ink2)}
+.score-table .mcode{font:700 12.5px/1 var(--sans);color:var(--muted);margin-right:6px}
+.score-table .score-val{font-weight:700;white-space:nowrap}
+.score-table .pill{white-space:nowrap}
+.score-table td[data-col=why],.score-table td.wrap{font-size:14px;max-width:24em;white-space:normal;overflow-wrap:anywhere}
+@media (max-width:640px){
+  .score-table td[data-col=why]{max-width:none}
+}
