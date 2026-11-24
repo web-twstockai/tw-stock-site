@@ -140,3 +140,90 @@ def test_fetch_market_prices_use_db_state_only_fetches_missing_market(monkeypatc
     fk.calls.clear()
     st2 = mp.fetch_market_prices(c, trade_days=2, use_db_state=True)    # 全部完成 → 0 請求
     assert fk.calls == [] and st2["skipped_done"] == 2
+
+
+# ---------- 2026-11-24：全市場增量的計畫終點含「今天」（台北時間過 TODAY_PRICES_AFTER）----------
+def _today_conn():
+    c = _conn()
+    c.execute("INSERT OR REPLACE INTO trading_calendar(calendar_date,is_trade_day,source_kind,source,fetched_at) VALUES('2026-11-14',1,'t','t','2026-11-17T00:00:00+08:00')")
+    c.commit()
+    return c
+
+
+def _at(monkeypatch, hhmm: str):
+    import datetime as dt
+    from pipeline import dates as D
+    h, m = map(int, hhmm.split(":"))
+    monkeypatch.setattr(mp, "today", lambda: dt.date(2026, 11, 14))
+    monkeypatch.setattr(D, "now_taipei", lambda: dt.datetime(2026, 11, 14, h, m, tzinfo=D.TZ))
+
+
+def test_include_today_prices_cutoff(monkeypatch):
+    import datetime as dt
+    from pipeline import dates as D
+    mk = lambda h, m: dt.datetime(2026, 11, 24, h, m, tzinfo=D.TZ)
+    monkeypatch.delenv("PIPELINE_TODAY_PRICES_AFTER", raising=False)
+    assert D.today_prices_cutoff() == (15, 0)
+    assert D.include_today_prices(mk(14, 59)) is False and D.include_today_prices(mk(15, 0)) is True
+    assert D.include_today_prices(mk(18, 0)) is True and D.include_today_prices(mk(22, 1)) is True
+    # UTC 時間（Actions runner）也要換成台北：10:00Z＝18:00 台北
+    assert D.include_today_prices(dt.datetime(2026, 11, 24, 10, 0, tzinfo=dt.timezone.utc)) is True
+    assert D.include_today_prices(dt.datetime(2026, 11, 24, 5, 0, tzinfo=dt.timezone.utc)) is False
+    monkeypatch.setenv("PIPELINE_TODAY_PRICES_AFTER", "17:30")
+    assert D.include_today_prices(mk(17, 29)) is False and D.include_today_prices(mk(17, 30)) is True
+    monkeypatch.setenv("PIPELINE_TODAY_PRICES_AFTER", "abc")
+    assert D.today_prices_cutoff() == (15, 0)
+
+
+def test_after_cutoff_plan_includes_today_and_fetches_it(monkeypatch):
+    c = _today_conn()
+    fk = Fakes(c)
+    monkeypatch.setattr(mp, "fetch_twse_day", fk.twse)
+    monkeypatch.setattr(mp, "fetch_tpex_day", fk.tpex)
+    _at(monkeypatch, "22:01")
+    st = mp.fetch_market_prices(c, trade_days=2, use_db_state=True)
+    assert st["end"] == "2026-11-14" and st["days"][-1] == "2026-11-14"
+    assert "2026-11-14" in st["ok_dates"] and st["pending_today"] == []
+    # 當日先上櫃再上市
+    today_calls = [x for x in fk.calls if x[1] == "2026-11-14"]
+    assert today_calls == [("TPEx", "2026-11-14"), ("TWSE", "2026-11-14")]
+    n = c.execute("SELECT COUNT(*) FROM daily_prices WHERE price_date='2026-11-14' AND is_current=1").fetchone()[0]
+    assert n == 20
+
+
+def test_before_cutoff_plan_stops_yesterday(monkeypatch):
+    c = _today_conn()
+    fk = Fakes(c)
+    monkeypatch.setattr(mp, "fetch_twse_day", fk.twse)
+    monkeypatch.setattr(mp, "fetch_tpex_day", fk.tpex)
+    _at(monkeypatch, "14:30")
+    st = mp.fetch_market_prices(c, trade_days=2, use_db_state=True)
+    assert st["end"] == "2026-11-13" and "2026-11-14" not in st["days"]
+    assert all(x[1] != "2026-11-14" for x in fk.calls)
+
+
+def test_today_not_published_is_pending_not_failed(monkeypatch):
+    """上櫃未公布（ok＋0 列）→ 不抓上市、不寫入、不算失敗；上市未公布（stat 非 OK）亦同。"""
+    c = _today_conn()
+    fk = Fakes(c, no_data_twse={"2026-11-14"})
+
+    def tpex_unpublished(conn, iso, universe, events, **kw):
+        fk.calls.append(("TPEx", iso))
+        if iso == "2026-11-14":
+            return {"tpex": 0, "page_tpex": 0, "failed": [], "rate_limited": False}
+        return fk.tpex(conn, iso, universe, events, **kw)
+
+    monkeypatch.setattr(mp, "fetch_twse_day", fk.twse)
+    monkeypatch.setattr(mp, "fetch_tpex_day", tpex_unpublished)
+    _at(monkeypatch, "18:00")
+    st = mp.fetch_market_prices(c, trade_days=2, use_db_state=True)
+    assert st["pending_today"] == ["TPEx"] and st["failed"] == []
+    assert ("TWSE", "2026-11-14") not in fk.calls
+    assert "2026-11-14" not in st["ok_dates"] and "2026-11-13" in st["ok_dates"]
+    assert c.execute("SELECT COUNT(*) FROM daily_prices WHERE price_date='2026-11-14'").fetchone()[0] == 0
+    # 上櫃已公布、上市未公布（stat 非 OK）→ pending TWSE，不算失敗
+    fk.calls.clear()
+    monkeypatch.setattr(mp, "fetch_tpex_day", fk.tpex)
+    st2 = mp.fetch_market_prices(c, trade_days=2, use_db_state=True)
+    assert st2["pending_today"] == ["TWSE"] and st2["failed"] == []
+    assert ("TPEx", "2026-11-14") in fk.calls and ("TWSE", "2026-11-14") in fk.calls

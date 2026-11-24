@@ -64,25 +64,70 @@ def universe_label(src) -> str:
         return ""
 
 
+def _coverage_of(rec: dict) -> Optional[float]:
+    if not isinstance(rec, dict) or "coverage_ratio" not in rec:
+        return None
+    try:
+        return float(rec["coverage_ratio"])
+    except (TypeError, ValueError):
+        return None
+
+
+def computed_status(rec: dict) -> str:
+    """單一模式在快照／比對裡的狀態，規則與 hub.mode_state 相同（覆蓋率 < 95% → insufficient）。"""
+    if not isinstance(rec, dict):
+        return "error"
+    if rec.get("error"):
+        return "error"
+    from .hub import mode_state
+    if "coverage_ratio" in rec and "passed" in rec:
+        try:
+            st, _n = mode_state(rec)
+        except (KeyError, TypeError):
+            st = "ok"
+        if st == "insufficient_data":
+            return "insufficient"
+        return "ok"  # ok 與 zero 都可比較；zero 仍寫空名單
+    return "ok"
+
+
 def extract_passes(core: dict) -> tuple[dict[str, list[str]], dict[str, str]]:
-    """從 hub._core 取出各模式符合名單與狀態。不改名單內容。"""
+    """從 hub._core 取出各模式符合名單與狀態。覆蓋率未達門檻時狀態為 insufficient，名單不拿來比對。"""
     passes: dict[str, list[str]] = {}
     status: dict[str, str] = {}
     computed = core.get("computed") or {}
     for mid, rec in computed.items():
-        if not isinstance(rec, dict):
-            status[mid] = "error"
+        st = computed_status(rec)
+        status[mid] = st
+        if st != "ok":
             passes[mid] = []
             continue
-        if rec.get("error"):
-            status[mid] = "error"
-            passes[mid] = []
-            continue
-        # mode_state 尚未寫入 computed；以是否有 passed 為準。NA 模式通常沒進入 computed。
         codes = [str(c) for c in (rec.get("passed") or [])]
         passes[mid] = sorted(set(codes))
-        status[mid] = "ok"
     return passes, status
+
+
+def extract_coverage(core: dict) -> dict[str, dict]:
+    """供新快照附帶覆蓋率，讓之後能分辨「真的 0 檔」與「資料不足」。"""
+    out: dict[str, dict] = {}
+    for mid, rec in (core.get("computed") or {}).items():
+        if not isinstance(rec, dict):
+            continue
+        ratio = _coverage_of(rec)
+        if ratio is None:
+            continue
+        ev = rec.get("evaluable_count")
+        den = rec.get("denominator")
+        try:
+            ev_i = int(ev) if ev is not None else None
+        except (TypeError, ValueError):
+            ev_i = None
+        try:
+            den_i = int(den) if den is not None else None
+        except (TypeError, ValueError):
+            den_i = None
+        out[mid] = {"ratio": ratio, "evaluable": ev_i, "denominator": den_i}
+    return out
 
 
 def snapshot_payload(src, core: dict) -> dict:
@@ -95,7 +140,31 @@ def snapshot_payload(src, core: dict) -> dict:
         "generated_at": _now_taipei(),
         "passes": passes,
         "status": status,
+        "coverage": extract_coverage(core),
     }
+
+
+def prev_usable(prev: dict, mid: str, today_n: int = 0) -> tuple[bool, str]:
+    """對照日該模式的名單能不能拿來做差集。舊快照若把資料不足寫成 ok、空名單，不得把今日整批當成新進。"""
+    status = ((prev.get("status") or {}).get(mid)) or "ok"
+    cov = ((prev.get("coverage") or {}).get(mid) or {})
+    ratio = cov.get("ratio") if isinstance(cov, dict) else None
+    try:
+        ratio_f = float(ratio) if ratio is not None else None
+    except (TypeError, ValueError):
+        ratio_f = None
+    passes = [str(c) for c in ((prev.get("passes") or {}).get(mid) or [])]
+    from .hub import COVER
+    if status in ("insufficient", "error", "na", "pending"):
+        return False, "對照日此模式沒有可用名單，不比較異動"
+    if ratio_f is not None and ratio_f < COVER:
+        return False, "對照日可評估覆蓋率未達門檻，不比較異動"
+    if ratio_f is None and status == "ok" and not passes:
+        # 舊快照沒有覆蓋率：空名單可能是真的 0 檔，也可能是當時資料不足被誤記成 ok。
+        # 今日也是 0 檔時沒有「整批新進」的風險，可以顯示沒有異動；今日有符合時不比較。
+        if today_n > 0:
+            return False, "對照日快照沒有覆蓋率資料，且符合名單為空，無法分辨當時是真的 0 檔還是資料不足，為避免把今日名單整批當成新進，不比較異動"
+    return True, ""
 
 
 def validate_snapshot(data: Any) -> Optional[str]:
@@ -406,17 +475,15 @@ def _mode_rows(core: dict, prev: Optional[dict], names: dict[str, str],
             rows.append(item)
             continue
         today_set = set(today_passes.get(mid) or [])
-        # 對照日該模式若當時也是 error／無名單，passes 為空 → 全部今日符合會變成「新進」。
-        # 若對照快照明確標記非 ok，則不比對。
-        ps = prev_status.get(mid)
         if prev is None:
             item["status"] = "pending"
             item["reason"] = PENDING_REASON
             rows.append(item)
             continue
-        if ps and ps not in ("ok",):
+        ok_prev, why_prev = prev_usable(prev, mid, len(today_set))
+        if not ok_prev:
             item["status"] = "insufficient"
-            item["reason"] = f"對照日（{prev_as_of}）此模式沒有可用名單，不比較異動"
+            item["reason"] = (f"對照日（{prev_as_of}）" + why_prev) if prev_as_of else why_prev
             rows.append(item)
             continue
         prev_set = set(str(c) for c in (prev_passes.get(mid) or []))
@@ -474,6 +541,11 @@ def build(src, core: Optional[dict] = None) -> dict:
         "source": "none",
         "stale_note": "",
         "modes": [],
+        "changed": [],
+        "n_unchanged": 0,
+        "unchanged_ids": [],
+        "n_blocked": 0,
+        "blocked_ids": [],
         "n_entered": 0,
         "n_exited": 0,
         "disclaimer": DISCLAIMER,
@@ -499,6 +571,9 @@ def build(src, core: Optional[dict] = None) -> dict:
     modes = _mode_rows(core, prev, names, today, prev_as_of)
     n_in = sum(m["n_entered"] for m in modes if m["status"] == "ok")
     n_out = sum(m["n_exited"] for m in modes if m["status"] == "ok")
+    changed = [m for m in modes if m["status"] == "ok" and (m["n_entered"] or m["n_exited"])]
+    unchanged = [m for m in modes if m["status"] == "ok" and not m["n_entered"] and not m["n_exited"]]
+    blocked = [m for m in modes if m["status"] in ("insufficient", "pending", "error", "na")]
     src_label = "recompute" if (prev.get("_source") == "recompute" or prev.get("_how") == "recompute") else "snapshot"
     return {
         "today": today,
@@ -508,6 +583,11 @@ def build(src, core: Optional[dict] = None) -> dict:
         "source": src_label,
         "stale_note": stale,
         "modes": modes,
+        "changed": changed,
+        "n_unchanged": len(unchanged),
+        "unchanged_ids": [m["id"] for m in unchanged],
+        "n_blocked": len(blocked),
+        "blocked_ids": [m["id"] for m in blocked],
         "n_entered": n_in,
         "n_exited": n_out,
         "disclaimer": DISCLAIMER,

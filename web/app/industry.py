@@ -49,9 +49,10 @@ def _ind_name(s: dict) -> str:
     return v if v and v != "—" else MISSING_INDUSTRY
 
 
-def index(src: DataSource) -> dict:
+def index(src: DataSource, heat: bool = True) -> dict:
     view: dict[str, Any] = dict(industries=[], total=0, error="", mapping_date=None, is_test=src.is_test,
-                                universe_all=True, universe_label="", missing_count=0)
+                                universe_all=True, universe_label="", missing_count=0, heat_ready=False,
+                                heat_note="", heat_as_of=None)
     try:
         u = src.universe
         view.update(universe_all=u.symbols is None, universe_label=u.label)
@@ -80,7 +81,138 @@ def index(src: DataSource) -> dict:
     view["industries"] = inds
     view["total"] = sum(g["stock_count"] for g in inds)
     view["missing_count"] = groups.get(MISSING_INDUSTRY, {}).get("stock_count", 0)
+    if heat and inds and not view.get("error"):
+        _attach_heat(src, view)
     return view
+
+
+HEAT_SCALE = 3.0  # 加權漲跌幅達 ±3% 時顏色最深；實際數字仍照實顯示
+HEAT_DISC = "這是依官方產業別做的當日統計，只供瀏覽比較，不是買進或賣出建議。產業分類較粗，檔數少的產業波動會比較大。"
+
+
+def _attach_heat(src: DataSource, view: dict) -> None:
+    """在產業總覽各格加上成交金額加權漲跌幅與成交金額。漲跌幅只取 analysis screen() 的 change_pct。"""
+    as_of = (src.meta() or {}).get("data_date") or ""
+    view["heat_as_of"] = as_of
+    view["heat_disc"] = HEAT_DISC
+    if not as_of:
+        view["heat_note"] = "沒有資料日期，無法計算各產業的加權漲跌幅與成交金額。"
+        view["heat_ready"] = False
+        for g in view["industries"]:
+            g.update(_empty_heat("沒有資料日期"))
+        return
+    px = _price_rows(src, as_of)
+    pct, td = _change_pct(src)
+    pct_ok = bool(td) and td == as_of and bool(pct)
+    if not px:
+        view["heat_note"] = f"資料日 {as_of} 沒有行情，無法計算加權漲跌幅與成交金額。"
+        view["heat_ready"] = False
+        for g in view["industries"]:
+            g.update(_empty_heat(view["heat_note"]))
+        return
+    if not pct_ok:
+        view["heat_note"] = "選股引擎的評估日與資料日期不同或無法執行，加權漲跌幅暫不顯示（本站不自算漲跌幅）。"
+    stocks = _stocks(src)
+    by: dict[str, list] = {}
+    for s in stocks:
+        by.setdefault(_ind_name(s), []).append(s)
+    amounts = []
+    for g in view["industries"]:
+        g.update(_heat_group(by.get(g["industry_id"]) or [], px, pct if pct_ok else {}, as_of, src.is_test))
+        if g.get("trade_value"):
+            amounts.append(g["trade_value"])
+    max_tv = max(amounts) if amounts else 0
+    for g in view["industries"]:
+        tv = g.get("trade_value") or 0
+        g["flex"] = max(1, int(round((tv / max_tv) * 12))) if max_tv > 0 and tv > 0 else 1
+        g["bar_pct"] = int(round((tv / max_tv) * 100)) if max_tv > 0 and tv > 0 else 0
+    view["heat_ready"] = True
+
+
+def _empty_heat(reason: str) -> dict:
+    return dict(heat_status="insufficient", heat_reason=reason, weighted_pct=None, trade_value=None,
+                trade_value_yi=None, up_n=0, down_n=0, flat_n=0, rated_n=0, kind="na", intensity=0,
+                flex=1, bar_pct=0, aria="")
+
+
+def _heat_group(members: list[dict], px: dict, pct: dict, as_of: str, is_test: bool) -> dict:
+    if not members:
+        d = _empty_heat("追蹤範圍內目前沒有股票")
+        d["heat_status"] = "empty"
+        d["aria"] = "目前沒有股票"
+        return d
+    w_sum = 0.0
+    w_amt = 0.0
+    tv = 0.0
+    tv_ok = False
+    up_n = down_n = flat_n = rated_n = 0
+    priced = 0
+    for s in members:
+        r = px.get(s["code"])
+        close = _num(r.get("close_twd")) if r else None
+        if r is None or close is None:
+            continue
+        priced += 1
+        amt = _num(r.get("amount_twd"))
+        if amt is not None:
+            tv += amt
+            tv_ok = True
+        cp = pct.get(s["code"])
+        if cp is None:
+            continue
+        rated_n += 1
+        if cp > 0:
+            up_n += 1
+        elif cp < 0:
+            down_n += 1
+        else:
+            flat_n += 1
+        if amt is not None and amt > 0:
+            w_sum += cp * amt
+            w_amt += amt
+    yi = (tv / 1e8) if tv_ok else None
+    if w_amt > 0:
+        wp = w_sum / w_amt
+        status, reason = "ok", ""
+    else:
+        wp = None
+        status, reason = "insufficient", "這個產業沒有可計的成交金額加權漲跌幅（缺行情或分析引擎未提供漲跌幅，本站不自算）"
+    kind, intensity, bg = _heat_style(wp)
+    src_label = TEST_LABEL if is_test else "daily_prices"
+    wp_val = Val(wp, "%", "analysis/screener.py screen()" if not is_test else TEST_LABEL, as_of,
+                 status=STATUS_INSUFFICIENT if wp is None else "ok",
+                 note=reason if wp is None else "成交金額加權漲跌幅（權重＝當日成交金額）", digits=2)
+    amt_val = Val(yi, "億元", src_label, as_of,
+                  status=STATUS_INSUFFICIENT if yi is None else "ok",
+                  note="" if yi is not None else "沒有可計的成交金額", digits=2)
+    parts = []
+    if wp is not None:
+        side = "上漲" if wp > 0 else "下跌" if wp < 0 else "平盤"
+        parts.append(f"加權漲跌幅{side} {abs(wp):.2f}%")
+    else:
+        parts.append("加權漲跌幅資料不足")
+    if yi is not None:
+        parts.append(f"成交金額 {yi:,.2f} 億元")
+    parts.append(f"{len(members)} 檔")
+    if rated_n:
+        parts.append(f"可計漲跌幅 {rated_n} 檔中 {up_n} 檔上漲")
+    aria = "，".join(parts)
+    return dict(heat_status=status, heat_reason=reason, weighted_pct=wp_val, trade_value=(tv if tv_ok else None),
+                trade_value_yi=amt_val, up_n=up_n, down_n=down_n, flat_n=flat_n, rated_n=rated_n,
+                priced_n=priced, kind=kind, intensity=intensity, bg=bg, flex=1, bar_pct=0, aria=aria)
+
+
+def _heat_style(pct: Optional[float]) -> tuple[str, float, str]:
+    """回傳 (漲跌類別, 0～1 深淺, 背景色)。顏色只做輔助，格子上另有數字與▲▼■。"""
+    if pct is None:
+        return "na", 0.0, ""
+    if pct == 0:
+        return "flat", 0.0, "#f3f1ec"
+    intensity = min(1.0, abs(pct) / HEAT_SCALE)
+    alpha = 0.14 + 0.32 * intensity
+    if pct > 0:
+        return "up", intensity, f"rgba(196,38,29,{alpha:.3f})"
+    return "down", intensity, f"rgba(22,122,70,{alpha:.3f})"
 
 
 def _price_rows(src: DataSource, date: str) -> dict:
@@ -106,7 +238,7 @@ def _change_pct(src: DataSource) -> tuple[dict, str]:
 
 
 def detail(src: DataSource, industry_id: str, sort: Optional[str] = None, direction: Optional[str] = None) -> dict:
-    view = index(src)
+    view = index(src, heat=False)
     ind = next((g for g in view["industries"] if g["industry_id"] == industry_id), None)
     view.update(industry=ind, rows=[], na=[], sort="trade_value", dir="desc", cols=COLS, as_of=src.meta().get("data_date"))
     if ind is None or view.get("error"):

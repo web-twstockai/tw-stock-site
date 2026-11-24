@@ -72,16 +72,17 @@
   </div>
   {% else %}
   <p class="md-sum">今日 {{ d.today }} 比對照日 {{ d.prev }}：新進 {{ '{:,}'.format(d.n_entered|default(0)) }} 檔次、掉出 {{ '{:,}'.format(d.n_exited|default(0)) }} 檔次。</p>
+  {%- set changed = d.changed if d.changed is defined else [] -%}
+  {% if changed %}
   <div class="table-wrap">
     <table class="data md-table" data-testid="mode-diff-table">
       <thead>
         <tr><th>模式</th><th>新進</th><th>掉出</th></tr>
       </thead>
       <tbody>
-      {%- for m in d.modes|default([]) %}
+      {%- for m in changed %}
         <tr data-mode="{{ m.id }}" data-status="{{ m.status }}">
           <th class="wrap">{% if m.href is defined and m.href and m.available %}<a href="{{ m.href }}"><span class="mcode">{{ m.id }}</span>{{ m.name }}</a>{% else %}<span class="mcode">{{ m.id }}</span>{{ m.name }}{% endif %}</th>
-          {% if m.status == 'ok' %}
           <td class="wrap" data-col="in"><span class="md-n in">{{ '{:,}'.format(m.n_entered) }} 檔</span>
             {%- if m.entered_preview %}
             <ul class="md-codes compact">
@@ -98,14 +99,18 @@
             {%- if m.n_exited > (m.exited_preview|length) %}<p class="md-more">另有 {{ '{:,}'.format(m.n_exited - (m.exited_preview|length)) }} 檔，見<a href="{{ d.href|default('/changes') }}#{{ m.id }}">完整名單</a></p>{% endif -%}
             {%- endif %}
           </td>
-          {% else %}
-          <td class="wrap" colspan="2">{% if m.status == 'na' %}本模式目前無法計算，不比較異動{% else %}資料不足{% endif %}{% if m.reason is defined and m.reason %}：{{ m.reason }}{% endif %}</td>
-          {% endif %}
         </tr>
       {%- endfor %}
       </tbody>
     </table>
   </div>
+  {% endif %}
+  {% if d.n_unchanged is defined and d.n_unchanged %}
+  <p class="md-agg" data-testid="mode-diff-unchanged">另有 {{ d.n_unchanged }} 個模式沒有新進或掉出{% if d.unchanged_ids is defined and d.unchanged_ids %}（{{ d.unchanged_ids|join('、') }}）{% endif %}。</p>
+  {% endif %}
+  {% if d.n_blocked is defined and d.n_blocked %}
+  <p class="md-agg" data-testid="mode-diff-blocked">{{ d.n_blocked }} 個模式資料不足或目前無法計算，不比較異動{% if d.blocked_ids is defined and d.blocked_ids %}（{{ d.blocked_ids|join('、') }}）{% endif %}。原因見<a href="{{ d.href|default('/changes') }}">每日異動</a>。</p>
+  {% endif %}
   <p class="md-more-all"><a class="btn" href="{{ d.href|default('/changes') }}">看完整名單（每日異動） →</a></p>
   {% endif %}
   {% if d.backfill_note is defined and d.backfill_note %}<p class="md-note">{{ d.backfill_note }}</p>{% endif %}

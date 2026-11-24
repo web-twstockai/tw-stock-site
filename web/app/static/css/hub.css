@@ -196,6 +196,33 @@ th.sorted .sort-ic{color:var(--brand)}
 .sec-acts{display:flex;gap:8px;flex-wrap:wrap}
 @media (max-width:640px){.sec-acts{width:100%}.sec-acts .btn{flex:1 1 100%;text-align:center}}
 
+
+/* 產業熱度圖（HANDOFF §36） */
+.ind-heat{margin:0 0 var(--s4,16px)}
+.ind-heat .sec-h{margin-bottom:8px}
+.ind-heat .sec-h h2{margin:0;font-size:18px}
+.hm-legend{margin:0 0 12px;font-size:13.5px;color:var(--ink2);line-height:1.55}
+.hm-grid{list-style:none;margin:0;padding:0;display:flex;flex-wrap:wrap;gap:10px;align-items:stretch}
+.hm-cell{flex:1 1 168px;min-width:168px;max-width:100%}
+.hm-tile{min-height:140px;border-top-width:4px}
+.hm-tile.up{border-top-color:var(--up)}
+.hm-tile.down{border-top-color:var(--down)}
+.hm-tile.flat{border-top-color:var(--flat)}
+.hm-tile:hover{filter:brightness(0.97)}
+.hm-pct{display:flex;flex-wrap:wrap;align-items:baseline;gap:6px 8px;margin:4px 0 2px}
+.hm-pct .chg{font-size:20px;font-weight:800}
+.hm-pct-l{font-size:12px;font-weight:600;color:var(--ink2)}
+.hm-why{display:block;margin-top:4px;font-size:12.5px;line-height:1.45;font-weight:400;color:var(--ink2);overflow-wrap:anywhere}
+.hm-amt,.hm-up{font-size:13px;color:var(--ink);line-height:1.45}
+.hm-bar{display:block;height:5px;background:var(--line2);border-radius:3px;margin-top:8px;overflow:hidden}
+.hm-bar span{display:block;height:100%;background:var(--ink);opacity:.4;max-width:100%}
+@media (max-width:640px){
+  .hm-cell{flex:1 1 100%;min-width:0}
+  .hm-tile{min-height:128px}
+  .hm-pct .chg{font-size:18px}
+  .hm-tile{padding:12px 14px}
+}
+
 /* ===== analysis-0.10.0：M9～M21、個股頁「今天符合的模式」（HANDOFF §30） ===== */
 .mode-note{display:block;font-size:12.5px;color:var(--warn);line-height:1.45;margin-top:2px}
 .res-note{font-size:13.5px;color:var(--warn);margin:4px 0 0}

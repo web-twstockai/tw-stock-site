@@ -16,6 +16,28 @@ def today() -> date:
     return datetime.now(TZ).date()
 
 
+def now_taipei() -> datetime:
+    return datetime.now(TZ)
+
+
+def today_prices_cutoff() -> tuple[int, int]:
+    """當日行情納入計畫的台北時間（HH, MM）；環境變數 PIPELINE_TODAY_PRICES_AFTER 優先，不合法則用 config。"""
+    import os
+    from pipeline import config
+    for raw in (os.environ.get("PIPELINE_TODAY_PRICES_AFTER"), config.TODAY_PRICES_AFTER):
+        m = re.fullmatch(r"\s*(\d{1,2}):(\d{2})\s*", str(raw or ""))
+        if m and int(m.group(1)) < 24 and int(m.group(2)) < 60:
+            return int(m.group(1)), int(m.group(2))
+    return 15, 0
+
+
+def include_today_prices(now: datetime | None = None) -> bool:
+    """台北時間已過 today_prices_cutoff() → True（行情計畫終點為今天）。"""
+    now = (now or now_taipei()).astimezone(TZ)
+    h, m = today_prices_cutoff()
+    return (now.hour, now.minute) >= (h, m)
+
+
 def roc_ymd_to_iso(s: str) -> str | None:
     """1151109 / 115/11/09 / 115年11月09日 / 2026/11/10 → YYYY-MM-DD"""
     if not s:

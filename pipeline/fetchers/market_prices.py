@@ -9,7 +9,7 @@ from pathlib import Path
 
 from pipeline import config
 from pipeline.coverage import max_rss_mb, record_summary
-from pipeline.dates import ad_slash, ad_yyyymmdd, now_iso, parse_int, parse_number, today
+from pipeline.dates import ad_slash, ad_yyyymmdd, include_today_prices, now_iso, parse_int, parse_number, today
 from pipeline.db import touch_source, upsert_versioned
 from pipeline.deadline import should_stop
 from pipeline.fetchers.calendar import recent_trade_days
@@ -433,9 +433,13 @@ def fetch_market_prices(
     """依交易日整批回補／增量。支援檢查點與時限中止。
     use_db_state=True（雲端 all 模式）：不用 logs/ 檢查點檔，改以 DB 內「該日該市場現行列數」判斷是否已完成，
     只抓還缺的市場（TWSE／TPEx 各 1 個請求），Actions 臨時機器也能續跑、冪等。"""
-    end = today() - timedelta(days=1)
+    # 終點：台北時間過 config.TODAY_PRICES_AFTER 含今天，否則到昨天（2026-11-24 修正，原本一律到昨天）
+    t0 = today()
+    end = t0 if include_today_prices() else t0 - timedelta(days=1)
     days = recent_trade_days(conn, trade_days + 5, end=end)
     days = days[-trade_days:] if len(days) >= trade_days else days
+    today_iso = t0.isoformat()
+    pending_today: list[str] = []
     universe = _universe(conn)
     twse_n = sum(1 for m in universe.values() if m == "TWSE")
     tpex_n = sum(1 for m in universe.values() if m == "TPEx")
@@ -462,15 +466,36 @@ def fetch_market_prices(
                 continue
             st = {"twse": 0, "tpex": 0, "failed": [], "rate_limited": False}
             exact, intervals = load_halt_coverage(conn)
-            if "TWSE" in need:
-                tw = fetch_twse_day(conn, iso, universe, http_events, exact=exact, intervals=intervals)
-                st["twse"] = tw["twse"]
-                st["failed"].extend(tw["failed"])
-            if "TPEx" in need:
-                tp = fetch_tpex_day(conn, iso, universe, http_events, exact=exact, intervals=intervals)
-                st["tpex"] = tp["tpex"]
-                st["failed"].extend(tp["failed"])
-                st["rate_limited"] = tp.get("rate_limited", False)
+            if iso == today_iso:
+                # 當日：先抓上櫃（較晚公布；未公布時回 ok 但 0 列），上櫃未公布就不抓上市，避免只有半個市場。
+                # 任一市場官方尚未公布 → 不寫入、不算失敗，記 pending_today，下次 run 再抓。
+                if "TPEx" in need:
+                    tp = fetch_tpex_day(conn, iso, universe, http_events, exact=exact, intervals=intervals)
+                    st["tpex"] = tp["tpex"]
+                    st["rate_limited"] = tp.get("rate_limited", False)
+                    if tp.get("rate_limited") or tp.get("failed"):
+                        st["failed"].extend(tp.get("failed") or [])
+                    elif not tp.get("page_tpex"):
+                        pending_today.append("TPEx")
+                if "TWSE" in need and "TPEx" not in pending_today and not st["failed"] and not st["rate_limited"]:
+                    tw = fetch_twse_day(conn, iso, universe, http_events, exact=exact, intervals=intervals)
+                    st["twse"] = tw["twse"]
+                    if tw.get("no_data"):
+                        pending_today.append("TWSE")
+                    else:
+                        st["failed"].extend(tw["failed"])
+                if pending_today:
+                    log.info("prices day %s：官方尚未公布 %s，本次不寫入、不算失敗", iso, "／".join(pending_today))
+            else:
+                if "TWSE" in need:
+                    tw = fetch_twse_day(conn, iso, universe, http_events, exact=exact, intervals=intervals)
+                    st["twse"] = tw["twse"]
+                    st["failed"].extend(tw["failed"])
+                if "TPEx" in need:
+                    tp = fetch_tpex_day(conn, iso, universe, http_events, exact=exact, intervals=intervals)
+                    st["tpex"] = tp["tpex"]
+                    st["failed"].extend(tp["failed"])
+                    st["rate_limited"] = tp.get("rate_limited", False)
         elif iso in done:
             skipped_done += 1
             continue
@@ -511,7 +536,8 @@ def fetch_market_prices(
     cov_tpex = _covered("TPEx")
     notes = (
         f"ok_dates={len(ok_dates)} skipped_done={skipped_done} stopped={stopped} "
-        f"peak_rss_mb={peak_rss} target_days={len(days)}"
+        f"peak_rss_mb={peak_rss} target_days={len(days)} end={end.isoformat()}"
+        + (f" pending_today={'/'.join(pending_today)}" if pending_today else "")
     )
     record_summary(
         conn, run_id=run_id, universe="all", data_kind="prices", market="TWSE",
@@ -527,6 +553,8 @@ def fetch_market_prices(
     )
     return {
         "days": days,
+        "end": end.isoformat(),
+        "pending_today": pending_today,
         "ok_dates": ok_dates,
         "failed": failed,
         "skipped_done": skipped_done,

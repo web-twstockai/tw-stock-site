@@ -24,11 +24,43 @@
 {%- if not ind.industries %}
 <div class="state st-nodata" role="status"><p class="st-big"><span class="pill pill-muted big">資料不足</span></p><p>資料庫的證券基本資料沒有產業別，無法分類。</p><p class="st-meta"><a href="/status">看資料狀態 →</a></p></div>
 {%- else %}
-<ul class="ind-grid">
-{%- for g in ind.industries %}
-  <li><a class="ind-tile{{ ' z' if not g.stock_count }}" href="/industry/{{ g.industry_id|urlencode }}"><span class="it-n">{{ g.name }}</span><span class="it-c"><b class="num">{{ n0(g.stock_count) }}</b> 檔</span><span class="it-m">{{ ('上市 ' ~ g.listed_count ~ '・上櫃 ' ~ g.otc_count) if g.stock_count else ('追蹤範圍內沒有股票' if not ind.universe_all else '目前沒有股票') }}</span></a></li>
-{%- endfor %}
-</ul>
+<section class="ind-heat" data-testid="industry-heat" aria-labelledby="h-heat">
+  <div class="sec-h">
+    <h2 id="h-heat">今天各產業的漲跌與成交</h2>
+    <p class="sec-sub">顏色是當日成交金額加權漲跌幅（紅漲綠跌），格子大小是當日成交金額。漲跌幅來自分析引擎，本站不自算。</p>
+  </div>
+  <p class="md-warn" role="note"><b>!</b> {{ ind.heat_disc if ind.heat_disc is defined and ind.heat_disc else '這是分類瀏覽與當日統計，不是買進或賣出建議。' }}</p>
+  {% if ind.heat_note is defined and ind.heat_note %}<p class="md-note" role="status">{{ ind.heat_note }}</p>{% endif %}
+  <p class="hm-legend">漲跌以 <span class="chg up"><span class="arr" aria-hidden="true">▲</span>紅</span>／<span class="chg down"><span class="arr" aria-hidden="true">▼</span>綠</span>／<span class="chg flat"><span class="arr" aria-hidden="true">■</span>平盤</span> 加數字表示；格子愈大，成交金額愈多。每格也寫上漲家數。點格子進入該產業。</p>
+  <ul class="hm-grid">
+  {%- for g in ind.industries %}
+    <li class="hm-cell" style="flex-grow: {{ g.flex if g.flex is defined else 1 }};">
+      <a class="ind-tile hm-tile {{ 'z' if not g.stock_count else (g.kind if g.kind is defined else '') }}"
+         href="/industry/{{ g.industry_id|urlencode }}"
+         {% if g.bg is defined and g.bg %}style="background: {{ g.bg }};"{% endif %}
+         {% if g.aria is defined and g.aria %}aria-label="{{ g.name }}，{{ g.aria }}"{% endif %}>
+        <span class="it-n">{{ g.name }}</span>
+        <span class="hm-pct">
+          {%- if g.heat_status is defined and g.heat_status == 'ok' and g.weighted_pct is defined -%}
+            {{ chg(g.weighted_pct) }}
+            <span class="hm-pct-l">加權漲跌幅</span>
+          {%- elif not g.stock_count -%}
+            <span class="pill pill-muted">0 檔</span>
+          {%- else -%}
+            <span class="pill pill-muted">資料不足</span>
+            {%- if g.heat_reason is defined and g.heat_reason %}<span class="hm-why">{{ g.heat_reason }}</span>{% endif -%}
+          {%- endif -%}
+        </span>
+        <span class="it-c"><b class="num">{{ n0(g.stock_count) }}</b> 檔</span>
+        <span class="hm-amt">{% if g.trade_value_yi is defined and g.trade_value_yi %}成交 {{ val(g.trade_value_yi) }}{% else %}成交金額資料不足{% endif %}</span>
+        <span class="hm-up">{% if g.rated_n is defined and g.rated_n %}上漲 {{ n0(g.up_n) }}／可計 {{ n0(g.rated_n) }} 檔（{{ '%.0f' % (100 * g.up_n / g.rated_n) }}%）{% elif g.stock_count %}上漲家數資料不足{% else %}{{ '追蹤範圍內沒有股票' if not ind.universe_all else '目前沒有股票' }}{% endif %}</span>
+        <span class="it-m">{{ ('上市 ' ~ g.listed_count ~ '・上櫃 ' ~ g.otc_count) if g.stock_count else '' }}</span>
+        <span class="hm-bar" aria-hidden="true"><span style="width: {{ g.bar_pct if g.bar_pct is defined else 0 }}%"></span></span>
+      </a>
+    </li>
+  {%- endfor %}
+  </ul>
+</section>
 <p class="ind-total">共 <b class="num">{{ ind.industries|length }}</b> 個產業、<b class="num">{{ n0(ind.total) }}</b> 檔{{ scope }}。點產業看全部股票。{% if ind.missing_count %}其中 {{ n0(ind.missing_count) }} 檔的證券基本資料沒有產業別，列在「未分類」。{% endif %}</p>
 {%- endif %}
 {% elif not cur %}

@@ -121,6 +121,7 @@ def run_job(job: str, symbols_mode: str, *, stop_before_s: str | None = None, bu
                     )
                     success.append(
                         f"prices:batch:ok_dates={len(st.get('ok_dates') or [])}:days={depth}:rss={st.get('peak_rss_mb')}"
+                        f":end={st.get('end')}" + (f":pending_today={'/'.join(st['pending_today'])}" if st.get('pending_today') else "")
                     )
                     failed.extend(st.get("failed") or [])
                     if st.get("stopped"):

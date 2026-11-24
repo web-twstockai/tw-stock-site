@@ -645,6 +645,7 @@ label.watch-import input{position:absolute;width:1px;height:1px;overflow:hidden;
 .md-codes a,.md-codes span{display:inline-flex;align-items:center;min-height:32px;padding:2px 8px;border:1px solid var(--line2);border-radius:999px;background:#fff;text-decoration:none;color:var(--ink);font-size:13px}
 .md-codes a:hover{background:var(--brand-weak)}
 .md-codes.compact a,.md-codes.compact span{min-height:28px;font:600 13px/1 var(--mono)}
+.md-agg{margin:8px 0 0;font-size:14px;color:var(--ink2);line-height:1.55;overflow-wrap:anywhere}
 .md-more,.md-more-all{margin:6px 0 0;font-size:13px}
 .md-more-all{margin-top:var(--s3)}
 .md-more-all .btn{min-height:40px;display:inline-flex;align-items:center}

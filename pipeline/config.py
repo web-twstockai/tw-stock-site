@@ -41,6 +41,10 @@ DAILY_PRICE_TRADE_DAYS = 5
 DAILY_REVENUE_MONTHS = 2
 DAILY_MATERIAL_DAYS = 7
 EVENING_PRICE_TRADE_DAYS = 150  # evening 仍可補滿觀察窗
+# 全市場（symbols=all）增量：台北時間此刻之後，行情計畫含「今天」（2026-11-24 修正：原本一律只到昨天，
+# 18:00／22:00 及手動 run 都抓不到當日行情）。官方未公布時不寫入、不算失敗，下次 run 再抓。
+# 可用環境變數 PIPELINE_TODAY_PRICES_AFTER（HH:MM）覆寫。
+TODAY_PRICES_AFTER = "15:00"
 
 # 全市場（universe=all）目標深度；daily 增量仍用 DAILY_* 
 ALL_PRICE_TRADE_DAYS = 150
