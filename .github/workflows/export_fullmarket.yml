@@ -1,0 +1,95 @@
+# 草稿（web/pending/fullmarket，2026-11-24）：全市場匯出「只匯出、不部署」試跑。
+# 放法：複製到 repo main 分支的 .github/workflows/export_fullmarket.yml（見 APPLY_FULLMARKET.md）。
+# 只用 workflow_dispatch（沒有排程）；權限只有 contents: read；不 push、不 deploy、不寫回 db-latest。
+name: 全市場匯出試跑（不部署）
+on:
+  workflow_dispatch:
+    inputs:
+      code_ref:
+        description: "程式碼分支（src）"
+        type: string
+        default: src
+      page_extra:
+        description: "TWSITE_PAGE_EXTRA（空白＝全市場預設 top_value:300；none＝只收符合者）"
+        type: string
+        default: ""
+      workers:
+        description: "--workers（空白＝CPU 數−1，最多 6）"
+        type: string
+        default: ""
+permissions:
+  contents: read
+concurrency:
+  group: export-fullmarket-trial
+  cancel-in-progress: true
+jobs:
+  export:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    env:
+      GH_TOKEN: ${{ github.token }}
+      TZ: Asia/Taipei
+      TWSITE_UNIVERSE: all
+    steps:
+      - name: 取得程式碼
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.code_ref || 'src' }}
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+          cache: pip
+          cache-dependency-path: tools/cloud/requirements-cloud.txt
+      - name: 安裝套件
+        timeout-minutes: 10
+        run: pip install -r tools/cloud/requirements-cloud.txt
+      - name: 下載資料庫（db-latest，唯讀使用）
+        timeout-minutes: 10
+        run: bash tools/cloud/db_fetch.sh
+      - name: 機器規格
+        run: |
+          nproc; free -m; df -h . | tail -1
+          python -c "import sqlite3;c=sqlite3.connect('file:data/twstock.db?mode=ro',uri=True);print(c.execute('select max(price_date),count(distinct symbol) from daily_prices').fetchone())"
+      - name: 全市場匯出 v2（量峰值與耗時）
+        id: export
+        timeout-minutes: 40
+        env:
+          IN_PAGE_EXTRA: ${{ inputs.page_extra }}
+          IN_WORKERS: ${{ inputs.workers }}
+        run: |
+          mkdir -p build
+          [ -n "$IN_PAGE_EXTRA" ] && export TWSITE_PAGE_EXTRA="$IN_PAGE_EXTRA"
+          W=(); [ -n "$IN_WORKERS" ] && W=(--workers "$IN_WORKERS")
+          TIME=(); [ -x /usr/bin/time ] && TIME=(/usr/bin/time -v -o build/time_v.txt)
+          cd web
+          "${TIME[@]}" python -W ignore tools/peak_mem.py --json ../build/export_mem.json -- \
+            python -W ignore tools/export_static.py --mode v2 --pages auto "${W[@]}" --out ../build/site 2>&1 | tee ../build/export.log
+      - name: 自檢（check_export）＋範圍關卡
+        run: |
+          ( cd web && python -W ignore tools/check_export.py ../build/site )
+          # 範圍關卡要用支援 auto 的建議版（套用 fullmarket.patch 後的 tools/cloud/scope_guard.py）；舊版只收數字上限
+          if grep -q '"auto"' tools/cloud/scope_guard.py; then python tools/cloud/scope_guard.py build/site auto
+          else python tools/cloud/scope_guard.py build/site "$(python -c "import json;print(len(json.load(open('build/site/build-info.json'))['tracking_universe']))")"; fi
+      - name: 摘要
+        if: always()
+        run: |
+          {
+            echo "### 全市場匯出試跑"
+            [ -f build/export_mem.json ] && python -c "import json;d=json.load(open('build/export_mem.json'));print(f\"- 峰值 PSS {d['peak_pss_mb']} MB（RSS 合計 {d['peak_rss_sum_mb']} MB、單一行程 {d['peak_single_rss_mb']} MB、行程數 {d['peak_procs']}）\n- 耗時 {d['seconds']} 秒、結束碼 {d['exit_code']}\")"
+            [ -f build/time_v.txt ] && grep -E "Maximum resident|Elapsed" build/time_v.txt | sed 's/^\s*/- time -v：/'
+            [ -f build/site/build-info.json ] && python -c "import json;b=json.load(open('build/site/build-info.json'));print(f\"- 個股頁 {b.get('pages')} 檔、未收錄 {b.get('nopage')} 檔；{b.get('page_policy')}\")"
+            [ -d build/site ] && echo "- 輸出 $(find build/site -type f | wc -l) 檔、$(du -sh build/site | cut -f1)"
+            grep -E "^完成：" build/export.log | tail -1 | cut -c1-900
+          } >> "$GITHUB_STEP_SUMMARY"
+      - name: 上傳匯出與量測（artifact，不部署）
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: fullmarket-export-${{ github.run_id }}
+          path: |
+            build/site
+            build/export_mem.json
+            build/time_v.txt
+            build/export.log
+          retention-days: 7
+          if-no-files-found: warn
