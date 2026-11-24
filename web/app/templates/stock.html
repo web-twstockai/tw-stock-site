@@ -61,7 +61,7 @@
     <p class="sm-none">今天沒有符合的篩選模式。</p>
     {%- endif %}
     {%- if sm.insufficient %}<p class="sm-lack"><small class="muted">另有 {{ sm.insufficient }} 個模式今日資料不足（可評估比例未達 95%）或無法計算，未列入判斷。</small></p>{% endif %}
-    <p class="sm-foot"><small class="muted">符合模式只代表今天的條件判斷，不代表優劣；歷史統計，不代表未來，非投資建議。<a href="/hub">篩選中心 →</a></small></p>
+    <p class="sm-foot"><small class="muted">符合模式只代表今天的條件判斷，不代表優劣。{% if sm.tier_rule is defined and sm.tier_rule %}{{ sm.tier_rule }}{% endif %}{% if sm.disclaimer is defined and sm.disclaimer %}{{ sm.disclaimer }}。{% else %}歷史統計，不代表未來，非投資建議。{% endif %}<a href="/hub">篩選中心 →</a></small></p>
   </div>
   {%- endif %}
   {% if ph.change_mismatch %}

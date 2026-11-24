@@ -1,7 +1,7 @@
 """篩選中心新增模式 M9～M21（analysis-0.10.0）與全部模式登記表（M1～M21）——純函式模組。
 
 只做計算：無檔案／網路／資料庫 I/O（讀取用 io_sqlite.load_mode_inputs）；相同輸入得相同輸出，不修改傳入的 DataFrame。
-規格：docs/indicators.md 第 12 節（專案負責人核可 2026-11-24 16:05，暫定分級）；研究依據 docs/rd/SCREEN_MODES_v2.md。
+規格：docs/indicators.md 第 12 節；等級依歷史 5 日勝率門檻（H AO 2026-11-24 18:20，§12.1），登記表 tier 欄只是研究稿舊標示；研究依據 docs/rd/SCREEN_MODES_v2.md、v3。
 
 共同規則
 - 可評估：先跑 screener.screen()（預設參數＝M1 的排除規則），當日 status 為 EXCLUDED 者在每個新模式都以同一排除碼排除
@@ -38,8 +38,9 @@ __all__ = ["REGISTRY_VERSION", "TIER_BASIS", "WINRATE_DISPLAY", "FIN_CODES", "MO
            "ModesResult", "evaluate_modes", "eps_quarter_state", "revenue_month_available", "quarter_available"]
 
 REGISTRY_VERSION = "hub-modes-v1"
-TIER_BASIS = ("暫定分級（專案負責人核可 2026-11-24 16:05）：依每日符合檔數（中位數）與 2026-05-27～2026-11-16 的 5 日歷史統計"
-              "（docs/rd/SCREEN_MODES_v2.md）；3 年回補後依同檔「預先登記」規則重算再定。等級只是標示，不代表保證或較準。")
+TIER_BASIS = ("等級依歷史 5 日勝率門檻判定（docs/indicators.md §11 口徑：扣成本後報酬＞0 的比例，N≥100 且 D≥30）："
+              "勝率 ≥80% 為高級、≥70% 為進階，無有效勝率或未達 70% 為基本；目前所有模式都沒有有效勝率，一律列基本。"
+              "各模式的 tier 欄只保留研究稿的舊標示，網站不採用。等級只是標示，不代表保證或較準。")
 WINRATE_DISPLAY = "計算中"
 WINRATE_NOTE = "歷史勝率待 3 年行情回補後依 docs/indicators.md §11 重算；初步研究數字不對外顯示。"
 TV_MIN = 100_000_000.0
@@ -102,7 +103,7 @@ REGISTRY = (
        ["收盤 > 前 250 個交易日最高價（不含當日）", "成交金額 ≥ 1 億元"], tier_prev="進階",
        engine="analysis/screener.py screen()（突破 250 日）", data=_PX, history_days=251,
        metric=dict(key="dist_high", label="收盤距前高（%）", digits=2),
-       note="行情回補前無法評估；等級待回補後依預先登記規則判定（暫維持原等級）"),
+       note="行情回補前無法評估；等級依歷史 5 日勝率門檻判定，目前無有效勝率，列基本"),
     _m("M7", "基本", "營收創高＋趨勢", "營收創 12 個月新高且股價在均線之上",
        ["M3 為真", "收盤 > MA20 > MA60"], tier_prev="高級",
        engine="analysis/revenue.py evaluate_revenue() ＋ analysis/screener.py screen()", data=_PX + ("monthly_revenues",),
@@ -183,8 +184,8 @@ REGISTRY = (
 )
 _BY_ID = {m["id"]: m for m in REGISTRY}
 NEW_MODE_IDS = tuple(m["id"] for m in REGISTRY if m["engine"] == _ENG_NEW)
-TIERS = (("基本", "每日中位符合檔數約 75 檔以上"), ("進階", "其餘通過篩選的模式"),
-         ("高級", "每日中位 15 檔以下，且研究期間 5 日勝率顯著高於同日基準"))
+TIERS = (("基本", "無有效歷史 5 日勝率，或勝率未達 70%"), ("進階", "歷史 5 日勝率 ≥ 70%"),
+         ("高級", "歷史 5 日勝率 ≥ 80%"))
 
 
 def mode(mid: str):

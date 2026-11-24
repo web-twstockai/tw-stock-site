@@ -1,7 +1,7 @@
 """篩選中心新模式 M9～M21（analysis-0.10.0 modes.py；docs/indicators.md §12）與模式登記表。
 
-- 登記表：analysis/modes.py registry()（讀不到模組時退回 analysis/mode_registry.json）。等級、名稱、說明、排序指標、
-  勝率顯示文字一律取登記表；網站不自行判斷。
+- 登記表：analysis/modes.py registry()（讀不到模組時退回 analysis/mode_registry.json）。名稱、說明、排序指標、
+  勝率顯示文字取登記表。等級不讀登記表 tier 欄位，改由 win_rate 依 §11 有效勝率與門檻計算（見 tier_of）。
 - 計算：evaluate_modes() 每個（資料版本, 評估日）只算一次後快取，只留 summary（conditions 與輸入資料算完即釋放）。
   SqliteSource 一律以全市場計算（USAGE §9：橫斷面排名 M12／M14／M19 須用全市場），再由呼叫端篩到追蹤範圍。
 """
@@ -14,6 +14,164 @@ import time
 from typing import Any, Optional
 
 from .data_source import DataSource
+
+# 等級門檻（H AO 2026-11-24 18:20）：有效 5 日勝率 < 進階門檻不得放進階，< 高級門檻不得放高級。
+# 有效勝率＝登記表 win_rate 的官方數字，且須符合 docs/indicators.md §11.2.7（N≥100 且 D≥30）；
+# display 為「計算中／樣本不足／資料不足」或沒有數字 → 無有效勝率 → 基本。
+TIER_WINRATE_ADVANCED = 0.70
+TIER_WINRATE_PREMIUM = 0.80
+ENV_TIER_ADVANCED = "TWSITE_TIER_WINRATE_ADVANCED"
+ENV_TIER_PREMIUM = "TWSITE_TIER_WINRATE_PREMIUM"
+MIN_WINRATE_N = 100   # §11.2.7 去重後事件數
+MIN_WINRATE_D = 30    # §11.2.7 訊號日數
+_PENDING_DISPLAY = frozenset({"計算中", "樣本不足", "資料不足"})
+_RATE_KEYS = ("rate", "value", "p", "pct", "win", "net", "net_rate")
+_N_KEYS = ("n", "N", "events", "event_count", "n_events")
+_D_KEYS = ("d", "D", "days", "signal_days", "n_days", "signal_day_count")
+_TIER_CLASS = {"基本": "t1", "進階": "t2", "高級": "t3"}
+
+
+def _env_rate(name: str, default: float) -> float:
+    import os
+    raw = os.environ.get(name)
+    if raw is None or str(raw).strip() == "":
+        return default
+    s = str(raw).strip().replace("%", "")
+    try:
+        v = float(s)
+    except ValueError:
+        return default
+    if v > 1.0:
+        v = v / 100.0
+    return v
+
+
+def tier_thresholds() -> tuple[float, float]:
+    """(進階門檻, 高級門檻)；環境變數不合法（非 0 < 進階 ≤ 高級 ≤ 1）則用預設 0.70／0.80。"""
+    adv = _env_rate(ENV_TIER_ADVANCED, TIER_WINRATE_ADVANCED)
+    pre = _env_rate(ENV_TIER_PREMIUM, TIER_WINRATE_PREMIUM)
+    if not (0 < adv <= pre <= 1):
+        return TIER_WINRATE_ADVANCED, TIER_WINRATE_PREMIUM
+    return adv, pre
+
+
+def pct_label(rate: float) -> str:
+    """0.70 →『70%』；0.699 →『69.9%』（去掉多餘小數 0）。"""
+    p = rate * 100
+    s = f"{p:.4f}".rstrip("0").rstrip(".")
+    return f"{s}%"
+
+
+def _first_num(d: dict, keys: tuple) -> Optional[float]:
+    import math
+    for k in keys:
+        if k not in d or d[k] is None or d[k] == "":
+            continue
+        try:
+            f = float(d[k])
+        except (TypeError, ValueError):
+            continue
+        if math.isnan(f):
+            continue
+        return f
+    return None
+
+
+def _normalize_rate(v: float) -> float:
+    return v / 100.0 if v > 1.0 else v
+
+
+def _rate_from_display(disp) -> Optional[float]:
+    import re
+    if disp is None or disp == "":
+        return None
+    if isinstance(disp, (int, float)):
+        return _normalize_rate(float(disp))
+    s = str(disp).strip()
+    if s in _PENDING_DISPLAY:
+        return None
+    m = re.fullmatch(r"([+-]?\d+(?:\.\d+)?)\s*%", s)
+    if m:
+        return float(m.group(1)) / 100.0
+    try:
+        return _normalize_rate(float(s))
+    except ValueError:
+        return None
+
+
+def effective_win_rate(win_rate: Optional[dict]) -> Optional[float]:
+    """登記表 win_rate 的「有效勝率」（0～1）。不符合 §11 顯示條件則回 None。
+
+    判斷：
+    - 來源欄位：優先 rate／value／p／pct／win／net／net_rate；否則解析 display（「70%」或數字）。
+    - display 為「計算中」「樣本不足」「資料不足」→ 視為尚未有官方勝率（即使其他欄有研究數字也不用）。
+    - 若有事件數 N 或訊號日數 D（n／N／events…、d／D／signal_days…），須 N≥100 且 D≥30（§11.2.7）；不足則無效。
+    - evaluate_modes() 目前不輸出勝率；現況登記表只有 display＝計算中／樣本不足，故全部為 None。
+    """
+    w = win_rate or {}
+    if not isinstance(w, dict):
+        return None
+    disp = w.get("display")
+    if isinstance(disp, str) and disp.strip() in _PENDING_DISPLAY:
+        return None
+    rate = _first_num(w, _RATE_KEYS)
+    if rate is not None:
+        rate = _normalize_rate(rate)
+    else:
+        rate = _rate_from_display(disp)
+    if rate is None:
+        return None
+    n = _first_num(w, _N_KEYS)
+    d = _first_num(w, _D_KEYS)
+    if n is not None and n < MIN_WINRATE_N:
+        return None
+    if d is not None and d < MIN_WINRATE_D:
+        return None
+    return rate
+
+
+def tier_of(mode: Optional[dict], thresholds: Optional[tuple[float, float]] = None) -> str:
+    """依模式登記列的 win_rate 決定等級；不讀 mode['tier']。"""
+    adv, pre = thresholds if thresholds is not None else tier_thresholds()
+    rate = effective_win_rate((mode or {}).get("win_rate"))
+    if rate is None:
+        return "基本"
+    if rate + 1e-12 >= pre:
+        return "高級"
+    if rate + 1e-12 >= adv:
+        return "進階"
+    return "基本"
+
+
+def tier_rule_text() -> str:
+    """篩選中心區塊標頭：新規則說明（含「依事先登記的同一套規則」）。"""
+    adv, pre = tier_thresholds()
+    return (f"等級依事先登記的同一套規則，以歷史 5 日勝率（扣成本後報酬＞0 的比例；"
+            f"N≥{MIN_WINRATE_N} 且 D≥{MIN_WINRATE_D}）劃分：無有效勝率或未達 {pct_label(adv)} 為基本，"
+            f"達 {pct_label(adv)} 為進階，達 {pct_label(pre)} 為高級。等級只是標示，不代表保證或較準。")
+
+
+def tier_groups() -> list[tuple]:
+    """（等級名, CSS class, 各區說明）。說明由門檻產生，不用登記表 rule。"""
+    adv, pre = tier_thresholds()
+    rules = {
+        "基本": f"無有效歷史 5 日勝率，或勝率未達 {pct_label(adv)}。",
+        "進階": f"歷史 5 日勝率 ≥ {pct_label(adv)}。",
+        "高級": f"歷史 5 日勝率 ≥ {pct_label(pre)}。",
+    }
+    return [(name, _TIER_CLASS[name], rules[name]) for name in ("基本", "進階", "高級")]
+
+
+def empty_tier_message() -> str:
+    adv, pre = tier_thresholds()
+    return f"目前沒有模式達標（進階需歷史 5 日勝率 ≥ {pct_label(adv)}，高級 ≥ {pct_label(pre)}）"
+
+
+def stock_tier_rule() -> str:
+    adv, pre = tier_thresholds()
+    return (f"模式等級依事先登記的同一套規則，以歷史 5 日勝率劃分：無有效勝率或未達 {pct_label(adv)} 為基本，"
+            f"達 {pct_label(adv)} 為進階，達 {pct_label(pre)} 為高級。")
+
 
 _REG: dict[str, Any] = {}
 _LOCK = threading.Lock()

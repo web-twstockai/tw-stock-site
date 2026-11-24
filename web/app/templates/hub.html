@@ -81,7 +81,9 @@
     <div class="tg-h">{{ tier(t) }}<span class="tg-n">{{ tnote }}</span>
       <p class="tg-def"><b>5 日勝率</b>{{ hub.windef }}（報酬＝0 算沒有上漲）。N＝事件數、D＝訊號日數，N ≥ 100 且 D ≥ 30 才顯示比例，否則「樣本不足」。統計期間 2023-11 起。<b>{{ hub.disclaimer }}。</b></p></div>
     <div class="mode-grid">
-    {%- for m in hub.modes if m.tier == t %}
+    {%- set group = hub.modes|default([])|selectattr('tier', 'equalto', t)|list %}
+    {%- if group %}
+    {%- for m in group %}
       <div class="mode-cell" data-cell="{{ m.id }}">
       {%- if m.available %}
         <a class="mode{{ ' on' if m.selected }}" href="/hub{{ '' if m.selected else '?mode=' ~ m.id }}#results"{% if m.selected %} aria-current="true"{% endif %} data-mode="{{ m.id }}">
@@ -95,6 +97,9 @@
       {%- if m.available %}</a>{% else %}</div>{% endif %}
       </div>
     {%- endfor %}
+    {%- elif t in ('進階', '高級') %}
+      <p class="tg-empty">{% if hub.empty_tier_msg is defined and hub.empty_tier_msg %}{{ hub.empty_tier_msg }}{% else %}目前沒有模式達標{% endif %}{% if hub.disclaimer is defined and hub.disclaimer %}。{{ hub.disclaimer }}{% endif %}。</p>
+    {%- endif %}
     </div>
   </div>
   {%- endfor %}

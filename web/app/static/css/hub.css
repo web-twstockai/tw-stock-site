@@ -66,6 +66,7 @@ h1{font-size:32px;line-height:1.25;letter-spacing:.02em}
 .tg-def{margin:4px 0 0;font-size:12.5px;line-height:1.55;color:var(--ink2)}
 .tg-def b{color:var(--ink)}
 .mode-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px}
+.tg-empty{grid-column:1/-1;margin:0;padding:12px 14px;border:1px dashed var(--line);background:#fbfaf7;color:var(--ink2);font-size:14px;line-height:1.65}
 .mode-cell{display:flex;flex-direction:column;min-width:0}
 .mode{flex:1 1 auto;display:flex;flex-direction:column;align-items:stretch;text-align:left;width:100%;background:var(--sheet);border:1px solid var(--line2);border-top:3px solid var(--ink);border-radius:0 0 var(--r) var(--r);padding:12px 14px 14px;gap:2px;color:var(--ink);text-decoration:none}
 a.mode:hover{background:#fdfcf9;border-color:var(--ink2)}

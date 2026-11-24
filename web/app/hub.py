@@ -7,6 +7,7 @@
 - analysis 沒有提供的計算（目前：單季 EPS 年增 → M5、M8）顯示「尚未提供」，卡片不可點。
 - 5 日勝率：analysis 尚未計算任何勝率（indicators.md §11.3「程式未完成前不得顯示任何勝率數字」），
   所以一律不輸出比例：M5、M8 為「樣本不足」（季頻結構性不足，§11.6.1），其餘為「計算中」（上線初期，HUB_HANDOFF §8-6）。
+- 等級：不讀登記表 tier，改由 win_rate 有效勝率與門檻決定（modes_hub.tier_of；H AO 2026-11-24 18:20）。
 - 名單、檔數只算追蹤範圍（TWSITE_UNIVERSE）內的股票。
 """
 from __future__ import annotations
@@ -25,7 +26,7 @@ TIERS = [
     ("進階", "t2", "要較長的歷史或財報資料。"),
     ("高級", "t3", "要同時對齊多種資料，樣本最少。"),
 ]
-TIER_NOTE = "等級只代表資料需求與計算複雜度，不代表比較準。"
+TIER_NOTE = "等級依事先登記的同一套規則，以歷史 5 日勝率劃分；等級只是標示，不代表保證或較準。"
 FREE_NOTE = "目前全部免費開放。"
 WINDEF = "＝扣成本後 5 個交易日報酬＞0 的比例"
 DISCLAIMER = "歷史統計，不代表未來，非投資建議"
@@ -97,8 +98,12 @@ def strip_approval(t: str) -> str:
     return _APPROVAL_RE.sub("", t)
 
 
+_TONGDANG_RE = __import__("re").compile(r"依同檔[「『「\"']預先登記[」』」\"']規則")
+
+
 def public_text(t: Optional[str]) -> str:
-    """登記表文字上畫面前：文件路徑換成中文（網站不顯示英文檔名）。例：「依 docs/indicators.md §11 重算」→「依指標說明第 11 節重算」。"""
+    """登記表文字上畫面前：文件路徑換成中文（網站不顯示英文檔名）。例：「依 docs/indicators.md §11 重算」→「依指標說明第 11 節重算」。
+    另把「依同檔『預先登記』規則」改為「依事先登記的同一套規則」。"""
     if not t:
         return ""
     def rep(m):
@@ -108,6 +113,7 @@ def public_text(t: Optional[str]) -> str:
             return f"指標說明第 {m.group(1)} 節"
         return "研究文件"
     t = _DOC_RE.sub(rep, str(t)).replace("依 指標說明", "依指標說明")
+    t = _TONGDANG_RE.sub("依事先登記的同一套規則", t)
     return strip_approval(_CODE_RE.sub("", t))   # 「（rev_12m_high-v1）」這類內部定義代碼、內部核可字樣不上畫面
 
 
@@ -129,8 +135,8 @@ def mode_specs() -> list[dict]:
         d = dict(m)
         r = reg.get(m["id"])
         if r:
-            d.update(tier=r.get("tier") or d["tier"], tier_prev=r.get("tier_prev"), note=public_text(r.get("note")))
-        d.update(_rate(r, bool(m.get("quarterly"))))
+            d.update(tier_prev=r.get("tier_prev"), note=public_text(r.get("note")))
+        d.update(tier=MH.tier_of(r), **_rate(r, bool(m.get("quarterly"))))
         out.append(d)
     ver = (MH.registry() or {}).get("registry_version", "")
     for mid in NEW_MODE_IDS:
@@ -138,7 +144,7 @@ def mode_specs() -> list[dict]:
         if not r or r.get("state") not in (None, "production"):
             continue
         met = r.get("metric") or {}
-        d = dict(id=mid, tier=r.get("tier") or "進階", name=public_text(r.get("name")) or mid, desc=public_text(r.get("desc")),
+        d = dict(id=mid, tier=MH.tier_of(r), name=public_text(r.get("name")) or mid, desc=public_text(r.get("desc")),
                  conditions=[public_text(x) for x in r.get("conditions") or []], note=public_text(r.get("note")), new=True,
                  engine=r.get("engine") or "analysis/modes.py evaluate_modes()", engine_zh=NEW_ENGINE_ZH.format(ver=ver),
                  metric=met.get("key"), metric_label=met.get("label") or "排序指標",
@@ -152,11 +158,9 @@ def mode_specs() -> list[dict]:
 
 
 def tiers() -> list[tuple]:
-    """等級分區（基本／進階／高級）：說明文字＝登記表各級 rule；沒有登記表 → 舊 TIERS。"""
+    """等級分區（基本／進階／高級）：說明文字由勝率門檻產生，不用登記表 rule。"""
     from . import modes_hub as MH
-    reg = MH.registry() or {}
-    t = [(x["name"], TIER_CLASS.get(x["name"], "t1"), public_text(x.get("rule"))) for x in reg.get("tiers") or [] if x.get("name")]
-    return t or TIERS
+    return MH.tier_groups()
 
 # 各模式交給 analysis ScreenParams 的參數（只用 analysis 已有的參數；驗證交給 analysis）
 P_M1: dict = {}
@@ -335,7 +339,7 @@ def _excl_reasons(maps: list[dict], symbols: list[str], ok_fn, labels: dict) -> 
 def build(src: DataSource, selected: Optional[str] = None, sort: Optional[str] = None) -> dict:
     """篩選中心頁面資料。selected＝模式代號（M1…M21）或 None（未選）。各模式的計算結果依資料版本快取（_core）。"""
     view: dict[str, Any] = dict(
-        modes=[], tiers=tiers(), tier_note=_tier_note(), free_note=FREE_NOTE, windef=WINDEF, disclaimer=_disclaimer(),
+        modes=[], tiers=tiers(), tier_note=_tier_note(), empty_tier_msg=_empty_tier_msg(), free_note=FREE_NOTE, windef=WINDEF, disclaimer=_disclaimer(),
         launch_note=LAUNCH_NOTE, sort_note=_sort_note(), m2_sort_note=M2_SORT_NOTE, selected=None, error="", as_of="—", universe_label="",
         universe_text="", is_test=src.is_test, revenue_month=None, cover=COVER)
     try:
@@ -394,7 +398,13 @@ def _reg_text(key: str, default: str) -> str:
 
 
 def _tier_note() -> str:
-    return _reg_text("tier_basis", TIER_NOTE)
+    from . import modes_hub as MH
+    return MH.tier_rule_text()
+
+
+def _empty_tier_msg() -> str:
+    from . import modes_hub as MH
+    return MH.empty_tier_message()
 
 
 def _disclaimer() -> str:
@@ -472,7 +482,9 @@ def today_modes(src: DataSource, code: str) -> dict:
     state：ok（有符合）／none（沒有符合）／error（篩選中心無法計算）。"""
     core = _core(src)
     if core.get("fatal"):
-        return dict(state="error", hits=[], insufficient=0, as_of="—", error=core["fatal"])
+        from . import modes_hub as MH
+        return dict(state="error", hits=[], insufficient=0, as_of="—", error=core["fatal"],
+                    tier_rule=MH.stock_tier_rule(), disclaimer=_disclaimer())
     items, lack = [], 0
     for m in mode_specs():
         if "na" in m:
@@ -487,7 +499,9 @@ def today_modes(src: DataSource, code: str) -> dict:
             continue
         if code in set(c["passed"]):
             items.append(dict(id=m["id"], name=m["name"], tier=m["tier"], tier_class=TIER_CLASS.get(m["tier"], "t1")))
-    return dict(state="ok" if items else "none", hits=items, insufficient=lack, as_of=core["as_of"])
+    from . import modes_hub as MH
+    return dict(state="ok" if items else "none", hits=items, insufficient=lack, as_of=core["as_of"],
+                tier_rule=MH.stock_tier_rule(), disclaimer=_disclaimer())
 
 
 def _compute_core(src: DataSource) -> dict:
