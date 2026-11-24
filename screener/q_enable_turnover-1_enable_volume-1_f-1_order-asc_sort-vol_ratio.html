@@ -6,6 +6,7 @@
 <title>選股｜台股盤後研究</title>
 <link rel="icon" href="data:,">
 <link rel="stylesheet" href="../static/css/site.css">
+<link rel="stylesheet" href="../static/css/hub.css">
 <script>document.documentElement.classList.add('js')</script>
 <meta name="site-root" content="../">
 <link rel="stylesheet" href="../static/css/static.css">
@@ -18,7 +19,9 @@
     <a class="brand" href="../" aria-label="台股盤後研究 首頁"><span class="seal" aria-hidden="true">盤後</span><span class="brand-name">台股盤後研究</span></a>
     <nav class="mainnav" aria-label="主要功能">
       <a href="../">盤後總覽</a>
-      <a href="./" class="on" aria-current="page">條件選股</a>
+      <a href="../hub/">篩選中心</a>
+      <a href="../industry/">產業分類</a>
+      <a href="./" class="on" aria-current="page">自訂條件</a>
       <a href="../revenue/">營收</a>
       <a href="../status/">資料狀態</a>
     </nav>
@@ -30,21 +33,21 @@
       <button type="submit">前往個股</button>
     </form>
   </div><div class="wrap meta-bar" role="status" aria-label="資料更新狀態">
-    <span class="mi">資料日期 <strong data-date="2026-11-16">2026-11-16</strong></span>
-    <span class="mi">更新 <span class="pill pill-muted">— interrupted</span></span>
+    <span class="mi">資料日期 <strong data-date="2026-11-23">2026-11-23</strong></span>
+    <span class="mi">更新 <span class="pill pill-ok">● 成功</span></span>
     <span class="mi src-ok">行情 <span class="dot ok" aria-hidden="true"></span>正常</span>
     <span class="mi src-ok">月營收 <span class="dot ok" aria-hidden="true"></span>正常</span>
     <span class="mi src-ok">重大訊息 <span class="dot ok" aria-hidden="true"></span>正常</span>
-    <span class="mi muted">最後更新 2026-11-17 10:56（台北）</span>
+    <span class="mi muted">最後更新 2026-11-24 12:46（台北）</span>
     
     <a class="mi status-link" href="../status/">資料狀態 →</a>
   </div>
 </header>
 <main id="main" class="wrap">
-<div class="static-banner" role="note" data-testid="static-banner"><strong>公開靜態版</strong><span>資料日期 <b>2026-11-16</b>｜最近一次更新工作完成 2026-11-17 10:56（台北時間）｜本頁產生於 2026-11-17 10:59（台北時間）。每交易日 18:00、每日 22:00 更新後重新產生；資料全部來自證交所、櫃買中心、公開資訊觀測站。</span></div>
+<div class="static-banner" role="note" data-testid="static-banner"><strong>公開靜態版</strong><span>資料日期 <b>2026-11-23</b>｜最近一次更新工作完成 2026-11-24 12:46（台北時間）｜本頁產生於 2026-11-24 13:04（台北時間）。每交易日 18:00、每日 22:00 更新後重新產生；資料全部來自證交所、櫃買中心、公開資訊觀測站。</span></div>
 
 <h1>技術條件選股 <small>趨勢＋突破＋量能</small></h1>
-<p class="basis-note" data-testid="volume-basis">量與金額口徑：上市：STOCK_DAY 官方總量口徑（含零股、盤後定價、鉅額）；上櫃：tradingStock 官方總量口徑（上櫃不含鉅額，已知限制）。</p>
+<p class="basis-note" data-testid="volume-basis">量與金額口徑：上櫃以櫃買中心 dailyQuotes 總量（含鉅額）為主；取不到時暫用 tradingStock，標「不含鉅額」。上市以證交所 STOCK_DAY 總量（含鉅額）。上櫃是否含盤後定價、零股待查證。<br><span data-testid="basis-counts">2026-11-23 實際口徑（依各列逐日標記）：總量（含鉅額） 30 檔、不含鉅額 0 檔、口徑不明 0 檔。</span></p>
 
 
 
@@ -128,6 +131,7 @@
 
 
 <section class="card exclusion-stats" id="exclusion-stats" data-testid="exclusion-stats">
+  
   <h2>排除原因統計 <small>檢查 30 檔｜排除 0 檔</small></h2>
   <p class="muted">無排除。</p>
   <p class="muted"><a href="#excluded">逐檔排除明細 ↓</a></p>
@@ -137,7 +141,7 @@
 <p class="note">追蹤範圍：30 檔驗證樣本（設定 TWSITE_UNIVERSE；清單來源 pipeline/config.py SAMPLE30）。範圍外的股票不評估、不計入排除。</p>
 
 <section class="card" id="results">
-  <h2>結果 <small>1 檔／檢查 30 檔｜交易日 2026-11-16</small></h2>
+  <h2>結果 <small>11 檔／檢查 30 檔｜交易日 2026-11-23</small></h2>
   
   <p class="sortbar">排序：<a href="q_enable_turnover-1_enable_volume-1_f-1_order-desc_sort-code.html" class="">代號</a> <a href="q_enable_turnover-1_enable_volume-1_f-1_order-desc_sort-change_pct.html" class="">漲跌幅</a> <a href="q_enable_turnover-1_enable_volume-1_f-1_order-desc_sort-turnover.html" class="">成交金額</a> <a href="q_enable_turnover-1_enable_volume-1_f-1_order-desc_sort-vol_ratio.html" class="on">量比↑</a> <a href="q_enable_turnover-1_enable_volume-1_f-1_order-desc_sort-close.html" class="">收盤</a> </p>
   
@@ -154,23 +158,213 @@
   </tr></thead>
   <tbody>
   
-  <tr id="row-2317">
-    <td class="c-code"><a href="../stock/2317/">2317</a></td><td class="c-name"><a href="../stock/2317/">鴻海</a><button type="button" class="more-toggle" aria-expanded="false" aria-controls="row-2317" data-more>更多欄位</button></td><td class="c-sec c-mkt">上市</td><td class="c-sec c-date">2026-11-16</td>
-    <td class="r c-key c-close" data-sort="218.5"><a class="v vlink" href="../source/q_price_date-2026-11-16_symbol-2317_table-daily_prices.html" data-src-link="1">218.50<span class="tip" role="tooltip">來源：daily_prices（經 analysis/screener.py 計算）<br>資料日期：2026-11-16<br>來源表：daily_prices<br>主鍵：symbol=2317, price_date=2026-11-16<br>單位：新台幣元<br>點擊開啟來源列 →</span></a></td>
-    <td class="r c-key c-chg" data-sort="-9.336099585062241"><span class="chg down"><span class="arr" aria-hidden="true">▼</span><span class="sr">下跌</span><a class="v vlink" href="./#row-2317" data-src-link="1">−9.34%<span class="tip" role="tooltip">來源：daily_prices（經 analysis/screener.py 計算）<br>資料日期：2026-11-16<br>來源表：analysis/screener.py 輸出<br>主鍵：symbol=2317, as_of=2026-11-16<br>單位：%<br>點擊開啟來源列 →</span></a></span></td>
-    <td class="r c-sec" data-sort="18232288164.0"><a class="v vlink" href="../source/q_price_date-2026-11-16_symbol-2317_table-daily_prices.html" data-src-link="1">182.32 億<span class="tip" role="tooltip">來源：daily_prices（經 analysis/screener.py 計算）<br>資料日期：2026-11-16<br>來源表：daily_prices<br>主鍵：symbol=2317, price_date=2026-11-16<br>單位：新台幣元<br>原值：18,232,288,164<br>點擊開啟來源列 →</span></a></td>
-    <td class="r c-sec"><a class="v vlink" href="./#row-2317" data-src-link="1">241.53<span class="tip" role="tooltip">來源：daily_prices（經 analysis/screener.py 計算）<br>資料日期：2026-11-16<br>來源表：analysis/screener.py 輸出<br>主鍵：symbol=2317, as_of=2026-11-16<br>單位：新台幣元<br>點擊開啟來源列 →</span></a></td><td class="r c-sec"><a class="v vlink" href="./#row-2317" data-src-link="1">246.87<span class="tip" role="tooltip">來源：daily_prices（經 analysis/screener.py 計算）<br>資料日期：2026-11-16<br>來源表：analysis/screener.py 輸出<br>主鍵：symbol=2317, as_of=2026-11-16<br>單位：新台幣元<br>點擊開啟來源列 →</span></a></td>
-    <td class="r c-sec" data-sort="1.8356033739989779"><a class="v vlink" href="./#row-2317" data-src-link="1">1.84<span class="tip" role="tooltip">來源：daily_prices（經 analysis/screener.py 計算）<br>資料日期：2026-11-16<br>來源表：analysis/screener.py 輸出<br>主鍵：symbol=2317, as_of=2026-11-16<br>單位：倍<br>點擊開啟來源列 →</span></a></td>
+  <tr id="row-2357">
+    <td class="c-code"><a href="../stock/2357/">2357</a></td><td class="c-name"><a href="../stock/2357/">華碩</a><button type="button" class="more-toggle" aria-expanded="false" aria-controls="row-2357" data-more>更多欄位</button></td><td class="c-sec c-mkt">上市</td><td class="c-sec c-date">2026-11-23</td>
+    <td class="r c-key c-close" data-sort="758.0"><a class="v vlink" href="../source/q_price_date-2026-11-23_symbol-2357_table-daily_prices.html" data-src-link="1">758.00<span class="tip" role="tooltip">來源：daily_prices（經 analysis/screener.py 計算）<br>資料日期：2026-11-23<br>來源表：daily_prices<br>主鍵：symbol=2357, price_date=2026-11-23<br>單位：新台幣元<br>點擊開啟來源列 →</span></a></td>
+    <td class="r c-key c-chg" data-sort="0.2645502645502562"><span class="chg up"><span class="arr" aria-hidden="true">▲</span><span class="sr">上漲</span><a class="v vlink" href="./#row-2357" data-src-link="1">+0.26%<span class="tip" role="tooltip">來源：daily_prices（經 analysis/screener.py 計算）<br>資料日期：2026-11-23<br>來源表：analysis/screener.py 輸出<br>主鍵：symbol=2357, as_of=2026-11-23<br>單位：%<br>點擊開啟來源列 →</span></a></span></td>
+    <td class="r c-sec" data-sort="3888142355.0"><a class="v vlink" href="../source/q_price_date-2026-11-23_symbol-2357_table-daily_prices.html" data-src-link="1">38.88 億<span class="tip" role="tooltip">來源：daily_prices（經 analysis/screener.py 計算）<br>資料日期：2026-11-23<br>來源表：daily_prices<br>主鍵：symbol=2357, price_date=2026-11-23<br>單位：新台幣元<br>原值：3,888,142,355<br>點擊開啟來源列 →</span></a></td>
+    <td class="r c-sec"><a class="v vlink" href="./#row-2357" data-src-link="1">872.50<span class="tip" role="tooltip">來源：daily_prices（經 analysis/screener.py 計算）<br>資料日期：2026-11-23<br>來源表：analysis/screener.py 輸出<br>主鍵：symbol=2357, as_of=2026-11-23<br>單位：新台幣元<br>點擊開啟來源列 →</span></a></td><td class="r c-sec"><a class="v vlink" href="./#row-2357" data-src-link="1">938.07<span class="tip" role="tooltip">來源：daily_prices（經 analysis/screener.py 計算）<br>資料日期：2026-11-23<br>來源表：analysis/screener.py 輸出<br>主鍵：symbol=2357, as_of=2026-11-23<br>單位：新台幣元<br>點擊開啟來源列 →</span></a></td>
+    <td class="r c-sec" data-sort="1.535843179890019"><a class="v vlink" href="./#row-2357" data-src-link="1">1.54<span class="tip" role="tooltip">來源：daily_prices（經 analysis/screener.py 計算）<br>資料日期：2026-11-23<br>來源表：analysis/screener.py 輸出<br>主鍵：symbol=2357, as_of=2026-11-23<br>單位：倍<br>點擊開啟來源列 →</span></a></td>
     <td class="reasons c-key"><details><summary>2 條全部通過</summary>
       <ol><li class="fail off">
         ⚪ 未啟用
-        趨勢：收盤 &gt; MA短 &gt; MA長（門檻 收盤 &gt; MA20 且 MA20 &gt; MA60）：<span class="actual">未啟用（不列入判斷）；參考：收盤 218.50 ≤ MA20 241.53，MA20 241.53 ≤ MA60 246.87</span></li><li class="fail off">
+        趨勢：收盤 &gt; MA短 &gt; MA長（門檻 收盤 &gt; MA20 且 MA20 &gt; MA60）：<span class="actual">未啟用（不列入判斷）；參考：收盤 758.00 ≤ MA20 872.50，MA20 872.50 ≤ MA60 938.07</span></li><li class="fail off">
         ⚪ 未啟用
-        突破：收盤 &gt; 前 N 個交易日最高價（不含當日）（門檻 收盤 &gt; 253.50）：<span class="actual">未啟用（不列入判斷）；參考：收盤 218.50 ≤ 前 20 日最高 253.50</span></li><li class="pass">
+        突破：收盤 &gt; 前 N 個交易日最高價（不含當日）（門檻 收盤 &gt; 992.00）：<span class="actual">未啟用（不列入判斷）；參考：收盤 758.00 ≤ 前 20 日最高 992.00</span></li><li class="pass">
         ✅
-        量能：成交量 ≥ 前 N 個交易日平均量（不含當日）× 倍數（門檻 量比 ≥ 1.5）：<span class="actual">成立：當日 80,611,194 股 ≥ 均量 43,915,366 股 × 1.5 = 65,873,049 股</span></li><li class="pass">
+        量能：成交量 ≥ 前 N 個交易日平均量（不含當日）× 倍數（門檻 量比 ≥ 1.5）：<span class="actual">成立：當日 5,055,081 股 ≥ 均量 3,291,404 股 × 1.5 = 4,937,107 股</span></li><li class="pass">
         ✅
-        成交金額 ≥ 門檻（新台幣元）（門檻 ≥ 100,000,000 元）：<span class="actual">成立：成交金額 18,232,288,164 元 ≥ 100,000,000 元</span></li></ol></details></td>
+        成交金額 ≥ 門檻（新台幣元）（門檻 ≥ 100,000,000 元）：<span class="actual">成立：成交金額 3,888,142,355 元 ≥ 100,000,000 元</span></li></ol><small class="muted" data-testid="row-extra"><span>評估日量額口徑：總量（含鉅額）</span>；<span>均量窗口非總量日數：0 日</span>；<span>觀察窗資料異常日數：0 日</span></small></details></td>
+  </tr>
+  
+  <tr id="row-2308">
+    <td class="c-code"><a href="../stock/2308/">2308</a></td><td class="c-name"><a href="../stock/2308/">台達電</a><button type="button" class="more-toggle" aria-expanded="false" aria-controls="row-2308" data-more>更多欄位</button></td><td class="c-sec c-mkt">上市</td><td class="c-sec c-date">2026-11-23</td>
+    <td class="r c-key c-close" data-sort="990.0"><a class="v vlink" href="../source/q_price_date-2026-11-23_symbol-2308_table-daily_prices.html" data-src-link="1">990.00<span class="tip" role="tooltip">來源：daily_prices（經 analysis/screener.py 計算）<br>資料日期：2026-11-23<br>來源表：daily_prices<br>主鍵：symbol=2308, price_date=2026-11-23<br>單位：新台幣元<br>點擊開啟來源列 →</span></a></td>
+    <td class="r c-key c-chg" data-sort="10.000000000000009"><span class="chg up"><span class="arr" aria-hidden="true">▲</span><span class="sr">上漲</span><a class="v vlink" href="./#row-2308" data-src-link="1">+10.00%<span class="tip" role="tooltip">來源：daily_prices（經 analysis/screener.py 計算）<br>資料日期：2026-11-23<br>來源表：analysis/screener.py 輸出<br>主鍵：symbol=2308, as_of=2026-11-23<br>單位：%<br>點擊開啟來源列 →</span></a></span></td>
+    <td class="r c-sec" data-sort="29423858339.0"><a class="v vlink" href="../source/q_price_date-2026-11-23_symbol-2308_table-daily_prices.html" data-src-link="1">294.24 億<span class="tip" role="tooltip">來源：daily_prices（經 analysis/screener.py 計算）<br>資料日期：2026-11-23<br>來源表：daily_prices<br>主鍵：symbol=2308, price_date=2026-11-23<br>單位：新台幣元<br>原值：29,423,858,339<br>點擊開啟來源列 →</span></a></td>
+    <td class="r c-sec"><a class="v vlink" href="./#row-2308" data-src-link="1">1,212.00<span class="tip" role="tooltip">來源：daily_prices（經 analysis/screener.py 計算）<br>資料日期：2026-11-23<br>來源表：analysis/screener.py 輸出<br>主鍵：symbol=2308, as_of=2026-11-23<br>單位：新台幣元<br>點擊開啟來源列 →</span></a></td><td class="r c-sec"><a class="v vlink" href="./#row-2308" data-src-link="1">1,595.83<span class="tip" role="tooltip">來源：daily_prices（經 analysis/screener.py 計算）<br>資料日期：2026-11-23<br>來源表：analysis/screener.py 輸出<br>主鍵：symbol=2308, as_of=2026-11-23<br>單位：新台幣元<br>點擊開啟來源列 →</span></a></td>
+    <td class="r c-sec" data-sort="1.5879750304016684"><a class="v vlink" href="./#row-2308" data-src-link="1">1.59<span class="tip" role="tooltip">來源：daily_prices（經 analysis/screener.py 計算）<br>資料日期：2026-11-23<br>來源表：analysis/screener.py 輸出<br>主鍵：symbol=2308, as_of=2026-11-23<br>單位：倍<br>點擊開啟來源列 →</span></a></td>
+    <td class="reasons c-key"><details><summary>2 條全部通過</summary>
+      <ol><li class="fail off">
+        ⚪ 未啟用
+        趨勢：收盤 &gt; MA短 &gt; MA長（門檻 收盤 &gt; MA20 且 MA20 &gt; MA60）：<span class="actual">未啟用（不列入判斷）；參考：收盤 990.00 ≤ MA20 1,212.00，MA20 1,212.00 ≤ MA60 1,595.83</span></li><li class="fail off">
+        ⚪ 未啟用
+        突破：收盤 &gt; 前 N 個交易日最高價（不含當日）（門檻 收盤 &gt; 1,650.00）：<span class="actual">未啟用（不列入判斷）；參考：收盤 990.00 ≤ 前 20 日最高 1,650.00</span></li><li class="pass">
+        ✅
+        量能：成交量 ≥ 前 N 個交易日平均量（不含當日）× 倍數（門檻 量比 ≥ 1.5）：<span class="actual">成立：當日 31,464,403 股 ≥ 均量 19,814,167 股 × 1.5 = 29,721,251 股</span></li><li class="pass">
+        ✅
+        成交金額 ≥ 門檻（新台幣元）（門檻 ≥ 100,000,000 元）：<span class="actual">成立：成交金額 29,423,858,339 元 ≥ 100,000,000 元</span></li></ol><small class="muted" data-testid="row-extra"><span>評估日量額口徑：總量（含鉅額）</span>；<span>均量窗口非總量日數：0 日</span>；<span>觀察窗資料異常日數：0 日</span></small></details></td>
+  </tr>
+  
+  <tr id="row-5347">
+    <td class="c-code"><a href="../stock/5347/">5347</a></td><td class="c-name"><a href="../stock/5347/">世界</a><button type="button" class="more-toggle" aria-expanded="false" aria-controls="row-5347" data-more>更多欄位</button></td><td class="c-sec c-mkt">上櫃</td><td class="c-sec c-date">2026-11-23</td>
+    <td class="r c-key c-close" data-sort="110.0"><a class="v vlink" href="../source/q_price_date-2026-11-23_symbol-5347_table-daily_prices.html" data-src-link="1">110.00<span class="tip" role="tooltip">來源：daily_prices（經 analysis/screener.py 計算）<br>資料日期：2026-11-23<br>來源表：daily_prices<br>主鍵：symbol=5347, price_date=2026-11-23<br>單位：新台幣元<br>點擊開啟來源列 →</span></a></td>
+    <td class="r c-key c-chg" data-sort="3.2863849765258246"><span class="chg up"><span class="arr" aria-hidden="true">▲</span><span class="sr">上漲</span><a class="v vlink" href="./#row-5347" data-src-link="1">+3.29%<span class="tip" role="tooltip">來源：daily_prices（經 analysis/screener.py 計算）<br>資料日期：2026-11-23<br>來源表：analysis/screener.py 輸出<br>主鍵：symbol=5347, as_of=2026-11-23<br>單位：%<br>點擊開啟來源列 →</span></a></span></td>
+    <td class="r c-sec" data-sort="2585153967.0"><a class="v vlink" href="../source/q_price_date-2026-11-23_symbol-5347_table-daily_prices.html" data-src-link="1">25.85 億<span class="tip" role="tooltip">來源：daily_prices（經 analysis/screener.py 計算）<br>資料日期：2026-11-23<br>來源表：daily_prices<br>主鍵：symbol=5347, price_date=2026-11-23<br>單位：新台幣元<br>原值：2,585,153,967<br>點擊開啟來源列 →</span></a></td>
+    <td class="r c-sec"><a class="v vlink" href="./#row-5347" data-src-link="1">133.45<span class="tip" role="tooltip">來源：daily_prices（經 analysis/screener.py 計算）<br>資料日期：2026-11-23<br>來源表：analysis/screener.py 輸出<br>主鍵：symbol=5347, as_of=2026-11-23<br>單位：新台幣元<br>點擊開啟來源列 →</span></a></td><td class="r c-sec"><a class="v vlink" href="./#row-5347" data-src-link="1">155.03<span class="tip" role="tooltip">來源：daily_prices（經 analysis/screener.py 計算）<br>資料日期：2026-11-23<br>來源表：analysis/screener.py 輸出<br>主鍵：symbol=5347, as_of=2026-11-23<br>單位：新台幣元<br>點擊開啟來源列 →</span></a></td>
+    <td class="r c-sec" data-sort="1.6200874396650666"><a class="v vlink" href="./#row-5347" data-src-link="1">1.62<span class="tip" role="tooltip">來源：daily_prices（經 analysis/screener.py 計算）<br>資料日期：2026-11-23<br>來源表：analysis/screener.py 輸出<br>主鍵：symbol=5347, as_of=2026-11-23<br>單位：倍<br>點擊開啟來源列 →</span></a></td>
+    <td class="reasons c-key"><details><summary>2 條全部通過</summary>
+      <ol><li class="fail off">
+        ⚪ 未啟用
+        趨勢：收盤 &gt; MA短 &gt; MA長（門檻 收盤 &gt; MA20 且 MA20 &gt; MA60）：<span class="actual">未啟用（不列入判斷）；參考：收盤 110.00 ≤ MA20 133.45，MA20 133.45 ≤ MA60 155.03</span></li><li class="fail off">
+        ⚪ 未啟用
+        突破：收盤 &gt; 前 N 個交易日最高價（不含當日）（門檻 收盤 &gt; 170.00）：<span class="actual">未啟用（不列入判斷）；參考：收盤 110.00 ≤ 前 20 日最高 170.00</span></li><li class="pass">
+        ✅
+        量能：成交量 ≥ 前 N 個交易日平均量（不含當日）× 倍數（門檻 量比 ≥ 1.5）：<span class="actual">成立：當日 23,938,792 股 ≥ 均量 14,776,235 股 × 1.5 = 22,164,352 股</span></li><li class="pass">
+        ✅
+        成交金額 ≥ 門檻（新台幣元）（門檻 ≥ 100,000,000 元）：<span class="actual">成立：成交金額 2,585,153,967 元 ≥ 100,000,000 元</span></li></ol><small class="muted" data-testid="row-extra"><span>評估日量額口徑：總量（含鉅額）</span>；<span>均量窗口非總量日數：0 日</span>；<span>觀察窗資料異常日數：0 日</span></small></details></td>
+  </tr>
+  
+  <tr id="row-2882">
+    <td class="c-code"><a href="../stock/2882/">2882</a></td><td class="c-name"><a href="../stock/2882/">國泰金</a><button type="button" class="more-toggle" aria-expanded="false" aria-controls="row-2882" data-more>更多欄位</button></td><td class="c-sec c-mkt">上市</td><td class="c-sec c-date">2026-11-23</td>
+    <td class="r c-key c-close" data-sort="95.0"><a class="v vlink" href="../source/q_price_date-2026-11-23_symbol-2882_table-daily_prices.html" data-src-link="1">95.00<span class="tip" role="tooltip">來源：daily_prices（經 analysis/screener.py 計算）<br>資料日期：2026-11-23<br>來源表：daily_prices<br>主鍵：symbol=2882, price_date=2026-11-23<br>單位：新台幣元<br>點擊開啟來源列 →</span></a></td>
+    <td class="r c-key c-chg" data-sort="-1.9607843137254943"><span class="chg down"><span class="arr" aria-hidden="true">▼</span><span class="sr">下跌</span><a class="v vlink" href="./#row-2882" data-src-link="1">−1.96%<span class="tip" role="tooltip">來源：daily_prices（經 analysis/screener.py 計算）<br>資料日期：2026-11-23<br>來源表：analysis/screener.py 輸出<br>主鍵：symbol=2882, as_of=2026-11-23<br>單位：%<br>點擊開啟來源列 →</span></a></span></td>
+    <td class="r c-sec" data-sort="4600797742.0"><a class="v vlink" href="../source/q_price_date-2026-11-23_symbol-2882_table-daily_prices.html" data-src-link="1">46.01 億<span class="tip" role="tooltip">來源：daily_prices（經 analysis/screener.py 計算）<br>資料日期：2026-11-23<br>來源表：daily_prices<br>主鍵：symbol=2882, price_date=2026-11-23<br>單位：新台幣元<br>原值：4,600,797,742<br>點擊開啟來源列 →</span></a></td>
+    <td class="r c-sec"><a class="v vlink" href="./#row-2882" data-src-link="1">110.34<span class="tip" role="tooltip">來源：daily_prices（經 analysis/screener.py 計算）<br>資料日期：2026-11-23<br>來源表：analysis/screener.py 輸出<br>主鍵：symbol=2882, as_of=2026-11-23<br>單位：新台幣元<br>點擊開啟來源列 →</span></a></td><td class="r c-sec"><a class="v vlink" href="./#row-2882" data-src-link="1">110.94<span class="tip" role="tooltip">來源：daily_prices（經 analysis/screener.py 計算）<br>資料日期：2026-11-23<br>來源表：analysis/screener.py 輸出<br>主鍵：symbol=2882, as_of=2026-11-23<br>單位：新台幣元<br>點擊開啟來源列 →</span></a></td>
+    <td class="r c-sec" data-sort="1.6307729034984457"><a class="v vlink" href="./#row-2882" data-src-link="1">1.63<span class="tip" role="tooltip">來源：daily_prices（經 analysis/screener.py 計算）<br>資料日期：2026-11-23<br>來源表：analysis/screener.py 輸出<br>主鍵：symbol=2882, as_of=2026-11-23<br>單位：倍<br>點擊開啟來源列 →</span></a></td>
+    <td class="reasons c-key"><details><summary>2 條全部通過</summary>
+      <ol><li class="fail off">
+        ⚪ 未啟用
+        趨勢：收盤 &gt; MA短 &gt; MA長（門檻 收盤 &gt; MA20 且 MA20 &gt; MA60）：<span class="actual">未啟用（不列入判斷）；參考：收盤 95.00 ≤ MA20 110.34，MA20 110.34 ≤ MA60 110.94</span></li><li class="fail off">
+        ⚪ 未啟用
+        突破：收盤 &gt; 前 N 個交易日最高價（不含當日）（門檻 收盤 &gt; 117.50）：<span class="actual">未啟用（不列入判斷）；參考：收盤 95.00 ≤ 前 20 日最高 117.50</span></li><li class="pass">
+        ✅
+        量能：成交量 ≥ 前 N 個交易日平均量（不含當日）× 倍數（門檻 量比 ≥ 1.5）：<span class="actual">成立：當日 48,657,990 股 ≥ 均量 29,837,380 股 × 1.5 = 44,756,069 股</span></li><li class="pass">
+        ✅
+        成交金額 ≥ 門檻（新台幣元）（門檻 ≥ 100,000,000 元）：<span class="actual">成立：成交金額 4,600,797,742 元 ≥ 100,000,000 元</span></li></ol><small class="muted" data-testid="row-extra"><span>評估日量額口徑：總量（含鉅額）</span>；<span>均量窗口非總量日數：0 日</span>；<span>觀察窗資料異常日數：0 日</span></small></details></td>
+  </tr>
+  
+  <tr id="row-3008">
+    <td class="c-code"><a href="../stock/3008/">3008</a></td><td class="c-name"><a href="../stock/3008/">大立光</a><button type="button" class="more-toggle" aria-expanded="false" aria-controls="row-3008" data-more>更多欄位</button></td><td class="c-sec c-mkt">上市</td><td class="c-sec c-date">2026-11-23</td>
+    <td class="r c-key c-close" data-sort="3620.0"><a class="v vlink" href="../source/q_price_date-2026-11-23_symbol-3008_table-daily_prices.html" data-src-link="1">3,620.00<span class="tip" role="tooltip">來源：daily_prices（經 analysis/screener.py 計算）<br>資料日期：2026-11-23<br>來源表：daily_prices<br>主鍵：symbol=3008, price_date=2026-11-23<br>單位：新台幣元<br>點擊開啟來源列 →</span></a></td>
+    <td class="r c-key c-chg" data-sort="-1.3623978201634857"><span class="chg down"><span class="arr" aria-hidden="true">▼</span><span class="sr">下跌</span><a class="v vlink" href="./#row-3008" data-src-link="1">−1.36%<span class="tip" role="tooltip">來源：daily_prices（經 analysis/screener.py 計算）<br>資料日期：2026-11-23<br>來源表：analysis/screener.py 輸出<br>主鍵：symbol=3008, as_of=2026-11-23<br>單位：%<br>點擊開啟來源列 →</span></a></span></td>
+    <td class="r c-sec" data-sort="14905838870.0"><a class="v vlink" href="../source/q_price_date-2026-11-23_symbol-3008_table-daily_prices.html" data-src-link="1">149.06 億<span class="tip" role="tooltip">來源：daily_prices（經 analysis/screener.py 計算）<br>資料日期：2026-11-23<br>來源表：daily_prices<br>主鍵：symbol=3008, price_date=2026-11-23<br>單位：新台幣元<br>原值：14,905,838,870<br>點擊開啟來源列 →</span></a></td>
+    <td class="r c-sec"><a class="v vlink" href="./#row-3008" data-src-link="1">4,934.25<span class="tip" role="tooltip">來源：daily_prices（經 analysis/screener.py 計算）<br>資料日期：2026-11-23<br>來源表：analysis/screener.py 輸出<br>主鍵：symbol=3008, as_of=2026-11-23<br>單位：新台幣元<br>點擊開啟來源列 →</span></a></td><td class="r c-sec"><a class="v vlink" href="./#row-3008" data-src-link="1">6,037.33<span class="tip" role="tooltip">來源：daily_prices（經 analysis/screener.py 計算）<br>資料日期：2026-11-23<br>來源表：analysis/screener.py 輸出<br>主鍵：symbol=3008, as_of=2026-11-23<br>單位：新台幣元<br>點擊開啟來源列 →</span></a></td>
+    <td class="r c-sec" data-sort="1.654665406088786"><a class="v vlink" href="./#row-3008" data-src-link="1">1.65<span class="tip" role="tooltip">來源：daily_prices（經 analysis/screener.py 計算）<br>資料日期：2026-11-23<br>來源表：analysis/screener.py 輸出<br>主鍵：symbol=3008, as_of=2026-11-23<br>單位：倍<br>點擊開啟來源列 →</span></a></td>
+    <td class="reasons c-key"><details><summary>2 條全部通過</summary>
+      <ol><li class="fail off">
+        ⚪ 未啟用
+        趨勢：收盤 &gt; MA短 &gt; MA長（門檻 收盤 &gt; MA20 且 MA20 &gt; MA60）：<span class="actual">未啟用（不列入判斷）；參考：收盤 3,620.00 ≤ MA20 4,934.25，MA20 4,934.25 ≤ MA60 6,037.33</span></li><li class="fail off">
+        ⚪ 未啟用
+        突破：收盤 &gt; 前 N 個交易日最高價（不含當日）（門檻 收盤 &gt; 6,370.00）：<span class="actual">未啟用（不列入判斷）；參考：收盤 3,620.00 ≤ 前 20 日最高 6,370.00</span></li><li class="pass">
+        ✅
+        量能：成交量 ≥ 前 N 個交易日平均量（不含當日）× 倍數（門檻 量比 ≥ 1.5）：<span class="actual">成立：當日 4,148,856 股 ≥ 均量 2,507,369 股 × 1.5 = 3,761,053 股</span></li><li class="pass">
+        ✅
+        成交金額 ≥ 門檻（新台幣元）（門檻 ≥ 100,000,000 元）：<span class="actual">成立：成交金額 14,905,838,870 元 ≥ 100,000,000 元</span></li></ol><small class="muted" data-testid="row-extra"><span>評估日量額口徑：總量（含鉅額）</span>；<span>均量窗口非總量日數：0 日</span>；<span>觀察窗資料異常日數：0 日</span></small></details></td>
+  </tr>
+  
+  <tr id="row-2317">
+    <td class="c-code"><a href="../stock/2317/">2317</a></td><td class="c-name"><a href="../stock/2317/">鴻海</a><button type="button" class="more-toggle" aria-expanded="false" aria-controls="row-2317" data-more>更多欄位</button></td><td class="c-sec c-mkt">上市</td><td class="c-sec c-date">2026-11-23</td>
+    <td class="r c-key c-close" data-sort="206.0"><a class="v vlink" href="../source/q_price_date-2026-11-23_symbol-2317_table-daily_prices.html" data-src-link="1">206.00<span class="tip" role="tooltip">來源：daily_prices（經 analysis/screener.py 計算）<br>資料日期：2026-11-23<br>來源表：daily_prices<br>主鍵：symbol=2317, price_date=2026-11-23<br>單位：新台幣元<br>點擊開啟來源列 →</span></a></td>
+    <td class="r c-key c-chg" data-sort="-1.904761904761909"><span class="chg down"><span class="arr" aria-hidden="true">▼</span><span class="sr">下跌</span><a class="v vlink" href="./#row-2317" data-src-link="1">−1.90%<span class="tip" role="tooltip">來源：daily_prices（經 analysis/screener.py 計算）<br>資料日期：2026-11-23<br>來源表：analysis/screener.py 輸出<br>主鍵：symbol=2317, as_of=2026-11-23<br>單位：%<br>點擊開啟來源列 →</span></a></span></td>
+    <td class="r c-sec" data-sort="16679078973.0"><a class="v vlink" href="../source/q_price_date-2026-11-23_symbol-2317_table-daily_prices.html" data-src-link="1">166.79 億<span class="tip" role="tooltip">來源：daily_prices（經 analysis/screener.py 計算）<br>資料日期：2026-11-23<br>來源表：daily_prices<br>主鍵：symbol=2317, price_date=2026-11-23<br>單位：新台幣元<br>原值：16,679,078,973<br>點擊開啟來源列 →</span></a></td>
+    <td class="r c-sec"><a class="v vlink" href="./#row-2317" data-src-link="1">234.35<span class="tip" role="tooltip">來源：daily_prices（經 analysis/screener.py 計算）<br>資料日期：2026-11-23<br>來源表：analysis/screener.py 輸出<br>主鍵：symbol=2317, as_of=2026-11-23<br>單位：新台幣元<br>點擊開啟來源列 →</span></a></td><td class="r c-sec"><a class="v vlink" href="./#row-2317" data-src-link="1">244.32<span class="tip" role="tooltip">來源：daily_prices（經 analysis/screener.py 計算）<br>資料日期：2026-11-23<br>來源表：analysis/screener.py 輸出<br>主鍵：symbol=2317, as_of=2026-11-23<br>單位：新台幣元<br>點擊開啟來源列 →</span></a></td>
+    <td class="r c-sec" data-sort="1.656457051094923"><a class="v vlink" href="./#row-2317" data-src-link="1">1.66<span class="tip" role="tooltip">來源：daily_prices（經 analysis/screener.py 計算）<br>資料日期：2026-11-23<br>來源表：analysis/screener.py 輸出<br>主鍵：symbol=2317, as_of=2026-11-23<br>單位：倍<br>點擊開啟來源列 →</span></a></td>
+    <td class="reasons c-key"><details><summary>2 條全部通過</summary>
+      <ol><li class="fail off">
+        ⚪ 未啟用
+        趨勢：收盤 &gt; MA短 &gt; MA長（門檻 收盤 &gt; MA20 且 MA20 &gt; MA60）：<span class="actual">未啟用（不列入判斷）；參考：收盤 206.00 ≤ MA20 234.35，MA20 234.35 ≤ MA60 244.32</span></li><li class="fail off">
+        ⚪ 未啟用
+        突破：收盤 &gt; 前 N 個交易日最高價（不含當日）（門檻 收盤 &gt; 253.50）：<span class="actual">未啟用（不列入判斷）；參考：收盤 206.00 ≤ 前 20 日最高 253.50</span></li><li class="pass">
+        ✅
+        量能：成交量 ≥ 前 N 個交易日平均量（不含當日）× 倍數（門檻 量比 ≥ 1.5）：<span class="actual">成立：當日 80,161,587 股 ≥ 均量 48,393,399 股 × 1.5 = 72,590,098 股</span></li><li class="pass">
+        ✅
+        成交金額 ≥ 門檻（新台幣元）（門檻 ≥ 100,000,000 元）：<span class="actual">成立：成交金額 16,679,078,973 元 ≥ 100,000,000 元</span></li></ol><small class="muted" data-testid="row-extra"><span>評估日量額口徑：總量（含鉅額）</span>；<span>均量窗口非總量日數：0 日</span>；<span>觀察窗資料異常日數：0 日</span></small></details></td>
+  </tr>
+  
+  <tr id="row-2207">
+    <td class="c-code"><a href="../stock/2207/">2207</a></td><td class="c-name"><a href="../stock/2207/">和泰車</a><button type="button" class="more-toggle" aria-expanded="false" aria-controls="row-2207" data-more>更多欄位</button></td><td class="c-sec c-mkt">上市</td><td class="c-sec c-date">2026-11-23</td>
+    <td class="r c-key c-close" data-sort="500.0"><a class="v vlink" href="../source/q_price_date-2026-11-23_symbol-2207_table-daily_prices.html" data-src-link="1">500.00<span class="tip" role="tooltip">來源：daily_prices（經 analysis/screener.py 計算）<br>資料日期：2026-11-23<br>來源表：daily_prices<br>主鍵：symbol=2207, price_date=2026-11-23<br>單位：新台幣元<br>點擊開啟來源列 →</span></a></td>
+    <td class="r c-key c-chg" data-sort="-3.100775193798455"><span class="chg down"><span class="arr" aria-hidden="true">▼</span><span class="sr">下跌</span><a class="v vlink" href="./#row-2207" data-src-link="1">−3.10%<span class="tip" role="tooltip">來源：daily_prices（經 analysis/screener.py 計算）<br>資料日期：2026-11-23<br>來源表：analysis/screener.py 輸出<br>主鍵：symbol=2207, as_of=2026-11-23<br>單位：%<br>點擊開啟來源列 →</span></a></span></td>
+    <td class="r c-sec" data-sort="315712770.0"><a class="v vlink" href="../source/q_price_date-2026-11-23_symbol-2207_table-daily_prices.html" data-src-link="1">3.16 億<span class="tip" role="tooltip">來源：daily_prices（經 analysis/screener.py 計算）<br>資料日期：2026-11-23<br>來源表：daily_prices<br>主鍵：symbol=2207, price_date=2026-11-23<br>單位：新台幣元<br>原值：315,712,770<br>點擊開啟來源列 →</span></a></td>
+    <td class="r c-sec"><a class="v vlink" href="./#row-2207" data-src-link="1">529.70<span class="tip" role="tooltip">來源：daily_prices（經 analysis/screener.py 計算）<br>資料日期：2026-11-23<br>來源表：analysis/screener.py 輸出<br>主鍵：symbol=2207, as_of=2026-11-23<br>單位：新台幣元<br>點擊開啟來源列 →</span></a></td><td class="r c-sec"><a class="v vlink" href="./#row-2207" data-src-link="1">527.00<span class="tip" role="tooltip">來源：daily_prices（經 analysis/screener.py 計算）<br>資料日期：2026-11-23<br>來源表：analysis/screener.py 輸出<br>主鍵：symbol=2207, as_of=2026-11-23<br>單位：新台幣元<br>點擊開啟來源列 →</span></a></td>
+    <td class="r c-sec" data-sort="1.7000866272069597"><a class="v vlink" href="./#row-2207" data-src-link="1">1.70<span class="tip" role="tooltip">來源：daily_prices（經 analysis/screener.py 計算）<br>資料日期：2026-11-23<br>來源表：analysis/screener.py 輸出<br>主鍵：symbol=2207, as_of=2026-11-23<br>單位：倍<br>點擊開啟來源列 →</span></a></td>
+    <td class="reasons c-key"><details><summary>2 條全部通過</summary>
+      <ol><li class="fail off">
+        ⚪ 未啟用
+        趨勢：收盤 &gt; MA短 &gt; MA長（門檻 收盤 &gt; MA20 且 MA20 &gt; MA60）：<span class="actual">未啟用（不列入判斷）；參考：收盤 500.00 ≤ MA20 529.70，MA20 529.70 &gt; MA60 527.00</span></li><li class="fail off">
+        ⚪ 未啟用
+        突破：收盤 &gt; 前 N 個交易日最高價（不含當日）（門檻 收盤 &gt; 556.00）：<span class="actual">未啟用（不列入判斷）；參考：收盤 500.00 ≤ 前 20 日最高 556.00</span></li><li class="pass">
+        ✅
+        量能：成交量 ≥ 前 N 個交易日平均量（不含當日）× 倍數（門檻 量比 ≥ 1.5）：<span class="actual">成立：當日 621,632 股 ≥ 均量 365,647 股 × 1.5 = 548,471 股</span></li><li class="pass">
+        ✅
+        成交金額 ≥ 門檻（新台幣元）（門檻 ≥ 100,000,000 元）：<span class="actual">成立：成交金額 315,712,770 元 ≥ 100,000,000 元</span></li></ol><small class="muted" data-testid="row-extra"><span title="停牌紀錄：停牌日 2025-12-18，官方恢復日 2025-12-19；管線交叉檢查：resume_basis＝official，resume_date_inferred＝（空）">資料說明：其他資料說明（原文見提示）</span>；<span>評估日量額口徑：總量（含鉅額）</span>；<span>均量窗口非總量日數：0 日</span>；<span>觀察窗資料異常日數：0 日</span></small></details></td>
+  </tr>
+  
+  <tr id="row-2881">
+    <td class="c-code"><a href="../stock/2881/">2881</a></td><td class="c-name"><a href="../stock/2881/">富邦金</a><button type="button" class="more-toggle" aria-expanded="false" aria-controls="row-2881" data-more>更多欄位</button></td><td class="c-sec c-mkt">上市</td><td class="c-sec c-date">2026-11-23</td>
+    <td class="r c-key c-close" data-sort="130.5"><a class="v vlink" href="../source/q_price_date-2026-11-23_symbol-2881_table-daily_prices.html" data-src-link="1">130.50<span class="tip" role="tooltip">來源：daily_prices（經 analysis/screener.py 計算）<br>資料日期：2026-11-23<br>來源表：daily_prices<br>主鍵：symbol=2881, price_date=2026-11-23<br>單位：新台幣元<br>點擊開啟來源列 →</span></a></td>
+    <td class="r c-key c-chg" data-sort="-4.395604395604391"><span class="chg down"><span class="arr" aria-hidden="true">▼</span><span class="sr">下跌</span><a class="v vlink" href="./#row-2881" data-src-link="1">−4.40%<span class="tip" role="tooltip">來源：daily_prices（經 analysis/screener.py 計算）<br>資料日期：2026-11-23<br>來源表：analysis/screener.py 輸出<br>主鍵：symbol=2881, as_of=2026-11-23<br>單位：%<br>點擊開啟來源列 →</span></a></span></td>
+    <td class="r c-sec" data-sort="5796955847.0"><a class="v vlink" href="../source/q_price_date-2026-11-23_symbol-2881_table-daily_prices.html" data-src-link="1">57.97 億<span class="tip" role="tooltip">來源：daily_prices（經 analysis/screener.py 計算）<br>資料日期：2026-11-23<br>來源表：daily_prices<br>主鍵：symbol=2881, price_date=2026-11-23<br>單位：新台幣元<br>原值：5,796,955,847<br>點擊開啟來源列 →</span></a></td>
+    <td class="r c-sec"><a class="v vlink" href="./#row-2881" data-src-link="1">153.55<span class="tip" role="tooltip">來源：daily_prices（經 analysis/screener.py 計算）<br>資料日期：2026-11-23<br>來源表：analysis/screener.py 輸出<br>主鍵：symbol=2881, as_of=2026-11-23<br>單位：新台幣元<br>點擊開啟來源列 →</span></a></td><td class="r c-sec"><a class="v vlink" href="./#row-2881" data-src-link="1">152.14<span class="tip" role="tooltip">來源：daily_prices（經 analysis/screener.py 計算）<br>資料日期：2026-11-23<br>來源表：analysis/screener.py 輸出<br>主鍵：symbol=2881, as_of=2026-11-23<br>單位：新台幣元<br>點擊開啟來源列 →</span></a></td>
+    <td class="r c-sec" data-sort="1.904362578816158"><a class="v vlink" href="./#row-2881" data-src-link="1">1.90<span class="tip" role="tooltip">來源：daily_prices（經 analysis/screener.py 計算）<br>資料日期：2026-11-23<br>來源表：analysis/screener.py 輸出<br>主鍵：symbol=2881, as_of=2026-11-23<br>單位：倍<br>點擊開啟來源列 →</span></a></td>
+    <td class="reasons c-key"><details><summary>2 條全部通過</summary>
+      <ol><li class="fail off">
+        ⚪ 未啟用
+        趨勢：收盤 &gt; MA短 &gt; MA長（門檻 收盤 &gt; MA20 且 MA20 &gt; MA60）：<span class="actual">未啟用（不列入判斷）；參考：收盤 130.50 ≤ MA20 153.55，MA20 153.55 &gt; MA60 152.14</span></li><li class="fail off">
+        ⚪ 未啟用
+        突破：收盤 &gt; 前 N 個交易日最高價（不含當日）（門檻 收盤 &gt; 164.00）：<span class="actual">未啟用（不列入判斷）；參考：收盤 130.50 ≤ 前 20 日最高 164.00</span></li><li class="pass">
+        ✅
+        量能：成交量 ≥ 前 N 個交易日平均量（不含當日）× 倍數（門檻 量比 ≥ 1.5）：<span class="actual">成立：當日 44,523,758 股 ≥ 均量 23,379,874 股 × 1.5 = 35,069,812 股</span></li><li class="pass">
+        ✅
+        成交金額 ≥ 門檻（新台幣元）（門檻 ≥ 100,000,000 元）：<span class="actual">成立：成交金額 5,796,955,847 元 ≥ 100,000,000 元</span></li></ol><small class="muted" data-testid="row-extra"><span>評估日量額口徑：總量（含鉅額）</span>；<span>均量窗口非總量日數：0 日</span>；<span>觀察窗資料異常日數：0 日</span></small></details></td>
+  </tr>
+  
+  <tr id="row-2412">
+    <td class="c-code"><a href="../stock/2412/">2412</a></td><td class="c-name"><a href="../stock/2412/">中華電</a><button type="button" class="more-toggle" aria-expanded="false" aria-controls="row-2412" data-more>更多欄位</button></td><td class="c-sec c-mkt">上市</td><td class="c-sec c-date">2026-11-23</td>
+    <td class="r c-key c-close" data-sort="164.5"><a class="v vlink" href="../source/q_price_date-2026-11-23_symbol-2412_table-daily_prices.html" data-src-link="1">164.50<span class="tip" role="tooltip">來源：daily_prices（經 analysis/screener.py 計算）<br>資料日期：2026-11-23<br>來源表：daily_prices<br>主鍵：symbol=2412, price_date=2026-11-23<br>單位：新台幣元<br>點擊開啟來源列 →</span></a></td>
+    <td class="r c-key c-chg" data-sort="1.2307692307692353"><span class="chg up"><span class="arr" aria-hidden="true">▲</span><span class="sr">上漲</span><a class="v vlink" href="./#row-2412" data-src-link="1">+1.23%<span class="tip" role="tooltip">來源：daily_prices（經 analysis/screener.py 計算）<br>資料日期：2026-11-23<br>來源表：analysis/screener.py 輸出<br>主鍵：symbol=2412, as_of=2026-11-23<br>單位：%<br>點擊開啟來源列 →</span></a></span></td>
+    <td class="r c-sec" data-sort="6021647241.0"><a class="v vlink" href="../source/q_price_date-2026-11-23_symbol-2412_table-daily_prices.html" data-src-link="1">60.22 億<span class="tip" role="tooltip">來源：daily_prices（經 analysis/screener.py 計算）<br>資料日期：2026-11-23<br>來源表：daily_prices<br>主鍵：symbol=2412, price_date=2026-11-23<br>單位：新台幣元<br>原值：6,021,647,241<br>點擊開啟來源列 →</span></a></td>
+    <td class="r c-sec"><a class="v vlink" href="./#row-2412" data-src-link="1">161.47<span class="tip" role="tooltip">來源：daily_prices（經 analysis/screener.py 計算）<br>資料日期：2026-11-23<br>來源表：analysis/screener.py 輸出<br>主鍵：symbol=2412, as_of=2026-11-23<br>單位：新台幣元<br>點擊開啟來源列 →</span></a></td><td class="r c-sec"><a class="v vlink" href="./#row-2412" data-src-link="1">149.77<span class="tip" role="tooltip">來源：daily_prices（經 analysis/screener.py 計算）<br>資料日期：2026-11-23<br>來源表：analysis/screener.py 輸出<br>主鍵：symbol=2412, as_of=2026-11-23<br>單位：新台幣元<br>點擊開啟來源列 →</span></a></td>
+    <td class="r c-sec" data-sort="2.1561084424008357"><a class="v vlink" href="./#row-2412" data-src-link="1">2.16<span class="tip" role="tooltip">來源：daily_prices（經 analysis/screener.py 計算）<br>資料日期：2026-11-23<br>來源表：analysis/screener.py 輸出<br>主鍵：symbol=2412, as_of=2026-11-23<br>單位：倍<br>點擊開啟來源列 →</span></a></td>
+    <td class="reasons c-key"><details><summary>2 條全部通過</summary>
+      <ol><li class="fail off">
+        ⚪ 未啟用
+        趨勢：收盤 &gt; MA短 &gt; MA長（門檻 收盤 &gt; MA20 且 MA20 &gt; MA60）：<span class="actual">未啟用（不列入判斷）；參考：收盤 164.50 &gt; MA20 161.47，MA20 161.47 &gt; MA60 149.77</span></li><li class="fail off">
+        ⚪ 未啟用
+        突破：收盤 &gt; 前 N 個交易日最高價（不含當日）（門檻 收盤 &gt; 171.00）：<span class="actual">未啟用（不列入判斷）；參考：收盤 164.50 ≤ 前 20 日最高 171.00</span></li><li class="pass">
+        ✅
+        量能：成交量 ≥ 前 N 個交易日平均量（不含當日）× 倍數（門檻 量比 ≥ 1.5）：<span class="actual">成立：當日 36,639,667 股 ≥ 均量 16,993,425 股 × 1.5 = 25,490,137 股</span></li><li class="pass">
+        ✅
+        成交金額 ≥ 門檻（新台幣元）（門檻 ≥ 100,000,000 元）：<span class="actual">成立：成交金額 6,021,647,241 元 ≥ 100,000,000 元</span></li></ol><small class="muted" data-testid="row-extra"><span>評估日量額口徑：總量（含鉅額）</span>；<span>均量窗口非總量日數：0 日</span>；<span>觀察窗資料異常日數：0 日</span></small></details></td>
+  </tr>
+  
+  <tr id="row-2603">
+    <td class="c-code"><a href="../stock/2603/">2603</a></td><td class="c-name"><a href="../stock/2603/">長榮</a><button type="button" class="more-toggle" aria-expanded="false" aria-controls="row-2603" data-more>更多欄位</button></td><td class="c-sec c-mkt">上市</td><td class="c-sec c-date">2026-11-23</td>
+    <td class="r c-key c-close" data-sort="234.5"><a class="v vlink" href="../source/q_price_date-2026-11-23_symbol-2603_table-daily_prices.html" data-src-link="1">234.50<span class="tip" role="tooltip">來源：daily_prices（經 analysis/screener.py 計算）<br>資料日期：2026-11-23<br>來源表：daily_prices<br>主鍵：symbol=2603, price_date=2026-11-23<br>單位：新台幣元<br>點擊開啟來源列 →</span></a></td>
+    <td class="r c-key c-chg" data-sort="0.6437768240343367"><span class="chg up"><span class="arr" aria-hidden="true">▲</span><span class="sr">上漲</span><a class="v vlink" href="./#row-2603" data-src-link="1">+0.64%<span class="tip" role="tooltip">來源：daily_prices（經 analysis/screener.py 計算）<br>資料日期：2026-11-23<br>來源表：analysis/screener.py 輸出<br>主鍵：symbol=2603, as_of=2026-11-23<br>單位：%<br>點擊開啟來源列 →</span></a></span></td>
+    <td class="r c-sec" data-sort="5701425756.0"><a class="v vlink" href="../source/q_price_date-2026-11-23_symbol-2603_table-daily_prices.html" data-src-link="1">57.01 億<span class="tip" role="tooltip">來源：daily_prices（經 analysis/screener.py 計算）<br>資料日期：2026-11-23<br>來源表：daily_prices<br>主鍵：symbol=2603, price_date=2026-11-23<br>單位：新台幣元<br>原值：5,701,425,756<br>點擊開啟來源列 →</span></a></td>
+    <td class="r c-sec"><a class="v vlink" href="./#row-2603" data-src-link="1">256.23<span class="tip" role="tooltip">來源：daily_prices（經 analysis/screener.py 計算）<br>資料日期：2026-11-23<br>來源表：analysis/screener.py 輸出<br>主鍵：symbol=2603, as_of=2026-11-23<br>單位：新台幣元<br>點擊開啟來源列 →</span></a></td><td class="r c-sec"><a class="v vlink" href="./#row-2603" data-src-link="1">246.72<span class="tip" role="tooltip">來源：daily_prices（經 analysis/screener.py 計算）<br>資料日期：2026-11-23<br>來源表：analysis/screener.py 輸出<br>主鍵：symbol=2603, as_of=2026-11-23<br>單位：新台幣元<br>點擊開啟來源列 →</span></a></td>
+    <td class="r c-sec" data-sort="2.172066307614488"><a class="v vlink" href="./#row-2603" data-src-link="1">2.17<span class="tip" role="tooltip">來源：daily_prices（經 analysis/screener.py 計算）<br>資料日期：2026-11-23<br>來源表：analysis/screener.py 輸出<br>主鍵：symbol=2603, as_of=2026-11-23<br>單位：倍<br>點擊開啟來源列 →</span></a></td>
+    <td class="reasons c-key"><details><summary>2 條全部通過</summary>
+      <ol><li class="fail off">
+        ⚪ 未啟用
+        趨勢：收盤 &gt; MA短 &gt; MA長（門檻 收盤 &gt; MA20 且 MA20 &gt; MA60）：<span class="actual">未啟用（不列入判斷）；參考：收盤 234.50 ≤ MA20 256.23，MA20 256.23 &gt; MA60 246.72</span></li><li class="fail off">
+        ⚪ 未啟用
+        突破：收盤 &gt; 前 N 個交易日最高價（不含當日）（門檻 收盤 &gt; 274.50）：<span class="actual">未啟用（不列入判斷）；參考：收盤 234.50 ≤ 前 20 日最高 274.50</span></li><li class="pass">
+        ✅
+        量能：成交量 ≥ 前 N 個交易日平均量（不含當日）× 倍數（門檻 量比 ≥ 1.5）：<span class="actual">成立：當日 24,216,754 股 ≥ 均量 11,149,178 股 × 1.5 = 16,723,767 股</span></li><li class="pass">
+        ✅
+        成交金額 ≥ 門檻（新台幣元）（門檻 ≥ 100,000,000 元）：<span class="actual">成立：成交金額 5,701,425,756 元 ≥ 100,000,000 元</span></li></ol><small class="muted" data-testid="row-extra"><span>評估日量額口徑：總量（含鉅額）</span>；<span>均量窗口非總量日數：0 日</span>；<span>觀察窗資料異常日數：0 日</span></small></details></td>
+  </tr>
+  
+  <tr id="row-2912">
+    <td class="c-code"><a href="../stock/2912/">2912</a></td><td class="c-name"><a href="../stock/2912/">統一超</a><button type="button" class="more-toggle" aria-expanded="false" aria-controls="row-2912" data-more>更多欄位</button></td><td class="c-sec c-mkt">上市</td><td class="c-sec c-date">2026-11-23</td>
+    <td class="r c-key c-close" data-sort="199.5"><a class="v vlink" href="../source/q_price_date-2026-11-23_symbol-2912_table-daily_prices.html" data-src-link="1">199.50<span class="tip" role="tooltip">來源：daily_prices（經 analysis/screener.py 計算）<br>資料日期：2026-11-23<br>來源表：daily_prices<br>主鍵：symbol=2912, price_date=2026-11-23<br>單位：新台幣元<br>點擊開啟來源列 →</span></a></td>
+    <td class="r c-key c-chg" data-sort="-2.2058823529411797"><span class="chg down"><span class="arr" aria-hidden="true">▼</span><span class="sr">下跌</span><a class="v vlink" href="./#row-2912" data-src-link="1">−2.21%<span class="tip" role="tooltip">來源：daily_prices（經 analysis/screener.py 計算）<br>資料日期：2026-11-23<br>來源表：analysis/screener.py 輸出<br>主鍵：symbol=2912, as_of=2026-11-23<br>單位：%<br>點擊開啟來源列 →</span></a></span></td>
+    <td class="r c-sec" data-sort="1115159327.0"><a class="v vlink" href="../source/q_price_date-2026-11-23_symbol-2912_table-daily_prices.html" data-src-link="1">11.15 億<span class="tip" role="tooltip">來源：daily_prices（經 analysis/screener.py 計算）<br>資料日期：2026-11-23<br>來源表：daily_prices<br>主鍵：symbol=2912, price_date=2026-11-23<br>單位：新台幣元<br>原值：1,115,159,327<br>點擊開啟來源列 →</span></a></td>
+    <td class="r c-sec"><a class="v vlink" href="./#row-2912" data-src-link="1">215.45<span class="tip" role="tooltip">來源：daily_prices（經 analysis/screener.py 計算）<br>資料日期：2026-11-23<br>來源表：analysis/screener.py 輸出<br>主鍵：symbol=2912, as_of=2026-11-23<br>單位：新台幣元<br>點擊開啟來源列 →</span></a></td><td class="r c-sec"><a class="v vlink" href="./#row-2912" data-src-link="1">216.63<span class="tip" role="tooltip">來源：daily_prices（經 analysis/screener.py 計算）<br>資料日期：2026-11-23<br>來源表：analysis/screener.py 輸出<br>主鍵：symbol=2912, as_of=2026-11-23<br>單位：新台幣元<br>點擊開啟來源列 →</span></a></td>
+    <td class="r c-sec" data-sort="2.6997604905091364"><a class="v vlink" href="./#row-2912" data-src-link="1">2.70<span class="tip" role="tooltip">來源：daily_prices（經 analysis/screener.py 計算）<br>資料日期：2026-11-23<br>來源表：analysis/screener.py 輸出<br>主鍵：symbol=2912, as_of=2026-11-23<br>單位：倍<br>點擊開啟來源列 →</span></a></td>
+    <td class="reasons c-key"><details><summary>2 條全部通過</summary>
+      <ol><li class="fail off">
+        ⚪ 未啟用
+        趨勢：收盤 &gt; MA短 &gt; MA長（門檻 收盤 &gt; MA20 且 MA20 &gt; MA60）：<span class="actual">未啟用（不列入判斷）；參考：收盤 199.50 ≤ MA20 215.45，MA20 215.45 ≤ MA60 216.63</span></li><li class="fail off">
+        ⚪ 未啟用
+        突破：收盤 &gt; 前 N 個交易日最高價（不含當日）（門檻 收盤 &gt; 229.50）：<span class="actual">未啟用（不列入判斷）；參考：收盤 199.50 ≤ 前 20 日最高 229.50</span></li><li class="pass">
+        ✅
+        量能：成交量 ≥ 前 N 個交易日平均量（不含當日）× 倍數（門檻 量比 ≥ 1.5）：<span class="actual">成立：當日 5,553,114 股 ≥ 均量 2,056,891 股 × 1.5 = 3,085,337 股</span></li><li class="pass">
+        ✅
+        成交金額 ≥ 門檻（新台幣元）（門檻 ≥ 100,000,000 元）：<span class="actual">成立：成交金額 1,115,159,327 元 ≥ 100,000,000 元</span></li></ol><small class="muted" data-testid="row-extra"><span>評估日量額口徑：總量（含鉅額）</span>；<span>均量窗口非總量日數：0 日</span>；<span>觀察窗資料異常日數：0 日</span></small></details></td>
   </tr>
   
   </tbody>
@@ -180,7 +374,7 @@
 
 
   
-  <p class="srcline">來源：analysis/screener.py screen()｜資料日期：2026-11-16｜價格調整方式待 docs/indicators.md 定案</p>
+  <p class="srcline">來源：analysis/screener.py screen()｜資料日期：2026-11-23｜價格調整方式待 docs/indicators.md 定案</p>
 </section>
 
 <section class="card" id="excluded">
@@ -206,6 +400,7 @@
   </div>
 </footer>
 <script src="../static/js/site.js" defer></script>
+<script src="../static/js/nav.js" defer></script>
 
 <script src="../static/js/static.js" defer></script>
 </body>

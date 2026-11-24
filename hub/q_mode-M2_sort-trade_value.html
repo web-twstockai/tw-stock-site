@@ -1,0 +1,209 @@
+<!doctype html>
+<html data-static="1" lang="zh-Hant-TW">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>篩選中心｜台股盤後研究</title>
+<link rel="icon" href="data:,">
+<link rel="stylesheet" href="../static/css/site.css">
+<link rel="stylesheet" href="../static/css/hub.css">
+<script>document.documentElement.classList.add('js')</script>
+<meta name="site-root" content="../">
+<link rel="stylesheet" href="../static/css/static.css">
+</head>
+<body>
+<a class="skip" href="#main">跳到主要內容</a>
+
+<header class="site">
+  <div class="wrap mast">
+    <a class="brand" href="../" aria-label="台股盤後研究 首頁"><span class="seal" aria-hidden="true">盤後</span><span class="brand-name">台股盤後研究</span></a>
+    <nav class="mainnav" aria-label="主要功能">
+      <a href="../">盤後總覽</a>
+      <a href="./" class="on" aria-current="page">篩選中心</a>
+      <a href="../industry/">產業分類</a>
+      <a href="../screener/">自訂條件</a>
+      <a href="../revenue/">營收</a>
+      <a href="../status/">資料狀態</a>
+    </nav>
+    <form class="search" action="#" data-static-path="/search" method="get" role="search">
+      <label class="sr" for="site-q">搜尋股票代號或名稱（按 / 快速聚焦）</label>
+      <input id="site-q" type="search" name="q" list="stocklist" placeholder="代號或名稱，如 2330、台積" value="" autocomplete="off">
+      <kbd class="kbd" aria-hidden="true" title="按 / 聚焦搜尋">/</kbd>
+      <datalist id="stocklist"></datalist>
+      <button type="submit">前往個股</button>
+    </form>
+  </div><div class="wrap meta-bar" role="status" aria-label="資料更新狀態">
+    <span class="mi">資料日期 <strong data-date="2026-11-23">2026-11-23</strong></span>
+    <span class="mi">更新 <span class="pill pill-ok">● 成功</span></span>
+    <span class="mi src-ok">行情 <span class="dot ok" aria-hidden="true"></span>正常</span>
+    <span class="mi src-ok">月營收 <span class="dot ok" aria-hidden="true"></span>正常</span>
+    <span class="mi src-ok">重大訊息 <span class="dot ok" aria-hidden="true"></span>正常</span>
+    <span class="mi muted">最後更新 2026-11-24 12:46（台北）</span>
+    
+    <a class="mi status-link" href="../status/">資料狀態 →</a>
+  </div>
+</header>
+<main id="main" class="wrap">
+<div class="static-banner" role="note" data-testid="static-banner"><strong>公開靜態版</strong><span>資料日期 <b>2026-11-23</b>｜最近一次更新工作完成 2026-11-24 12:46（台北時間）｜本頁產生於 2026-11-24 13:04（台北時間）。每交易日 18:00、每日 22:00 更新後重新產生；資料全部來自證交所、櫃買中心、公開資訊觀測站。</span></div>
+<div class="hubpg">
+<div class="page-head">
+  <div>
+    <h1>篩選中心</h1>
+    <p class="ph-lead">選一個篩選模式，看今天符合的股票。想依產業瀏覽，請到「<a href="../industry/">產業分類</a>」。</p>
+  </div>
+  <dl class="ph-meta">
+    <div><dt>資料日期</dt><dd data-date="2026-11-23">2026-11-23</dd></div>
+    <div><dt>檢查範圍</dt><dd>30 檔驗證樣本</dd></div>
+    <div><dt>營收月份</dt><dd>2026-10</dd></div>
+  </dl>
+</div>
+
+
+<details class="method" id="method">
+  <summary><span aria-hidden="true">?</span> 「5 日勝率」怎麼算</summary>
+  <div class="method-body">
+    <p><b>5 日勝率＝扣成本後 5 個交易日報酬＞0 的比例。</b>報酬剛好等於 0 算「沒有上漲」。</p>
+    <ul>
+      <li><b>進出場：</b>訊號日的下一個交易日開盤買進，從買進日算第 5 個交易日收盤賣出。進場日開盤就漲停（買不到）不進場、另列件數；持有中停牌或第 5 日無成交，延後到下一個有成交的交易日收盤，最多再等 20 個交易日。</li>
+      <li><b>價格：</b>還原價；持有期間的除權息、減資照實計入。</li>
+      <li><b>成本：</b>買、賣手續費各 0.1425%，賣出證交稅 0.3%。股利稅因人而異，未計入。</li>
+      <li><b>不重複計：</b>同一檔股票在持有期間（5 個交易日）內再出現的訊號不另計。</li>
+      <li><b>不偷看未來：</b>只用訊號日當時已知的資料；月營收、財報以法定申報期限為準（例如月營收以次月 10 日）。</li>
+      <li><b>顯示門檻：</b>事件數 N ≥ 100 且訊號日數 D ≥ 30 才顯示比例，否則顯示「樣本不足」。統計期間從 2023-11 起。</li>
+      <li><b>目前狀態：</b>歷史勝率仍在回補與計算中，本頁不顯示任何勝率數字。</li>
+    </ul>
+    <p class="disc">歷史統計，不代表未來，非投資建議。</p>
+  </div>
+</details>
+
+<section class="modes" aria-labelledby="h-modes">
+  <div class="sec-h"><h2 id="h-modes">篩選模式</h2><p class="sec-sub"><b>等級只代表資料需求與計算複雜度，不代表比較準。</b>目前全部免費開放。</p></div>
+  <div class="launch-note" role="note"><b>!</b> 上線初期：歷史勝率回補中，所有模式的 5 日勝率暫時顯示「計算中」，不顯示任何比例；今日檔數與名單照常。</div>
+  <div class="tier-group">
+    <div class="tg-h"><span class="tier t1"><span class="sr">等級：</span>基本</span><span class="tg-n">只用行情或月營收，規則單純。</span>
+      <p class="tg-def"><b>5 日勝率</b>＝扣成本後 5 個交易日報酬＞0 的比例（報酬＝0 算沒有上漲）。N＝事件數、D＝訊號日數，N ≥ 100 且 D ≥ 30 才顯示比例，否則「樣本不足」。統計期間 2023-11 起。<b>歷史統計，不代表未來，非投資建議。</b></p></div>
+    <div class="mode-grid">
+      <div class="mode-cell" data-cell="M1">
+        <a class="mode" href="q_mode-M1.html#results" data-mode="M1">
+          <span class="mode-top"><span class="mcode">M1</span><span class="tier t1"><span class="sr">等級：</span>基本</span><span class="dflt">原首頁預設</span></span>
+          <span class="mode-name">趨勢＋突破＋量能</span><span class="mode-desc">收盤 &gt; MA20 &gt; MA60、收盤突破前 20 日最高、量 ≥ 前 20 日均量 1.5 倍、成交金額 ≥ 1 億元</span>
+          <span class="cnt zero"><span class="cnt-l">今日</span><b class="cnt-v num">0</b><span class="cnt-u">檔</span><span class="cnt-of">／可評估 30 檔</span></span>
+          <span class="mode-rate"><span class="rate"><span class="rate-l">5 日勝率</span><span class="pill pill-pend">計算中</span></span>
+<span class="rate-n">歷史勝率回補中，暫不計算，不顯示比例</span></span></a>
+      </div>
+      <div class="mode-cell" data-cell="M2">
+        <a class="mode on" href="./#results" aria-current="true" data-mode="M2">
+          <span class="mode-top"><span class="mcode">M2</span><span class="tier t1"><span class="sr">等級：</span>基本</span><span class="sel">✓ 已選</span></span>
+          <span class="mode-name">均線多頭排列</span><span class="mode-desc">收盤 &gt; MA5 &gt; MA20 &gt; MA60，且成交金額 ≥ 1 億元</span>
+          <span class="cnt"><span class="cnt-l">今日</span><b class="cnt-v num">1</b><span class="cnt-u">檔</span><span class="cnt-of">／可評估 30 檔</span></span>
+          <span class="mode-rate"><span class="rate"><span class="rate-l">5 日勝率</span><span class="pill pill-pend">計算中</span></span>
+<span class="rate-n">歷史勝率回補中，暫不計算，不顯示比例</span></span></a>
+      </div>
+      <div class="mode-cell" data-cell="M3">
+        <a class="mode" href="q_mode-M3.html#results" data-mode="M3">
+          <span class="mode-top"><span class="mcode">M3</span><span class="tier t1"><span class="sr">等級：</span>基本</span></span>
+          <span class="mode-name">月營收創 12 個月新高</span><span class="mode-desc">最近可得月份的月營收嚴格大於前 12 個月最高（相等不算）</span>
+          <span class="cnt"><span class="cnt-l">今日</span><b class="cnt-v num">11</b><span class="cnt-u">檔</span><span class="cnt-of">／可評估 30 檔</span></span>
+          <span class="mode-rate"><span class="rate"><span class="rate-l">5 日勝率</span><span class="pill pill-pend">計算中</span></span>
+<span class="rate-n">歷史勝率回補中，暫不計算，不顯示比例</span></span></a>
+      </div>
+    </div>
+  </div>
+  <div class="tier-group">
+    <div class="tg-h"><span class="tier t2"><span class="sr">等級：</span>進階</span><span class="tg-n">要較長的歷史或財報資料。</span>
+      <p class="tg-def"><b>5 日勝率</b>＝扣成本後 5 個交易日報酬＞0 的比例（報酬＝0 算沒有上漲）。N＝事件數、D＝訊號日數，N ≥ 100 且 D ≥ 30 才顯示比例，否則「樣本不足」。統計期間 2023-11 起。<b>歷史統計，不代表未來，非投資建議。</b></p></div>
+    <div class="mode-grid">
+      <div class="mode-cell" data-cell="M4">
+        <a class="mode" href="q_mode-M4.html#results" data-mode="M4">
+          <span class="mode-top"><span class="mcode">M4</span><span class="tier t2"><span class="sr">等級：</span>進階</span></span>
+          <span class="mode-name">營收連續 3 個月年增</span><span class="mode-desc">最近可得的連續 3 個月，月營收年增率都 &gt; 0</span>
+          <span class="cnt"><span class="cnt-l">今日</span><b class="cnt-v num">24</b><span class="cnt-u">檔</span><span class="cnt-of">／可評估 30 檔</span></span>
+          <span class="mode-rate"><span class="rate"><span class="rate-l">5 日勝率</span><span class="pill pill-pend">計算中</span></span>
+<span class="rate-n">歷史勝率回補中，暫不計算，不顯示比例</span></span></a>
+      </div>
+      <div class="mode-cell" data-cell="M5">
+        <div class="mode na" data-mode="M5" data-state="mode_na">
+          <span class="mode-top"><span class="mcode">M5</span><span class="tier t2"><span class="sr">等級：</span>進階</span></span>
+          <span class="mode-name">單季 EPS 年增</span><span class="mode-desc">單季 EPS &gt; 0 且大於去年同季</span>
+          <span class="cnt"><span class="cnt-l">今日</span><span class="pill pill-muted big">尚未提供</span></span>
+<span class="na-why">研究分析模組還沒有提供單季 EPS 推算與年增判斷，本站不自行計算。</span>
+          <span class="mode-rate"><span class="rate"><span class="rate-l">5 日勝率</span><span class="pill pill-few">! 樣本不足</span></span>
+<span class="rate-n">季頻訊號一年只有 4 個公告期，未達 D ≥ 30 的顯示門檻，不顯示比例｜歷史統計，不代表未來，非投資建議</span></span></div>
+      </div>
+      <div class="mode-cell" data-cell="M6">
+        <a class="mode" href="q_mode-M6.html#results" data-mode="M6">
+          <span class="mode-top"><span class="mcode">M6</span><span class="tier t2"><span class="sr">等級：</span>進階</span></span>
+          <span class="mode-name">創 250 日新高</span><span class="mode-desc">收盤 &gt; 前 250 個交易日最高價（不含當日），且成交金額 ≥ 1 億元</span>
+          <span class="cnt"><span class="cnt-l">今日</span><span class="pill pill-muted big">資料不足</span></span>
+<span class="lack">! 可評估 0／30 檔（0.0%），未達 95%</span>
+          <span class="mode-rate"><span class="rate"><span class="rate-l">5 日勝率</span><span class="pill pill-pend">計算中</span></span>
+<span class="rate-n">歷史勝率回補中，暫不計算，不顯示比例</span></span></a>
+      </div>
+    </div>
+  </div>
+  <div class="tier-group">
+    <div class="tg-h"><span class="tier t3"><span class="sr">等級：</span>高級</span><span class="tg-n">要同時對齊多種資料，樣本最少。</span>
+      <p class="tg-def"><b>5 日勝率</b>＝扣成本後 5 個交易日報酬＞0 的比例（報酬＝0 算沒有上漲）。N＝事件數、D＝訊號日數，N ≥ 100 且 D ≥ 30 才顯示比例，否則「樣本不足」。統計期間 2023-11 起。<b>歷史統計，不代表未來，非投資建議。</b></p></div>
+    <div class="mode-grid">
+      <div class="mode-cell" data-cell="M7">
+        <a class="mode" href="q_mode-M7.html#results" data-mode="M7">
+          <span class="mode-top"><span class="mcode">M7</span><span class="tier t3"><span class="sr">等級：</span>高級</span></span>
+          <span class="mode-name">營收創高＋趨勢</span><span class="mode-desc">月營收創 12 個月新高，且收盤 &gt; MA20 &gt; MA60</span>
+          <span class="cnt zero"><span class="cnt-l">今日</span><b class="cnt-v num">0</b><span class="cnt-u">檔</span><span class="cnt-of">／可評估 30 檔</span></span>
+          <span class="mode-rate"><span class="rate"><span class="rate-l">5 日勝率</span><span class="pill pill-pend">計算中</span></span>
+<span class="rate-n">歷史勝率回補中，暫不計算，不顯示比例</span></span></a>
+      </div>
+      <div class="mode-cell" data-cell="M8">
+        <div class="mode na" data-mode="M8" data-state="mode_na">
+          <span class="mode-top"><span class="mcode">M8</span><span class="tier t3"><span class="sr">等級：</span>高級</span></span>
+          <span class="mode-name">EPS 成長＋營收連續成長＋趨勢</span><span class="mode-desc">單季 EPS 年增、營收連續 3 個月年增，且收盤 &gt; MA20 &gt; MA60</span>
+          <span class="cnt"><span class="cnt-l">今日</span><span class="pill pill-muted big">尚未提供</span></span>
+<span class="na-why">需要單季 EPS 年增（M5），研究分析模組尚未提供，本站不自行計算。</span>
+          <span class="mode-rate"><span class="rate"><span class="rate-l">5 日勝率</span><span class="pill pill-few">! 樣本不足</span></span>
+<span class="rate-n">季頻訊號一年只有 4 個公告期，未達 D ≥ 30 的顯示門檻，不顯示比例｜歷史統計，不代表未來，非投資建議</span></span></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<div class="lower">
+  <div class="lower-main">
+    <section class="results" id="results" aria-live="polite" tabindex="-1" data-mode="M2">
+      <header class="res-h"><p class="eyebrow"><span class="tier t1"><span class="sr">等級：</span>基本</span> M2 篩選結果</p><h2>均線多頭排列</h2><p class="res-cond">條件：收盤 &gt; MA5 &gt; MA20 &gt; MA60，且成交金額 ≥ 1 億元</p></header>
+      <div class="res-sum" role="note"><p class="sum-1"><span><b class="num">1</b> 檔</span><span>排序：成交金額（億元） ↓</span><span class="sum-word">5 日勝率 計算中（歷史勝率回補中）</span></p></div>
+      <p class="sort-alt" data-testid="sort-switch">排序方式：<a href="q_mode-M2.html#results">收盤距 60 日均線（%） ↓</a><span class="is-on" aria-current="true">✓ 成交金額 ↓</span></p>
+      <p class="sort-note">排序僅為排列方式，不代表優劣。</p>
+      <div class="tbl-wrap"><table class="rt"><caption class="sr">均線多頭排列 篩選結果名單</caption>
+        <thead><tr><th scope="col">股票</th><th scope="col" class="r">收盤（元）</th><th scope="col" class="r">漲跌幅</th><th scope="col" class="r sorted" aria-sort="descending">成交金額（億元）<span aria-hidden="true"> ↓</span></th></tr></thead>
+        <tbody>
+        <tr><th scope="row" class="stk"><a href="../stock/2412/"><span class="snm" title="中華電">中華電</span><span class="scd">2412</span></a><span class="smk">上市</span></th>
+          <td class="r" data-l="收盤（元）"><a class="v vlink" href="../source/q_price_date-2026-11-23_symbol-2412_table-daily_prices.html" data-src-link="1">164.50<span class="tip" role="tooltip">來源：analysis/screener.py screen()（daily_prices）<br>資料日期：2026-11-23<br>來源表：daily_prices<br>主鍵：symbol=2412, price_date=2026-11-23<br>單位：新台幣元<br>點擊開啟來源列 →</span></a></td><td class="r" data-l="漲跌幅"><span class="chg up"><span class="arr" aria-hidden="true">▲</span><span class="sr">上漲</span><a class="v vlink" href="../source/q_price_date-2026-11-23_symbol-2412_table-daily_prices.html" data-src-link="1">+1.23%<span class="tip" role="tooltip">來源：analysis/screener.py screen()（daily_prices）<br>資料日期：2026-11-23<br>來源表：daily_prices<br>主鍵：symbol=2412, price_date=2026-11-23<br>單位：%<br>點擊開啟來源列 →</span></a></span></td>
+          <td class="r" data-l="成交金額（億元）"><a class="v vlink" href="../source/q_price_date-2026-11-23_symbol-2412_table-daily_prices.html" data-src-link="1">60.22<span class="tip" role="tooltip">來源：analysis/screener.py screen()（daily_prices）<br>資料日期：2026-11-23<br>來源表：daily_prices<br>主鍵：symbol=2412, price_date=2026-11-23<br>單位：億元<br>點擊開啟來源列 →</span></a></td></tr>
+        </tbody></table></div>
+      <p class="tbl-foot">點股票名稱進入個股研究。<span title="analysis/screener.py screen() 兩次：MA5／MA20 與 MA20／MA60（只開趨勢與成交金額條件），兩者都符合">計算：研究分析的技術篩選器跑兩次（MA5／MA20、MA20／MA60，只開趨勢與成交金額條件），兩次都符合才列入</span>。漲跌以 ▲／▼／■ 加正負號與顏色表示（紅漲綠跌）。</p>
+    </section>
+  </div>
+  <aside class="topics" aria-labelledby="h-top">
+    <div class="sec-h sm"><h2 id="h-top">近期話題</h2></div>
+    <div class="later" role="note"><p class="later-h">重大訊息則數排行 <span class="later-tag">之後提供</span></p><p>近 7 個交易日重大訊息則數最多的個股（只算普通股、排除例行公告）。例行公告的排除規則仍待核可，目前還沒有這項功能。</p></div>
+    <div class="later" role="note"><p class="later-h">主題話題 <span class="later-tag">之後提供</span></p><p>例如把同一主題的多檔股票歸在一起；目前還沒有這項功能。</p></div>
+  </aside>
+</div>
+<p class="disclaimer">本頁為程式依資料庫計算的篩選結果，僅供研究參考，不構成投資建議；本站不提供下單功能。時間皆為台北時間。</p>
+</div>
+
+</main>
+<footer class="site">
+  <div class="wrap foot-grid">
+    <div><h2>資料來源與更新</h2><p>行情：證交所、櫃買中心；月營收、財報、重大訊息：公開資訊觀測站。每交易日 18:00 盤後更新、22:00 補查公告與營收。時間皆為台北時間（UTC+8）。<a href="../status/">各來源狀態 →</a></p></div>
+    <div><h2>單位</h2><p>價格：新台幣元；金額：億元（新台幣）；成交量：股；指數：點；漲跌：▲ 上漲（紅）、▼ 下跌（綠）、■ 平盤，並加 +／− 號。</p></div>
+    <div><h2>聲明</h2><p>本站僅供研究參考，不構成投資建議；技術訊號不代表獲利保證；本站不提供下單功能。數值由程式計算，文字說明不推論未經證實的原因。</p>
+      <p class="muted">圖表：<a href="https://www.tradingview.com/" rel="noopener">TradingView Lightweight Charts™</a>（Apache-2.0，本地檔案）。</p></div>
+  </div>
+</footer>
+<script src="../static/js/site.js" defer></script>
+<script src="../static/js/nav.js" defer></script>
+
+<script src="../static/js/static.js" defer></script>
+</body>
+</html>

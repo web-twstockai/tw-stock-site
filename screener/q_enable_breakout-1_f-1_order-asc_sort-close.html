@@ -6,6 +6,7 @@
 <title>選股｜台股盤後研究</title>
 <link rel="icon" href="data:,">
 <link rel="stylesheet" href="../static/css/site.css">
+<link rel="stylesheet" href="../static/css/hub.css">
 <script>document.documentElement.classList.add('js')</script>
 <meta name="site-root" content="../">
 <link rel="stylesheet" href="../static/css/static.css">
@@ -18,7 +19,9 @@
     <a class="brand" href="../" aria-label="台股盤後研究 首頁"><span class="seal" aria-hidden="true">盤後</span><span class="brand-name">台股盤後研究</span></a>
     <nav class="mainnav" aria-label="主要功能">
       <a href="../">盤後總覽</a>
-      <a href="./" class="on" aria-current="page">條件選股</a>
+      <a href="../hub/">篩選中心</a>
+      <a href="../industry/">產業分類</a>
+      <a href="./" class="on" aria-current="page">自訂條件</a>
       <a href="../revenue/">營收</a>
       <a href="../status/">資料狀態</a>
     </nav>
@@ -30,21 +33,21 @@
       <button type="submit">前往個股</button>
     </form>
   </div><div class="wrap meta-bar" role="status" aria-label="資料更新狀態">
-    <span class="mi">資料日期 <strong data-date="2026-11-16">2026-11-16</strong></span>
-    <span class="mi">更新 <span class="pill pill-muted">— interrupted</span></span>
+    <span class="mi">資料日期 <strong data-date="2026-11-23">2026-11-23</strong></span>
+    <span class="mi">更新 <span class="pill pill-ok">● 成功</span></span>
     <span class="mi src-ok">行情 <span class="dot ok" aria-hidden="true"></span>正常</span>
     <span class="mi src-ok">月營收 <span class="dot ok" aria-hidden="true"></span>正常</span>
     <span class="mi src-ok">重大訊息 <span class="dot ok" aria-hidden="true"></span>正常</span>
-    <span class="mi muted">最後更新 2026-11-17 10:56（台北）</span>
+    <span class="mi muted">最後更新 2026-11-24 12:46（台北）</span>
     
     <a class="mi status-link" href="../status/">資料狀態 →</a>
   </div>
 </header>
 <main id="main" class="wrap">
-<div class="static-banner" role="note" data-testid="static-banner"><strong>公開靜態版</strong><span>資料日期 <b>2026-11-16</b>｜最近一次更新工作完成 2026-11-17 10:56（台北時間）｜本頁產生於 2026-11-17 10:59（台北時間）。每交易日 18:00、每日 22:00 更新後重新產生；資料全部來自證交所、櫃買中心、公開資訊觀測站。</span></div>
+<div class="static-banner" role="note" data-testid="static-banner"><strong>公開靜態版</strong><span>資料日期 <b>2026-11-23</b>｜最近一次更新工作完成 2026-11-24 12:46（台北時間）｜本頁產生於 2026-11-24 13:04（台北時間）。每交易日 18:00、每日 22:00 更新後重新產生；資料全部來自證交所、櫃買中心、公開資訊觀測站。</span></div>
 
 <h1>技術條件選股 <small>趨勢＋突破＋量能</small></h1>
-<p class="basis-note" data-testid="volume-basis">量與金額口徑：上市：STOCK_DAY 官方總量口徑（含零股、盤後定價、鉅額）；上櫃：tradingStock 官方總量口徑（上櫃不含鉅額，已知限制）。</p>
+<p class="basis-note" data-testid="volume-basis">量與金額口徑：上櫃以櫃買中心 dailyQuotes 總量（含鉅額）為主；取不到時暫用 tradingStock，標「不含鉅額」。上市以證交所 STOCK_DAY 總量（含鉅額）。上櫃是否含盤後定價、零股待查證。<br><span data-testid="basis-counts">2026-11-23 實際口徑（依各列逐日標記）：總量（含鉅額） 30 檔、不含鉅額 0 檔、口徑不明 0 檔。</span></p>
 
 
 
@@ -128,6 +131,7 @@
 
 
 <section class="card exclusion-stats" id="exclusion-stats" data-testid="exclusion-stats">
+  
   <h2>排除原因統計 <small>檢查 30 檔｜排除 0 檔</small></h2>
   <p class="muted">無排除。</p>
   <p class="muted"><a href="#excluded">逐檔排除明細 ↓</a></p>
@@ -137,18 +141,18 @@
 <p class="note">追蹤範圍：30 檔驗證樣本（設定 TWSITE_UNIVERSE；清單來源 pipeline/config.py SAMPLE30）。範圍外的股票不評估、不計入排除。</p>
 
 <section class="card" id="results">
-  <h2>結果 <small>0 檔／檢查 30 檔｜交易日 2026-11-16</small></h2>
+  <h2>結果 <small>0 檔／檢查 30 檔｜交易日 2026-11-23</small></h2>
   
   
 
 <div class="empty zero" data-state="zero">
-  <strong>零檔</strong>：條件下無符合標的。2026-11-16 資料完整的股票中，沒有同時符合所有啟用條件者（共檢查 30 檔）。
+  <strong>零檔</strong>：條件下無符合標的。2026-11-23 資料完整的股票中，沒有同時符合所有啟用條件者（共檢查 30 檔）。
   <br>依規格不自動放寬條件；如需比較，請手動調整參數。
 </div>
 
 
   
-  <p class="srcline">來源：analysis/screener.py screen()｜資料日期：2026-11-16｜價格調整方式待 docs/indicators.md 定案</p>
+  <p class="srcline">來源：analysis/screener.py screen()｜資料日期：2026-11-23｜價格調整方式待 docs/indicators.md 定案</p>
 </section>
 
 <section class="card" id="excluded">
@@ -174,6 +178,7 @@
   </div>
 </footer>
 <script src="../static/js/site.js" defer></script>
+<script src="../static/js/nav.js" defer></script>
 
 <script src="../static/js/static.js" defer></script>
 </body>

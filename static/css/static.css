@@ -9,3 +9,4 @@ form[data-static-form] input:disabled{background:#f2f0ea;color:#555}
 .static-search-list{position:absolute;z-index:20;background:#fff;border:1px solid #e2dccf;margin:.2rem 0 0;padding:.3rem 0;list-style:none;max-height:16rem;overflow:auto;min-width:14rem;box-shadow:0 4px 12px rgba(0,0,0,.08)}
 .static-search-list li a{display:block;padding:.3rem .7rem}
 form.search{position:relative}
+a[data-nopage]::after{content:"（未收錄個股頁）";font-size:.8em;color:#7a6f5c;margin-left:.15em}

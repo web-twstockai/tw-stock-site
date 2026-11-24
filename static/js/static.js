@@ -45,11 +45,15 @@
         var m=a[0], list=a[1];
         var hit=list.filter(function(s){return s.code===q});
         if(!hit.length) hit=list.filter(function(s){return s.code.indexOf(q)===0||s.name.indexOf(q)>=0});
-        hit=hit.filter(function(s){return m.stocks[s.code]});
-        if(hit.length===1){ location.href=root+m.stocks[hit[0].code].replace(/index\.html$/,''); return; }
+        var np=m.nopage||{};
+        function url(c){return m.stocks[c]?root+m.stocks[c].replace(/index\.html$/,''):root+'stock/?code='+encodeURIComponent(c)}
+        hit=hit.filter(function(s){return m.stocks[s.code]||Object.prototype.hasOwnProperty.call(np,s.code)});
+        if(hit.length===1&&m.stocks[hit[0].code]){ location.href=url(hit[0].code); return; }
         if(!hit.length){ msg(sf,'查無「'+q+'」：公開靜態版只收錄追蹤範圍內的股票。'); return; }
         var ul=document.createElement('ul'); ul.className='static-search-list';
-        hit.slice(0,30).forEach(function(s){var li=document.createElement('li'),a2=document.createElement('a');a2.href=root+m.stocks[s.code].replace(/index\.html$/,'');a2.textContent=s.code+' '+s.name;li.appendChild(a2);ul.appendChild(li)});
+        hit.slice(0,30).forEach(function(s){var li=document.createElement('li'),a2=document.createElement('a');a2.href=url(s.code);a2.textContent=s.code+' '+s.name;
+          if(!m.stocks[s.code]){a2.setAttribute('data-nopage','1');a2.title='在追蹤範圍內，這一版未收錄個股頁'}
+          li.appendChild(a2);ul.appendChild(li)});
         sf.appendChild(ul);
       }).catch(function(){ msg(sf,'讀取股票清單失敗，請重新整理頁面。'); });
     });

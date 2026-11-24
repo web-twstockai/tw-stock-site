@@ -1,0 +1,164 @@
+<!doctype html>
+<html data-static="1" lang="zh-Hant-TW">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>來源明細 material_infos｜台股盤後研究</title>
+<link rel="icon" href="data:,">
+<link rel="stylesheet" href="../static/css/site.css">
+<link rel="stylesheet" href="../static/css/hub.css">
+<script>document.documentElement.classList.add('js')</script>
+<meta name="site-root" content="../">
+<link rel="stylesheet" href="../static/css/static.css">
+</head>
+<body>
+<a class="skip" href="#main">跳到主要內容</a>
+
+<header class="site">
+  <div class="wrap mast">
+    <a class="brand" href="../" aria-label="台股盤後研究 首頁"><span class="seal" aria-hidden="true">盤後</span><span class="brand-name">台股盤後研究</span></a>
+    <nav class="mainnav" aria-label="主要功能">
+      <a href="../">盤後總覽</a>
+      <a href="../hub/">篩選中心</a>
+      <a href="../industry/">產業分類</a>
+      <a href="../screener/">自訂條件</a>
+      <a href="../revenue/">營收</a>
+      <a href="../status/">資料狀態</a>
+    </nav>
+    <form class="search" action="#" data-static-path="/search" method="get" role="search">
+      <label class="sr" for="site-q">搜尋股票代號或名稱（按 / 快速聚焦）</label>
+      <input id="site-q" type="search" name="q" list="stocklist" placeholder="代號或名稱，如 2330、台積" value="" autocomplete="off">
+      <kbd class="kbd" aria-hidden="true" title="按 / 聚焦搜尋">/</kbd>
+      <datalist id="stocklist"></datalist>
+      <button type="submit">前往個股</button>
+    </form>
+  </div><div class="wrap meta-bar" role="status" aria-label="資料更新狀態">
+    <span class="mi">資料日期 <strong data-date="2026-11-23">2026-11-23</strong></span>
+    <span class="mi">更新 <span class="pill pill-ok">● 成功</span></span>
+    <span class="mi src-ok">行情 <span class="dot ok" aria-hidden="true"></span>正常</span>
+    <span class="mi src-ok">月營收 <span class="dot ok" aria-hidden="true"></span>正常</span>
+    <span class="mi src-ok">重大訊息 <span class="dot ok" aria-hidden="true"></span>正常</span>
+    <span class="mi muted">最後更新 2026-11-24 12:46（台北）</span>
+    
+    <a class="mi status-link" href="../status/">資料狀態 →</a>
+  </div>
+</header>
+<main id="main" class="wrap">
+<div class="static-banner" role="note" data-testid="static-banner"><strong>公開靜態版</strong><span>資料日期 <b>2026-11-23</b>｜最近一次更新工作完成 2026-11-24 12:46（台北時間）｜本頁產生於 2026-11-24 13:04（台北時間）。每交易日 18:00、每日 22:00 更新後重新產生；資料全部來自證交所、櫃買中心、公開資訊觀測站。</span></div>
+
+<h1>來源明細 <small>重大訊息</small></h1>
+<section class="card source-panel" data-testid="source-panel">
+  <dl class="kv">
+    <dt>來源資料表</dt><dd><code>material_infos</code></dd>
+    <dt>查詢條件</dt><dd><code>announce_date=2026-11-23</code> <code>追蹤範圍=symbol ∈ 30 檔驗證樣本（pipeline/config.py SAMPLE30）</code> <small class="muted">（主鍵欄位：symbol, announce_date, announce_time, content_hash）</small></dd>
+    <dt>版本</dt><dd>只顯示現行列（is_current=1）</dd>
+    <dt>單位</dt><dd>—</dd>
+    
+    <dt>資料日期</dt><dd>2026-11-23 等 8 列</dd>
+    <dt>來源</dt><dd class="wrap">https://openapi.twse.com.tw/v1/opendata/t187ap04_L</dd>
+    <dt>抓取時間</dt><dd>2026-11-24T09:36:38+08:00</dd>
+    <dt>原始單位</dt><dd>—；入庫單位：n/a</dd>
+    
+    <dt>彙總算式</dt><dd><code>count(*) WHERE symbol ∈ 追蹤範圍（30 檔驗證樣本）</code> ＝ <strong data-agg>8</strong></dd>
+  </dl>
+  
+</section>
+
+
+<section class="card"><h2>原始列 <small>8 列</small></h2>
+  <div class="table-wrap"><table class="data">
+    <thead><tr><th>symbol</th><th>market</th><th>announce_date</th><th>announce_time</th><th>announced_at</th><th>announced_at_note</th><th>title</th><th>clause</th><th>seq_no</th><th>detail_text</th><th>content_hash</th><th>source</th><th>fetched_at</th><th>unit</th><th>source_unit</th><th>unit_conversion</th><th>version</th><th>is_current</th><th>checksum</th><th>url</th></tr></thead>
+    <tbody><tr><td><a href="q_4daa2551b70a1779.html">1216</a></td><td>TWSE</td><td>2026-11-23</td><td>15:35:36</td><td>2026-11-23T15:35:36+08:00</td><td>來源快照無完整時區；已存發言日期／時間</td><td>代重要子公司Cayman President Holdings LTD.公告
+董事會決議發放股利</td><td>第14款</td><td>—</td><td>1.董事會決議日期:115/11/23
+2.發放股利種類及金額:發放現金股利總金額為美元20佰萬
+3.其他應敘明事項:無</td><td>209ddea4aa22fc5e8856ef172b5c079754925cf6</td><td>https://openapi.twse.com.tw/v1/opendata/t187ap04_L</td><td>2026-11-24T09:36:38+08:00</td><td>n/a</td><td>—</td><td>—</td><td>1</td><td>1</td><td>67cf4bf469e028e8c2ec257bcc0a383d26344d8a</td><td>—</td></tr><tr><td><a href="q_7d2a103719362904.html">1216</a></td><td>TWSE</td><td>2026-11-23</td><td>15:35:36</td><td>2026-11-23T15:35:36+08:00</td><td>來源無完整時區；已存發言日期／時間</td><td>代重要子公司Cayman President Holdings LTD.公告
+董事會決議發放股利</td><td>—</td><td>—</td><td>—</td><td>81104bc7a3de24b52500c04663751fe95afc7a9d</td><td>https://mopsov.twse.com.tw/mops/web/ajax_t05st01?co_id=1216&amp;year=115&amp;month=11</td><td>2026-11-24T05:57:49+08:00</td><td>n/a</td><td>—</td><td>—</td><td>1</td><td>1</td><td>de6162d02b5fd1ecd665a85d8d8bd212284a8352</td><td>—</td></tr><tr><td><a href="q_4374a84e70a431a1.html">2357</a></td><td>TWSE</td><td>2026-11-23</td><td>13:00:07</td><td>2026-11-23T13:00:07+08:00</td><td>來源無完整時區；已存發言日期／時間</td><td>說明115年11月21日媒體報導</td><td>—</td><td>—</td><td>—</td><td>25fc6e83cd88039f993cee06a6d0d7fb72855c60</td><td>https://mopsov.twse.com.tw/mops/web/ajax_t05st01?co_id=2357&amp;year=115&amp;month=11</td><td>2026-11-24T05:58:21+08:00</td><td>n/a</td><td>—</td><td>—</td><td>1</td><td>1</td><td>5a8fbc6e4bb142e2e668f785f524a4a4649dac68</td><td>—</td></tr><tr><td><a href="q_9e76d630acc7907f.html">3711</a></td><td>TWSE</td><td>2026-11-23</td><td>13:43:00</td><td>2026-11-23T13:43:00+08:00</td><td>來源無完整時區；已存發言日期／時間</td><td>公告本公司將受邀參加「Citi Taiwan Corporate Day」之法說訊息</td><td>—</td><td>—</td><td>—</td><td>f2890a40865902b7469dfde5269f022246d9be72</td><td>https://mopsov.twse.com.tw/mops/web/ajax_t05st01?co_id=3711&amp;year=115&amp;month=11</td><td>2026-11-24T05:58:28+08:00</td><td>n/a</td><td>—</td><td>—</td><td>1</td><td>1</td><td>17f743c709a0111238624645d876617b0a12fabf</td><td>—</td></tr><tr><td><a href="q_14bea43b31ef3a8b.html">3711</a></td><td>TWSE</td><td>2026-11-23</td><td>16:30:19</td><td>2026-11-23T16:30:19+08:00</td><td>來源無完整時區；已存發言日期／時間</td><td>代子公司矽品精密工業(股)公司公告取得廠務工程</td><td>—</td><td>—</td><td>—</td><td>b1f0bde1fd43361f1a9b7d57d89cc204ef7a9279</td><td>https://mopsov.twse.com.tw/mops/web/ajax_t05st01?co_id=3711&amp;year=115&amp;month=11</td><td>2026-11-24T05:58:28+08:00</td><td>n/a</td><td>—</td><td>—</td><td>1</td><td>1</td><td>7e40880f8203b13f64b3e640fe339b9394488158</td><td>—</td></tr><tr><td><a href="q_62ec61156562f508.html">3711</a></td><td>TWSE</td><td>2026-11-23</td><td>16:30:56</td><td>2026-11-23T16:30:56+08:00</td><td>來源無完整時區；已存發言日期／時間</td><td>代子公司矽品精密工業(股)公司公告取得廠務工程</td><td>—</td><td>—</td><td>—</td><td>f7fc5cc586376683b40284177b6bb5bfee27d397</td><td>https://mopsov.twse.com.tw/mops/web/ajax_t05st01?co_id=3711&amp;year=115&amp;month=11</td><td>2026-11-24T05:58:28+08:00</td><td>n/a</td><td>—</td><td>—</td><td>1</td><td>1</td><td>7e40880f8203b13f64b3e640fe339b9394488158</td><td>—</td></tr><tr><td><a href="q_c0d5da006702f9ce.html">3711</a></td><td>TWSE</td><td>2026-11-23</td><td>16:47:05</td><td>2026-11-23T16:47:05+08:00</td><td>來源無完整時區；已存發言日期／時間</td><td>代子公司日月光半導體製造(股)公司公告
+向KLA CORPORATION取得供營業用之機器設備</td><td>—</td><td>—</td><td>—</td><td>f296181cc4f034cc9da8f8c4120d00281106bb76</td><td>https://mopsov.twse.com.tw/mops/web/ajax_t05st01?co_id=3711&amp;year=115&amp;month=11</td><td>2026-11-24T05:58:28+08:00</td><td>n/a</td><td>—</td><td>—</td><td>1</td><td>1</td><td>cf2e838213ca028287f93585b57a2121c76ed26d</td><td>—</td></tr><tr><td><a href="q_e6d137079256bf3b.html">3711</a></td><td>TWSE</td><td>2026-11-23</td><td>16:47:05</td><td>2026-11-23T16:47:05+08:00</td><td>來源快照無完整時區；已存發言日期／時間</td><td>代子公司日月光半導體製造(股)公司公告
+向KLA CORPORATION取得供營業用之機器設備</td><td>第20款</td><td>—</td><td>1.標的物之名稱及性質（如坐落台中市北區ＸＸ段ＸＸ小段土地）:
+供營業用之機器設備
+2.事實發生日:115/9/14~115/11/23
+3.董事會通過日期: 不適用
+4.其他核決日期:
+核決層級:總經理核決
+民國115年11月23日
+5.交易單位數量（如ＸＸ平方公尺，折合ＸＸ坪）、每單位價格及交易總金額:
+交易數量：一批
+每單位價格計：新台幣1,030,639仟元(未稅)
+累計交易總金額計：新台幣1,030,639仟元(未稅)
+6.交易相對人及其與公司之關係（交易相對人如屬自然人，且非公司之關
+係人者，得免揭露其姓名）:
+交易相對人：KLA CORPORATION
+與公司之關係：無
+7.交易相對人為關係人者，並應公告選定關係人為交易對象之原因及前次移轉之
+所有人、前次移轉之所有人與公司及交易相對人間相互之關係、前次移轉日期
+及移轉金額:
+不適用
+8.交易標的最近五年內所有權人曾為公司之關係人者，尚應公告關係
+人之取得及處分日期、價格及交易當時與公司之關係:
+不適用
+9.預計處分利益（或損失）（取得資產者不適用）（遞延者應列表說明
+認列情形）:
+不適用
+10.交付或付款條件（含付款期間及金額）、契約限制條款及其他重要約定
+事項:
+交付或付款條件：電匯或信用狀付款
+契約限制條款：無
+其他重要約定事項：無
+11.本次交易之決定方式（如招標、比價或議價）、價格決定之參考依據及
+決策單位:
+交易之決定方式及價格決定之參考依據：比價及議價
+決策單位：依該公司核決權限規定辦理
+12.專業估價者事務所或公司名稱及其估價金額:
+不適用
+13.專業估價師姓名:
+不適用
+14.專業估價師開業證書字號:
+不適用
+15.估價報告是否為限定價格、特定價格或特殊價格:否或不適用
+16.是否尚未取得估價報告:否或不適用
+17.尚未取得估價報告之原因:
+不適用
+18.估價結果有重大差異時，其差異原因及會計師意見:
+不適用
+19.會計師事務所名稱:
+不適用
+20.會計師姓名:
+不適用
+21.會計師開業證書字號:
+不適用
+22.經紀人及經紀費用:
+無
+23.取得或處分之具體目的或用途:
+供生產及營運用
+24.本次交易表示異議之董事之意見:
+不適用
+25.本次交易為關係人交易:否
+26.監察人承認或審計委員會同意日期:
+不適用
+27.本次交易係向關係人取得不動產或其使用權資產:否
+28.依「公開發行公司取得或處分資產處理準則」第十六條規定
+評估之價格:不適用
+29.依前項評估之價格較交易價格為低者，依同準則第十七條規
+定評估之價格:不適用
+30.前已就同一件事件發布重大訊息日期: 不適用
+31.其他敘明事項:
+無</td><td>f34f85a823a7be8c8933b4c91857f72299d26c15</td><td>https://openapi.twse.com.tw/v1/opendata/t187ap04_L</td><td>2026-11-24T09:36:38+08:00</td><td>n/a</td><td>—</td><td>—</td><td>1</td><td>1</td><td>dd9586cc629dddaa2324033f8e58fd140271e93e</td><td>—</td></tr></tbody>
+  </table></div>
+</section>
+
+
+</main>
+<footer class="site">
+  <div class="wrap foot-grid">
+    <div><h2>資料來源與更新</h2><p>行情：證交所、櫃買中心；月營收、財報、重大訊息：公開資訊觀測站。每交易日 18:00 盤後更新、22:00 補查公告與營收。時間皆為台北時間（UTC+8）。<a href="../status/">各來源狀態 →</a></p></div>
+    <div><h2>單位</h2><p>價格：新台幣元；金額：億元（新台幣）；成交量：股；指數：點；漲跌：▲ 上漲（紅）、▼ 下跌（綠）、■ 平盤，並加 +／− 號。</p></div>
+    <div><h2>聲明</h2><p>本站僅供研究參考，不構成投資建議；技術訊號不代表獲利保證；本站不提供下單功能。數值由程式計算，文字說明不推論未經證實的原因。</p>
+      <p class="muted">圖表：<a href="https://www.tradingview.com/" rel="noopener">TradingView Lightweight Charts™</a>（Apache-2.0，本地檔案）。</p></div>
+  </div>
+</footer>
+<script src="../static/js/site.js" defer></script>
+<script src="../static/js/nav.js" defer></script>
+
+<script src="../static/js/static.js" defer></script>
+</body>
+</html>
