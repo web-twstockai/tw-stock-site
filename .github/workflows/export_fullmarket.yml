@@ -57,10 +57,12 @@ jobs:
           IN_PAGE_EXTRA: ${{ inputs.page_extra }}
           IN_WORKERS: ${{ inputs.workers }}
         run: |
+          set -euo pipefail
           mkdir -p build
-          [ -n "$IN_PAGE_EXTRA" ] && export TWSITE_PAGE_EXTRA="$IN_PAGE_EXTRA"
-          W=(); [ -n "$IN_WORKERS" ] && W=(--workers "$IN_WORKERS")
-          TIME=(); [ -x /usr/bin/time ] && TIME=(/usr/bin/time -v -o build/time_v.txt)
+          [ -n "${IN_PAGE_EXTRA:-}" ] && export TWSITE_PAGE_EXTRA="$IN_PAGE_EXTRA"
+          W=(); [ -n "${IN_WORKERS:-}" ] && W=(--workers "$IN_WORKERS")
+          # time 輸出路徑必須在 cd web 前就固定成 repo 根的絕對路徑（先前相對路徑 build/time_v.txt 會寫到 web/build，目錄不存在导致 /usr/bin/time 立刻失敗、匯出沒跑）
+          TIME=(); [ -x /usr/bin/time ] && TIME=(/usr/bin/time -v -o "$GITHUB_WORKSPACE/build/time_v.txt")
           cd web
           "${TIME[@]}" python -W ignore tools/peak_mem.py --json ../build/export_mem.json -- \
             python -W ignore tools/export_static.py --mode v2 --pages auto "${W[@]}" --out ../build/site 2>&1 | tee ../build/export.log
